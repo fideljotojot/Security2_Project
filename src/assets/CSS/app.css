@@ -1,0 +1,146 @@
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(../images/background.jpg);
+  background-size: cover;
+}
+
+header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 1em 1.5em;
+  background-color: var(--color-accent);
+  user-select: none;
+}
+
+.portal {
+  background-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+}
+
+header img {
+  height: 3em;
+  position: absolute;
+  left: 1em;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5),
+            0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+header .header-btn {
+  display: flex;
+  justify-content: space-between;
+  gap: 2em;
+}
+
+header .header-btn p {
+  padding: .6em .8em;
+  border: none;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: center;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+  color: #fefefe;
+}
+
+header .header-btn p:disabled,
+header .header-btn p.disabled-btn {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+header .header-btn .disabled-link {
+  pointer-events: none;
+  cursor: not-allowed;
+}
+.dark-btn {
+  color: #fff;
+}
+
+a {
+  text-decoration: none;
+}
+
+main {
+  flex: 1;
+  display: flex;
+}
+
+.page-container {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  user-select: none;
+}
+
+.logo-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.logo-container img {
+  margin: auto;
+  width: 30em;
+  border-radius: 1em;
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--color-primary) 15%, rgba(0,0,0,0.4));
+}
+
+.mask {
+  background-color: #fafafa ;
+  -webkit-mask: url('@/assets/images/icon.png') no-repeat center / contain;
+  mask: url('@/assets/images/icon.png') no-repeat center / contain;
+  display: inline-block;
+}
+
+.mask:hover {
+  background-color: #4e4e4e;
+  transition: 0.3s ease;
+}
+
+
+.form-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 90%;
+  border-left: 1px solid rgb(241, 241, 241);
+}
+
+.form-box {
+  width: fit-content;
+  height: fit-content;
+  padding: 1em 2.5em 2em;
+  border: none;
+  border-radius: 1em;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+footer {
+  color: #f0f0f0;
+  margin-top: auto;
+  text-align: center;
+  background-color: #5e945e;
+  padding: .5em;
+  font-size: .8em;
+  user-select: none;
+}
+
+.footer-portal {
+  background-color: #bcf9bc86;
+  color: #fff;
+}
