@@ -538,8 +538,8 @@ export default {
       try {
         // 1. Sign up user in Supabase Auth
         const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: this.form.email.trim(),
-          password: this.form.password.trim(),
+          email: (this.form.email || '').trim(),
+          password: (this.form.password || '').trim(),
         });
 
         if (authError) {
@@ -555,22 +555,22 @@ export default {
         // 2. Insert user details in public tables via create_user_profile RPC
         const { data: profileSuccess, error: profileError } = await supabase.rpc('create_user_profile', {
           p_user_id: authData.user.id,
-          p_id_number: this.form.id.trim(),
-          p_username: this.form.username.trim(),
-          p_email: this.form.email.trim(),
-          p_first_name: this.form.firstName.trim(),
-          p_middle_initial: this.form.middleInitial.trim(),
-          p_last_name: this.form.lastName.trim(),
-          p_suffix: this.form.suffix.trim(),
+          p_id_number: (this.form.id || '').trim(),
+          p_username: (this.form.username || '').trim(),
+          p_email: (this.form.email || '').trim(),
+          p_first_name: (this.form.firstName || '').trim(),
+          p_middle_initial: (this.form.middleInitial || '').trim(),
+          p_last_name: (this.form.lastName || '').trim(),
+          p_suffix: (this.form.suffix || '').trim(),
           p_birthdate: this.form.birthdate || null,
           p_age: this.form.age ? parseInt(this.form.age, 10) : null,
           p_sex: this.form.sex,
-          p_purok: this.form.purok.trim(),
-          p_barangay: this.form.barangay.trim(),
-          p_city: this.form.city.trim(),
-          p_province: this.form.province.trim(),
-          p_country: this.form.country.trim(),
-          p_zip: this.form.zip.trim(),
+          p_purok: (this.form.purok || '').trim(),
+          p_barangay: (this.form.barangay || '').trim(),
+          p_city: (this.form.city || '').trim(),
+          p_province: (this.form.province || '').trim(),
+          p_country: (this.form.country || '').trim(),
+          p_zip: String(this.form.zip || '').trim(),
           p_q1: this.form.question1,
           p_a1: this.form.answer1,
           p_q2: this.form.question2,

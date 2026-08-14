@@ -249,13 +249,13 @@
         </div>
 
       </div>
+      <div class="btn-container">
+        <button type="button" @click="step = 'login_details'" class="btn">Back</button>
+        <button type="submit" class="btn" :disabled="!canSubmitRegister">Register</button>
+      </div>
     </div>
 
 
-    <div class="btn-container">
-      <button type="button" @click="step = 'login_details'" class="btn">Back</button>
-      <button type="submit" class="btn" :disabled="!canSubmitRegister">Register</button>
-    </div>
   </form>
 </template>
 
