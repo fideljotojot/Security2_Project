@@ -170,21 +170,3 @@
   });
 })();
 </script>
-
-<style>
-form { height: 100%; display:flex; flex-direction:column; align-items:center; gap:1em }
-.form-content { width:100%; height:80%; gap:.5em; display:flex; flex-direction:column; align-items:center; justify-content:center; background-color:#9b9b8cae; padding:1.5em 2em; border-radius:1em; margin:auto }
-.registration-box { display:grid; grid-template-columns: repeat(2, 1fr); gap:1em 1em .5em 1em; width:100% }
-.form-group { display:flex; flex-direction:column-reverse; gap:.2em }
-.form-group label { text-align:start; margin-left:1em }
-.form-group input, select { width:90%; align-self:center; padding:.5em .5em .5em 1em; border-radius:1em; border:1px solid #111 }
-.header { width:100%; text-align:start; margin-left:1em }
-h3 { font-weight:600 }
-h1 { font-weight:bolder; text-transform:uppercase }
-hr { width:100% }
-.btn-container { display:flex; gap:1em; width:100%; justify-content:center; margin-top:3em }
-.btn { border-radius:.9em; padding:.8em 1.5em; border:none; background-color:#7D8D86; box-shadow:1px 1px 1px #00000095; color:#F1F0E4; font-size:.9em }
-.form-content > .btn { align-self:center; margin-top:auto }
-a { text-decoration:none; color:#F1F0E4 }
-#password-strength { font-weight:bold; }
-</style>
