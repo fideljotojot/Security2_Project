@@ -51,6 +51,12 @@ export default {
     this.restoreLockoutState();
   },
   methods: {
+    getWarning(id) {
+      const w = this.warnings[id];
+      if (!w) return '';
+      if (Array.isArray(w)) return w[0] || '';
+      return w;
+    },
     togglePassword() {
       this.showPassword = !this.showPassword;
     },

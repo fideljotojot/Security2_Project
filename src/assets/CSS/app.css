@@ -110,6 +110,11 @@ main {
   transition: 0.3s ease;
 }
 
+h1 {
+  font-size: 1.8rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
 
 .form-container {
   flex: 1;
@@ -157,6 +162,7 @@ footer {
 .form-group label {
   text-align: start;
   margin-left: 1em;
+  font-size: .8rem;
 }
 
 .form-group input, select {
@@ -182,6 +188,8 @@ footer {
 
 h3 {
   font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: -.5rem;
 }
 
 hr {
@@ -242,6 +250,17 @@ a {
 .warning {
   color: #da0303;
 }
+
+.field-warning {
+  color: #da0303;
+  font-size: 0.8em;
+  width: 90%;
+  align-self: center;
+  text-align: start;
+  margin-top: 0.25em;
+  line-height: 1.2;
+}
+
 .warning-container ul {
   margin: 0;
   padding-left: 1rem;
@@ -252,30 +271,35 @@ a {
   line-height: 1.25;
 }
 
-.password-group {
+.password-input-wrapper {
   position: relative;
-  width: 100%;
+  width: 90%;
+  align-self: center;
+  display: flex;
 }
 
-.toggle-password {
+.password-input-wrapper input {
+  width: 100% !important;
+}
+
+.password-input-wrapper .toggle-password,
+.password-input-wrapper .eye-icon {
   position: absolute;
-  right: 10px;
-  top: 68%;
+  right: 0.75em;
+  top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  user-select: none;
+  z-index: 10;
   display: flex;
   align-items: center;
-}
-
-.eye-icon {
+  justify-content: center;
   width: 1.2em;
   height: 1.2em;
   color: #3d3d3d;
-  background-color: white;
 }
 
-.eye-icon:hover {
+.password-input-wrapper .toggle-password:hover,
+.password-input-wrapper .eye-icon:hover {
   color: #576b58;
 }
 

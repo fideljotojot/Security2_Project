@@ -69,6 +69,12 @@ export default {
   },
 
   methods: {
+    getWarning(id) {
+      const w = this.warnings[id];
+      if (!w) return '';
+      if (Array.isArray(w)) return w[0] || '';
+      return w;
+    },
     containsSymbol(value) {
       return /[^a-zA-Z0-9\s]/.test(value);
     },

@@ -6,17 +6,10 @@
           <h3>Account Detail</h3>
         </div>
         <hr>
-        <div class="warning-container" v-if="warnings.idNumber && warnings.idNumber.length">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-          </svg>
-          <ul>
-            <li v-for="(msg, idx) in warnings.idNumber" :key="idx" class="warning">{{ msg }}</li>
-          </ul>
-        </div>
         <div class="registration-box">
           <div class="form-group">
             <div class="form-group">
+              <span class="field-warning" v-if="getWarning('idNumber')">{{ getWarning('idNumber') }}</span>
               <input type="text" v-model="idNumber" id="idNumber" name="idNumber" @input="validateIdNumber">
               <label for="idNumber">ID Number:</label>
             </div>
@@ -34,17 +27,19 @@
           <h3>Authentication Questions</h3>
         </div>
         <hr>
-        <div class="warning-container" v-if="allWarnings.length">
+        <!-- central warning container (shows general/server errors only) -->
+        <div class="warning-container" v-if="warnings.server && warnings.server.length">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
           </svg>
           <ul>
-            <li v-for="(msg, idx) in allWarnings" :key="idx" class="warning">{{ msg }}</li>
+            <li v-for="(msg, idx) in warnings.server" :key="idx" class="warning">{{ msg }}</li>
           </ul>
         </div>
         <div class="registration-box">
           <div class="form-group">
             <div class="form-group">
+              <span class="field-warning" v-if="getWarning('answer1')">{{ getWarning('answer1') }}</span>
               <input type="text" id="answer1" v-model="form.answer1" required @input="validateAnswer">
               <label for="answer1" class="question-label">Answer 1: <span>*</span></label>
             </div>
@@ -57,6 +52,7 @@
 
           <div class="form-group">
             <div class="form-group">
+              <span class="field-warning" v-if="getWarning('answer2')">{{ getWarning('answer2') }}</span>
               <input type="text" id="answer2" v-model="form.answer2" required @input="validateAnswer">
               <label for="answer2" class="question-label">Answer 2: <span>*</span></label>
             </div>
@@ -68,6 +64,7 @@
           </div>
             <div class="form-group">
               <div class="form-group">
+                <span class="field-warning" v-if="getWarning('answer3')">{{ getWarning('answer3') }}</span>
                 <input type="text" id="answer3" v-model="form.answer3" required @input="validateAnswer">
                 <label for="answer3" class="question-label">Answer 3: <span>*</span></label>
               </div>

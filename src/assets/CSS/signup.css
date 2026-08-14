@@ -1,6 +1,6 @@
 
 form {
-  width: 30vw;
+  width: 35vw;
   height: fit-content;
   display: flex;
   flex-direction: column;
@@ -111,18 +111,17 @@ form {
   grid-template-columns: repeat(2, 1fr);
   gap: .8em 1em ;
   width: 100%;
+  align-items: start;
 }
 
 .password-strength {
-  margin-top: 0.5em;
   width: 90%;
   align-self: center;
 }
 
 .strength-bar {
-  height: 6px;
+  height: 5px;
   border-radius: 4px;
-  margin-bottom: 0.3em;
   transition: background-color 0.3s, width 0.3s;
   width: 100%;
 }
@@ -141,11 +140,12 @@ form {
 }
 
 .strength-text {
-  font-size: 0.85em;
+  font-size: 0.7em;
   text-align: left;
   margin-left: 0.5em;
   font-weight: 500;
 }
+
 
 /* Success message */
 .success-container {

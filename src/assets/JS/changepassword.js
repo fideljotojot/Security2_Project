@@ -61,6 +61,12 @@ export default {
     },
   },
   methods: {
+    getWarning(id) {
+      const w = this.warnings[id];
+      if (!w) return '';
+      if (Array.isArray(w)) return w[0] || '';
+      return w;
+    },
     togglePassword(field) {
       if (field === "new") this.showNewPassword = !this.showNewPassword;
       if (field === "confirm") this.showConfirmPassword = !this.showConfirmPassword;
