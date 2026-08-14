@@ -1,4 +1,5 @@
 import ChangePassword from '../../components/ChangePassword.vue';
+import { supabase } from '../../utils/supabase.js';
 
 export default {
   components: {
@@ -14,6 +15,11 @@ export default {
       username: '',
       questionsLoaded: false,
       step: 1,
+      tempAnswers: {
+        answer1: '',
+        answer2: '',
+        answer3: ''
+      },
       form: {
         question1: '',
         answer1: '',
@@ -39,7 +45,6 @@ export default {
       );
     },
     allWarnings() {
-      // flatten arrays and return non-empty trimmed messages
       const vals = Object.values(this.warnings || {});
       const flat = [];
       for (const v of vals) {
@@ -65,7 +70,6 @@ export default {
 
   methods: {
     containsSymbol(value) {
-      // Returns true if any non-alphanumeric (except space) characters are found
       return /[^a-zA-Z0-9\s]/.test(value);
     },
 
@@ -99,26 +103,31 @@ export default {
       this.warnings.server = [];
 
       try {
-        const res = await fetch('http://localhost/Security2.0/api/verify_security_answers.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id_number: this.idNumber,
-            answer1: this.form.answer1,
-            answer2: this.form.answer2,
-            answer3: this.form.answer3
-          })
+        const { data: matched, error } = await supabase.rpc('verify_security_answers_only', {
+          p_id_number: this.idNumber,
+          p_ans1: this.form.answer1,
+          p_ans2: this.form.answer2,
+          p_ans3: this.form.answer3
         });
 
-        const data = await res.json();
-
-        if (!res.ok || !data.match) {
-          this.warnings.server = ['Your answers do not match our records.'];
-
-          // Disable the Next button because of error
-           this.isStep2Loading = true;
-          return; // stop — do not proceed
+        if (error) {
+          this.warnings.server = [error.message || 'Verification error.'];
+          this.isStep2Loading = true;
+          return;
         }
+
+        if (!matched) {
+          this.warnings.server = ['Your answers do not match our records.'];
+          this.isStep2Loading = true;
+          return;
+        }
+
+        // Store answers temporarily in memory to send during final reset in step 3
+        this.tempAnswers = {
+          answer1: this.form.answer1,
+          answer2: this.form.answer2,
+          answer3: this.form.answer3
+        };
 
         this.form.answer1 = '';
         this.form.answer2 = '';
@@ -127,16 +136,15 @@ export default {
         this.step = 3;
       } catch (err) {
         console.error(err);
-        this.warnings.server = ['Network or server error occurred.'];
+        this.warnings.server = ['Network or database error occurred.'];
       } finally {
-        // Re-enable only if there's no warning
         if (!this.warnings.server.length) {
           this.isStep2Loading = false;
         }
       }
     },
+
     async handleChangePassword() {
-      // Validate ID number format before proceeding
       if (!this.validateIdNumber()) {
         this.message = 'Please enter a valid ID number in the format 0000-0000.';
         return;
@@ -149,20 +157,50 @@ export default {
       }
 
       try {
-        //  Call child ChangePassword component
-        const result = await child.submitChange();
+        // 1. Get validated password from child component
+        const validationResult = await child.submitChange();
 
-        if (!result || !result.ok) {
-          this.message = result?.error || 'Failed to change password.';
+        if (!validationResult || !validationResult.ok) {
+          this.message = validationResult?.error || 'Failed to validate password.';
           return;
         }
 
-        this.message = result.data?.message || 'Password changed successfully.';
+        const newPassword = validationResult.newPassword;
 
+        // 2. Call Supabase RPC to verify answers and reset password atomically
+        const { data: resetResult, error: resetError } = await supabase.rpc('verify_and_reset_password', {
+          p_id_number: this.idNumber,
+          p_ans1: this.tempAnswers.answer1,
+          p_ans2: this.tempAnswers.answer2,
+          p_ans3: this.tempAnswers.answer3,
+          p_new_password: newPassword
+        });
+
+        if (resetError) {
+          this.message = resetError.message || 'Database error occurred.';
+          return;
+        }
+
+        if (!resetResult || !resetResult.ok) {
+          this.message = resetResult?.error || 'Failed to change password.';
+          return;
+        }
+
+        this.message = resetResult.message || 'Password changed successfully.';
+        
+        child.success = "Successfully Changed Password";
+        child.newPassword = "";
+        child.confirmPassword = "";
+        
         // Reset form after success
-        this.step = 1;
-        this.idNumber = '';
-        this.warnings.idNumber = [];
+        setTimeout(() => {
+          this.step = 1;
+          this.idNumber = '';
+          this.warnings.idNumber = [];
+          this.tempAnswers = { answer1: '', answer2: '', answer3: '' };
+          this.$router.push("/login");
+        }, 1000);
+
       } catch (err) {
         console.error(err);
         this.message = 'Unexpected error occurred.';
@@ -170,35 +208,23 @@ export default {
     },
 
     async submitReset() {
-      if (!this.idNumber.trim()) {
-        this.message = 'Please enter your ID number.';
-        return;
-      }
-
-      try {
-        const res = await fetch('http://localhost/Security2.0/api/forgot_password.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id_number: this.idNumber })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          this.message = data.error || 'Unable to send reset request.';
-          return;
+      if (this.step === 1) {
+        if (this.validateIdNumber()) {
+          await this.fetchQuestions();
         }
-
-        this.message = 'Password reset initiated successfully.';
-      } catch (err) {
-        console.error(err);
-        this.message = 'Network error occurred.';
+      } else if (this.step === 2) {
+        if (this.isStep2Valid && !this.isStep2Loading) {
+          await this.goToStep3();
+        }
+      } else if (this.step === 3) {
+        await this.handleChangePassword();
       }
     },
+
     // Fetch security questions for the supplied id
     async fetchQuestions() {
       this.message = '';
-      this.warnings.idNumber = []; // clear old warnings
+      this.warnings.idNumber = [];
 
       if (!this.validateIdNumber()) {
         this.warnings.idNumber = ['Please enter your ID number in the format 0000-0000.'];
@@ -206,39 +232,35 @@ export default {
       }
 
       try {
-        const res = await fetch('http://localhost/Security2.0/api/get_security_questions.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id_number: this.idNumber  })
-        });
+        const { data, error } = await supabase.rpc('get_user_security_questions', { p_id_number: this.idNumber });
 
-        const data = await res.json();
-
-        if (!res.ok) {
-          this.warnings.idNumber = [data.error || 'This ID number does not exist.'];
+        if (error) {
+          this.warnings.idNumber = [error.message || 'Database error occurred.'];
           return;
         }
 
-        if (!data.questions || !Array.isArray(data.questions)) {
-          this.message = 'No security questions returned.';
+        if (!data || data.length === 0) {
+          this.warnings.idNumber = ['This ID number does not exist.'];
           return;
         }
 
-        // Populate questionList with returned questions
-        this.questionList = data.questions.map(q => ({ choice: q, value: q }));
-        this.userId = data.user_id || null;
-        this.username = data.username || '';
+        const questions = data.map(row => row.question);
+        const username = data[0].username;
+        const userId = data[0].user_id;
 
-        // Auto-select the three questions for the form so user doesn't need to pick
-        this.form.question1 = data.questions[0] || '';
-        this.form.question2 = data.questions[1] || '';
-        this.form.question3 = data.questions[2] || '';
+        this.questionList = questions.map(q => ({ choice: q, value: q }));
+        this.userId = this.idNumber;
+        this.username = username;
+
+        this.form.question1 = questions[0] || '';
+        this.form.question2 = questions[1] || '';
+        this.form.question3 = questions[2] || '';
         this.questionsLoaded = true;
         this.message = '';
         this.step = 2;
       } catch (err) {
         console.error(err);
-        this.warnings.idNumber = 'Network error while fetching questions.';
+        this.warnings.idNumber = ['Network error while fetching questions.'];
       }
     },
     resetQuestionsAndBack() {
@@ -249,6 +271,7 @@ export default {
       this.username = '';
       this.userId = null;
       this.step = 1;
+      this.tempAnswers = { answer1: '', answer2: '', answer3: '' };
     }
   }
 };

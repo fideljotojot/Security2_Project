@@ -117,11 +117,10 @@ export default {
       if (!this.idNumber || !/^\d{4}-\d{4}$/.test(this.idNumber.trim())) {
         this.warnings.idNumber = ["ID must be in the format 0000-0000!"];
         console.log('ID warning triggered', this.warnings.idNumber);
-        return;
+        return { ok: false, error: "ID must be in the format 0000-0000!" };
       } else {
         this.warnings.idNumber = [];
       }
-
 
       // Run validations
       this.validatePassword({ target: { value: this.newPassword } });
@@ -131,36 +130,11 @@ export default {
         (this.warnings.newPassword && this.warnings.newPassword.length) ||
         (this.warnings.confirmPassword && this.warnings.confirmPassword.length)
       ) {
-        this.error;
-        return;
+        this.error = "Please fix the password validation errors.";
+        return { ok: false, error: this.error };
       }
-      try {
-        const res = await fetch('http://localhost/Security2.0/api/reset_password.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id_number: this.idNumber, new_password: this.newPassword }),
-        });
 
-        const data = await res.json();
-        if (!res.ok || data.error) {
-          this.error = data.error || "Failed to change password.";
-        } else {
-          this.success = "Successfully Changed Password";
-          this.newPassword = "";
-          this.confirmPassword = "";
-          setUserAuthenticated(false);
-          setTimeout(() => {
-            this.$router.push("/login"); // Redirect after a delay of 1 second
-          }, 1000);
-        }
-      } catch {
-        this.error = "Network error, please try again.";
-      }
-      console.log('Sending to backend:', {
-        id_number: this.idNumber,
-        new_password: this.newPassword
-      });
-
+      return { ok: true, newPassword: this.newPassword };
     }
 
   },

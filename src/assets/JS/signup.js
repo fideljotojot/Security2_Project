@@ -1,4 +1,6 @@
 
+import { supabase } from '../../utils/supabase.js';
+
 export default {
   data() {
     return {
@@ -495,15 +497,14 @@ export default {
         if (!usernameRegex.test(value)) messages.push('Username must be "a-z_a-z" format');
       }
 
-      // DATABASE CHECK
-      fetch('http://localhost/Security2.0/api/check_existing.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, value })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.exists) {
+      // DATABASE CHECK via Supabase RPC
+      supabase.rpc('check_user_exists', { p_type: type, p_value: value })
+        .then(({ data: exists, error }) => {
+          if (error) {
+            console.error(`Supabase error checking ${type}:`, error);
+            return;
+          }
+          if (exists) {
             if (type === 'id') messages.push('This ID already exists!');
             if (type === 'email') messages.push('This email is already registered');
             if (type === 'username') messages.push('This username already exists');
@@ -526,58 +527,56 @@ export default {
         return;
       }
 
-      const payload = {
-        id: this.form.id,
-        username: this.form.username,
-          email: this.form.email,
-        password: this.form.password,
-        profile: {
-          firstName: this.form.firstName,
-          middleInitial: this.form.middleInitial,
-          lastName: this.form.lastName,
-          suffix: this.form.suffix,
-          birthdate: this.form.birthdate,
-          age: this.form.age,
-          sex: this.form.sex
-        },
-        address: {
-          purok: this.form.purok,
-          barangay: this.form.barangay,
-          city: this.form.city,
-          province: this.form.province,
-          country: this.form.country,
-          zip: this.form.zip
-        },
-        security: [
-          { question: this.form.question1, answer: this.form.answer1 },
-          { question: this.form.question2, answer: this.form.answer2 },
-          { question: this.form.question3, answer: this.form.answer3 }
-        ]
-      };
-
       try {
-        // Use explicit Apache URL so the request reaches XAMPP even when dev server (Vite) is running on a different origin
-        const endpoint = 'http://localhost/Security2.0/api/register.php';
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+        // 1. Sign up user in Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: this.form.email.trim(),
+          password: this.form.password.trim(),
         });
-        // Try to parse JSON (backend returns JSON). If parsing fails, read text for debugging.
-        let data;
-        try {
-          data = await res.json();
-        } catch (e) {
-          const text = await res.text();
-          console.error('Non-JSON response from register endpoint:', text, e);
-          alert('Server returned unexpected response. See console for details.');
+
+        if (authError) {
+          alert(authError.message || 'Registration failed');
           return;
         }
-        console.log('Register response', res.status, data);
-        if (!res.ok) {
-          alert(data.error || 'Registration failed');
+
+        if (!authData?.user) {
+          alert('Failed to retrieve user information after signup.');
           return;
         }
+
+        // 2. Insert user details in public tables via create_user_profile RPC
+        const { data: profileSuccess, error: profileError } = await supabase.rpc('create_user_profile', {
+          p_user_id: authData.user.id,
+          p_id_number: this.form.id.trim(),
+          p_username: this.form.username.trim(),
+          p_email: this.form.email.trim(),
+          p_first_name: this.form.firstName.trim(),
+          p_middle_initial: this.form.middleInitial.trim(),
+          p_last_name: this.form.lastName.trim(),
+          p_suffix: this.form.suffix.trim(),
+          p_birthdate: this.form.birthdate || null,
+          p_age: this.form.age ? parseInt(this.form.age, 10) : null,
+          p_sex: this.form.sex,
+          p_purok: this.form.purok.trim(),
+          p_barangay: this.form.barangay.trim(),
+          p_city: this.form.city.trim(),
+          p_province: this.form.province.trim(),
+          p_country: this.form.country.trim(),
+          p_zip: this.form.zip.trim(),
+          p_q1: this.form.question1,
+          p_a1: this.form.answer1,
+          p_q2: this.form.question2,
+          p_a2: this.form.answer2,
+          p_q3: this.form.question3,
+          p_a3: this.form.answer3,
+        });
+
+        if (profileError || !profileSuccess) {
+          console.error('Profile creation error:', profileError);
+          alert(profileError?.message || 'Failed to create user profile database records.');
+          return;
+        }
+
         // success
         this.successMessage = 'Registration successful! Redirecting to login...';
         setTimeout(() => {

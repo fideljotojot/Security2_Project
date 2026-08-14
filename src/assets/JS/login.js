@@ -1,4 +1,5 @@
 import { setUserAuthenticated } from '../../router.js';
+import { supabase } from '../../utils/supabase.js';
 
 export default {
   data(){
@@ -118,8 +119,8 @@ export default {
 },
     async login() {
       this.warnings = {};
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
+      const username = this.username.trim();
+      const password = this.password.trim();
 
       if (!username || !password) {
         this.warnings.general = ["Please enter both username and password."];
@@ -127,33 +128,59 @@ export default {
       }
 
       try {
-        const response = await fetch("http://localhost/Security2.0/api/login.php", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({  username: this.username, password: this.password }),
-        });
+        // 1. Resolve email by username using Supabase RPC
+        const { data: email, error: emailError } = await supabase.rpc('get_email_by_username', { p_username: username });
 
-        const data = await response.json();
-        console.log(data);
-
-        if (!response.ok) {
-          this.consecutiveError++;
-
-          if (response.status === 404) {
-            this.warnings.username = ["Username does not exist."];
-          } else if (response.status === 401) {
-            this.warnings.password = ["Incorrect password."];
-          } else {
-            this.warnings.general = [data.error || "Login failed."];
-          }
-
-          this.disableButton();
-
+        if (emailError) {
+          console.error(emailError);
+          this.warnings.general = ["Server database error."];
           return;
         }
 
+        if (!email) {
+          this.consecutiveError++;
+          this.warnings.username = ["Username does not exist."];
+          this.disableButton();
+          return;
+        }
+
+        // 2. Authenticate with Supabase Auth using email and password
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password,
+        });
+
+        if (error) {
+          this.consecutiveError++;
+          const errMsg = error.message ? error.message.toLowerCase() : '';
+          if (errMsg.includes('email not confirmed')) {
+            this.warnings.general = ["Please confirm your email before logging in."];
+          } else if (error.status === 400 || errMsg.includes('invalid login credentials')) {
+            this.warnings.password = ["Incorrect password."];
+          } else {
+            this.warnings.general = [error.message || "Login failed."];
+          }
+          this.disableButton();
+          return;
+        }
+
+        // Retrieve the user ID number from the public.users table corresponding to the authenticated user's uuid
+        const { data: userData, error: userLookupError } = await supabase
+          .from('users')
+          .select('id_number')
+          .eq('id', data.user.id)
+          .single();
+
+        const idNumber = userData ? userData.id_number : '';
+
         // success
-        localStorage.setItem("user", JSON.stringify(data.user));
+        const loggedInUser = {
+          id: idNumber,
+          uuid: data.user.id,
+          username: username,
+          email: email
+        };
+        localStorage.setItem("user", JSON.stringify(loggedInUser));
         setUserAuthenticated(true);
         this.$router.push('/dashboard');
         this.consecutiveError = 0;
