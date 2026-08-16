@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, RouterView } from 'vue-router';
 
 import Home from './components/HomePage.vue';
 import Dashboard from './components/UserDashboard.vue';
@@ -8,9 +8,11 @@ import LoginForm from './components/LoginForm.vue';
 
 /* Superadmin */
 import SuperAdminDashboard from './components/superadmin/SuperadminDashboard.vue';
+import SuperAdminUsers from './components/superadmin/SuperadminUsers.vue';
 
 /* Admin */
 import AdminDashboard from './components/admin/AdminDashboard.vue';
+import AdminUsers from './components/admin/Users.vue';
 
 const routes = [
   { path: '/', name: 'home', component: Home },
@@ -18,8 +20,17 @@ const routes = [
   { path: '/signup', name: 'signup', component: SignupForm },
   { path: '/dashboard', name: 'dashboard', component: Dashboard },
   { path: '/forgot', name: 'forgot', component: ForgotPassword },
-  { path: '/superadmin', name: 'superadmin', component: SuperAdminDashboard },
-  { path: '/admin', name: 'admin', component: AdminDashboard }
+  { path: '/superadmin', component: RouterView,
+    children: [
+      { path: '', name: 'superadmin', component: SuperAdminDashboard },
+      { path: 'users', name: 'superadmin-users', component: SuperAdminUsers }
+    ]},
+  { path: '/admin', component: RouterView,
+    children: [
+      { path: '', name: 'admin', component: AdminDashboard },
+      { path: 'users', name: 'admin-users', component: AdminUsers }
+    ]
+  }
 ];
 
 // Use Vite's base (set in vite.config.js) for history so router works when app is served from /Security/

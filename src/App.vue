@@ -156,11 +156,15 @@ export default {
     <header v-if="$route.name === 'login' || $route.name === 'forgot'" class="portal">
       <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
       <div class="header-btn">
-        <router-link to="/" @click="preventNavigationIfLocked" :class="{ 'disabled-link': lockoutActive && $route.name === 'login' }">
-          <p class="dark-btn" :disabled="lockoutActive && $route.name === 'login'" :class="{ 'disabled-btn': lockoutActive && $route.name === 'login' }">Home</p>
+        <router-link to="/" @click="preventNavigationIfLocked"
+          :class="{ 'disabled-link': lockoutActive && $route.name === 'login' }">
+          <p class="dark-btn" :disabled="lockoutActive && $route.name === 'login'"
+            :class="{ 'disabled-btn': lockoutActive && $route.name === 'login' }">Home</p>
         </router-link>
-        <router-link to="/signup" @click="preventNavigationIfLocked" :class="{ 'disabled-link': lockoutActive && $route.name === 'login' }">
-          <p :disabled="lockoutActive && $route.name === 'login'" :class="{ 'disabled-btn': lockoutActive && $route.name === 'login' }">Sign Up</p>
+        <router-link to="/signup" @click="preventNavigationIfLocked"
+          :class="{ 'disabled-link': lockoutActive && $route.name === 'login' }">
+          <p :disabled="lockoutActive && $route.name === 'login'"
+            :class="{ 'disabled-btn': lockoutActive && $route.name === 'login' }">Sign Up</p>
         </router-link>
       </div>
     </header>
@@ -169,28 +173,69 @@ export default {
     <header v-else-if="$route.name === 'signup'" class="portal">
       <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
       <div class="header-btn">
-        <router-link to="/"><p class="dark-btn">Home</p></router-link>
-        <router-link to="/login"><p>Login</p></router-link>
+        <router-link to="/">
+          <p class="dark-btn">Home</p>
+        </router-link>
+        <router-link to="/login">
+          <p>Login</p>
+        </router-link>
       </div>
     </header>
 
     <header v-else-if="$route.name === 'home'">
       <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
       <div class="header-btn">
-        <router-link to="/login"><p class="dark-btn">Login</p></router-link>
-        <router-link to="/signup"><p>Sign Up</p></router-link>
+        <router-link to="/login">
+          <p class="dark-btn">Login</p>
+        </router-link>
+        <router-link to="/signup">
+          <p>Sign Up</p>
+        </router-link>
       </div>
     </header>
 
     <header v-else-if="$route.name === 'dashboard'">
       <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
       <div class="header-btn">
-        <router-link to="/login"><p>Logout</p></router-link>
+        <router-link to="/login">
+          <p>Logout</p>
+        </router-link>
+      </div>
+    </header>
+
+    <header v-else-if="$route.name === 'superadmin' || $route.name === 'superadmin-users'">
+      <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
+      <div class="header-btn">
+        <router-link to="/superadmin">
+          <p class="dark-btn">Dashboard</p>
+        </router-link>
+        <router-link to="/superadmin/users">
+          <p>Users</p>
+        </router-link>
+        <router-link to="/login">
+          <p>Logout</p>
+        </router-link>
+      </div>
+    </header>
+
+    <header v-else-if="$route.name === 'admin' || $route.name === 'admin-users'">
+      <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
+      <div class="header-btn">
+        <router-link to="/admin">
+          <p class="dark-btn">Dashboard</p>
+        </router-link>
+        <router-link to="/admin/users">
+          <p>Users</p>
+        </router-link>
+        <router-link to="/login">
+          <p>Logout</p>
+        </router-link>
       </div>
     </header>
 
     <main>
-      <div class="page-container" v-if="$route.name === 'signup' || $route.name === 'login' || $route.name === 'forgot'">
+      <div class="page-container"
+        v-if="$route.name === 'signup' || $route.name === 'login' || $route.name === 'forgot'">
         <div class="logo-container">
           <div class="mask">
             <img src="./assets/images/icon.png" alt="Logo">
@@ -203,7 +248,8 @@ export default {
         </div>
       </div>
 
-      <div class="page-container" v-else-if="['dashboard', 'admin', 'superadmin'].includes($route.name)">
+      <div class="page-container"
+        v-else-if="['dashboard', 'admin', 'superadmin', 'admin-users', 'superadmin-users'].includes($route.name)">
         <router-view></router-view>
       </div>
 
