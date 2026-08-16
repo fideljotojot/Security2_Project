@@ -1,13 +1,13 @@
 /**
  * Anti-Inspect Protection
  * Prevents right-click, keyboard shortcuts, and other inspection methods
- * 
+ *
  * WARNING: This is NOT real security! Users can easily bypass this by:
  * - Disabling JavaScript
  * - Opening DevTools before loading the page
  * - Using browser menu to access DevTools
  * - Using browser extensions
- * 
+ *
  * This is only a basic deterrent for casual users.
  */
 
@@ -33,35 +33,35 @@ export function enableAntiInspect() {
       showWarning();
       return false;
     }
-    
+
     // Ctrl+Shift+I - DevTools (Chrome, Edge, Firefox)
     if (e.ctrlKey && e.shiftKey && e.key === 'I') {
       e.preventDefault();
       showWarning();
       return false;
     }
-    
+
     // Ctrl+Shift+J - Console (Chrome, Edge)
     if (e.ctrlKey && e.shiftKey && e.key === 'J') {
       e.preventDefault();
       showWarning();
       return false;
     }
-    
+
     // Ctrl+Shift+C - Inspect Element
     if (e.ctrlKey && e.shiftKey && e.key === 'C') {
       e.preventDefault();
       showWarning();
       return false;
     }
-    
+
     // Ctrl+U - View Source
     if (e.ctrlKey && e.key === 'u') {
       e.preventDefault();
       showWarning();
       return false;
     }
-    
+
     // Ctrl+S - Save Page
     if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
@@ -100,7 +100,7 @@ function showWarning() {
 
   // Create or update warning message
   let warning = document.getElementById('anti-inspect-warning');
-  
+
   if (!warning) {
     warning = document.createElement('div');
     warning.id = 'anti-inspect-warning';
@@ -120,10 +120,13 @@ function showWarning() {
       animation: slideIn 0.3s ease-out;
     `;
     warning.innerHTML = `
-      <strong>⚠️ Action Not Allowed</strong><br>
+      <strong style="display: flex; align-items: center; gap: 1em; font-weight: 600">
+        <i class="fi fi-br-triangle-warning"></i>
+        Action Not Allowed
+      </strong>
       <small>Right-click and inspect are disabled on this site.</small>
     `;
-    
+
     // Add animation
     const style = document.createElement('style');
     style.textContent = `
@@ -168,12 +171,12 @@ function showWarning() {
 // Basic DevTools detection
 function detectDevTools() {
   const threshold = 160;
-  
+
   setInterval(() => {
     // Check window size difference (DevTools makes viewport smaller)
     const widthThreshold = window.outerWidth - window.innerWidth > threshold;
     const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-    
+
     if (widthThreshold || heightThreshold) {
       // DevTools might be open
       // You can add custom behavior here, like:
@@ -191,7 +194,7 @@ export function disableTextSelection() {
     e.preventDefault();
     return false;
   });
-  
+
   // Add CSS to prevent selection
   const style = document.createElement('style');
   style.textContent = `
@@ -217,12 +220,12 @@ export function disableCopyPaste() {
     e.preventDefault();
     return false;
   });
-  
+
   document.addEventListener('cut', (e) => {
     e.preventDefault();
     return false;
   });
-  
+
   document.addEventListener('paste', (e) => {
     // Allow paste in input fields
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
@@ -248,7 +251,7 @@ export function disablePrint() {
     e.preventDefault();
     alert('Printing is disabled on this site.');
   });
-  
+
   // Disable Ctrl+P
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'p') {

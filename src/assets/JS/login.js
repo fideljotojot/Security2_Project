@@ -170,25 +170,45 @@ export default {
           return;
         }
 
-        // Retrieve the user ID number from the public.users table corresponding to the authenticated user's uuid
+        // Retrieve the user's application ID and role from the public.users table.
         const { data: userData, error: userLookupError } = await supabase
           .from('users')
-          .select('id_number')
+          .select('id_number, role')
           .eq('id', data.user.id)
           .single();
 
-        const idNumber = userData ? userData.id_number : '';
+        if (userLookupError || !userData) {
+          console.error(userLookupError);
+          await supabase.auth.signOut();
+          this.warnings.general = ["Unable to retrieve your account role."];
+          return;
+        }
+
+        const { id_number: idNumber, role } = userData;
+        const roleRoutes = {
+          user: '/dashboard',
+          admin: '/admin',
+          superadmin: '/superadmin'
+        };
+        const destination = roleRoutes[role];
+
+        if (!destination) {
+          await supabase.auth.signOut();
+          this.warnings.general = ["Your account has an invalid role."];
+          return;
+        }
 
         // success
         const loggedInUser = {
           id: idNumber,
           uuid: data.user.id,
           username: username,
-          email: email
+          email: email,
+          role
         };
         localStorage.setItem("user", JSON.stringify(loggedInUser));
         setUserAuthenticated(true);
-        this.$router.push('/dashboard');
+        this.$router.push(destination);
         this.consecutiveError = 0;
 
       } catch (error) {

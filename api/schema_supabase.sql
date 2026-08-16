@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS public.users (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   id_number VARCHAR(9) NOT NULL UNIQUE,
   username VARCHAR(50) NOT NULL UNIQUE,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  role VARCHAR(20) NOT NULL DEFAULT 'user'
+    CHECK (role IN ('user', 'admin', 'superadmin')),
   email VARCHAR(120) NOT NULL UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

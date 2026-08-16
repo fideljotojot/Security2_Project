@@ -6,12 +6,20 @@ import ForgotPassword from './components/ForgotPassword.vue';
 import SignupForm from './components/SignupForm.vue';
 import LoginForm from './components/LoginForm.vue';
 
+/* Superadmin */
+import SuperAdminDashboard from './components/superadmin/SuperadminDashboard.vue';
+
+/* Admin */
+import AdminDashboard from './components/admin/AdminDashboard.vue';
+
 const routes = [
   { path: '/', name: 'home', component: Home },
   { path: '/login', name: 'login', component: LoginForm },
   { path: '/signup', name: 'signup', component: SignupForm },
   { path: '/dashboard', name: 'dashboard', component: Dashboard },
-  { path: '/forgot', name: 'forgot', component: ForgotPassword }
+  { path: '/forgot', name: 'forgot', component: ForgotPassword },
+  { path: '/superadmin', name: 'superadmin', component: SuperAdminDashboard },
+  { path: '/admin', name: 'admin', component: AdminDashboard }
 ];
 
 // Use Vite's base (set in vite.config.js) for history so router works when app is served from /Security/

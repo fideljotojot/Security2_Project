@@ -203,13 +203,14 @@ export default {
         </div>
       </div>
 
-      <div class="page-container" v-else-if="$route.name === 'dashboard'">
+      <div class="page-container" v-else-if="['dashboard', 'admin', 'superadmin'].includes($route.name)">
         <router-view></router-view>
       </div>
 
       <div class="page-container" v-else-if="$route.name === 'home'">
         <router-view></router-view>
       </div>
+
     </main>
 
     <!-- 🔹 FOOTER -->
