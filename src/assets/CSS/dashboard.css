@@ -7,10 +7,11 @@
   justify-content: center;
   text-align: center;
   gap: 1em;
-  background: #ffffff9f;
-  backdrop-filter: blur(10px);
+  background: #3b3b3b4d;
+  backdrop-filter: blur(3px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
+
 .container h1 {
   font: 5.5em "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   font-weight: 800;

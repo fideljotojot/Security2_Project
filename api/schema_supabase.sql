@@ -53,9 +53,16 @@ ALTER TABLE public.addresses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_security_questions ENABLE ROW LEVEL SECURITY;
 
 -- Add read-only RLS policies (only user can read their own data)
+DROP POLICY IF EXISTS "Users can read own record" ON public.users;
 CREATE POLICY "Users can read own record" ON public.users FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
 CREATE POLICY "Users can read own profile" ON public.profiles FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can read own address" ON public.addresses;
 CREATE POLICY "Users can read own address" ON public.addresses FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can read own security questions" ON public.user_security_questions;
 CREATE POLICY "Users can read own security questions" ON public.user_security_questions FOR SELECT USING (auth.uid() = user_id);
 
 
@@ -107,12 +114,13 @@ CREATE OR REPLACE FUNCTION public.create_user_profile(
   p_q2 TEXT,
   p_a2 TEXT,
   p_q3 TEXT,
-  p_a3 TEXT
+  p_a3 TEXT,
+  p_role TEXT DEFAULT 'user'
 ) RETURNS BOOLEAN AS $$
 BEGIN
   -- Insert user
-  INSERT INTO public.users (id, id_number, username, email)
-  VALUES (p_user_id, p_id_number, p_username, p_email);
+  INSERT INTO public.users (id, id_number, username, email, role)
+  VALUES (p_user_id, p_id_number, p_username, p_email, p_role);
 
   -- Insert profile
   INSERT INTO public.profiles (user_id, first_name, middle_initial, last_name, suffix, birthdate, age, sex)

@@ -49,6 +49,9 @@ export default {
   mounted() {
     // Restore lockout state if page was reloaded during lockout
     this.restoreLockoutState();
+    if (this.$route.query.blocked === 'true') {
+      this.warnings.general = ["Your account is blocked. Please contact the administrator."];
+    }
   },
   methods: {
     getWarning(id) {
@@ -170,10 +173,10 @@ export default {
           return;
         }
 
-        // Retrieve the user's application ID and role from the public.users table.
+        // Retrieve the user's application ID, role, and lockout status from the public.users table.
         const { data: userData, error: userLookupError } = await supabase
           .from('users')
-          .select('id_number, role')
+          .select('id_number, role, is_locked_out')
           .eq('id', data.user.id)
           .single();
 
@@ -181,6 +184,12 @@ export default {
           console.error(userLookupError);
           await supabase.auth.signOut();
           this.warnings.general = ["Unable to retrieve your account role."];
+          return;
+        }
+
+        if (userData.is_locked_out) {
+          await supabase.auth.signOut();
+          this.warnings.general = ["Your account is blocked. Please contact the administrator."];
           return;
         }
 

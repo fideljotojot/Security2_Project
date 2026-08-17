@@ -14,6 +14,8 @@ import SuperAdminUsers from './components/superadmin/SuperadminUsers.vue';
 import AdminDashboard from './components/admin/AdminDashboard.vue';
 import AdminUsers from './components/admin/Users.vue';
 
+import { supabase } from './utils/supabase.js';
+
 const routes = [
   { path: '/', name: 'home', component: Home },
   { path: '/login', name: 'login', component: LoginForm },
@@ -42,7 +44,7 @@ const router = createRouter({
 // Store lockout state globally for router access
 let globalLockoutActive = false;
 // Track if user is authenticated (has active session)
-let isUserAuthenticated = false;
+let isUserAuthenticated = !!localStorage.getItem("user");
 // Track if user accessed forgot password intentionally
 let canAccessForgotPassword = false;
 
@@ -60,17 +62,64 @@ export function setCanAccessForgotPassword(canAccess) {
 }
 
 // Route guard for login, dashboard, and forgot password
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // If lockout is active and user tries to navigate away from login page, prevent it
   if (globalLockoutActive && from.name === 'login' && to.name !== 'login') {
     next(false); // Cancel navigation
     return;
   }
 
-  // Protect /dashboard - only accessible if authenticated
-  if (to.name === 'dashboard' && !isUserAuthenticated) {
-    next({ name: 'login' });
-    return;
+  const requiresAuth = !['home', 'login', 'signup', 'forgot'].includes(to.name);
+
+  if (requiresAuth) {
+    // 1. Check local authentication
+    if (!isUserAuthenticated) {
+      next({ name: 'login' });
+      return;
+    }
+
+    // 2. Fetch latest session from Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      localStorage.removeItem("user");
+      isUserAuthenticated = false;
+      next({ name: 'login' });
+      return;
+    }
+
+    // 3. Retrieve user database record to check lockout status and role
+    const { data: userData, error } = await supabase
+      .from('users')
+      .select('role, is_locked_out')
+      .eq('id', session.user.id)
+      .single();
+
+    if (error || !userData) {
+      await supabase.auth.signOut();
+      localStorage.removeItem("user");
+      isUserAuthenticated = false;
+      next({ name: 'login' });
+      return;
+    }
+
+    // 4. If user is locked out, sign out and redirect to login
+    if (userData.is_locked_out) {
+      await supabase.auth.signOut();
+      localStorage.removeItem("user");
+      isUserAuthenticated = false;
+      next({ name: 'login', query: { blocked: 'true' } });
+      return;
+    }
+
+    // 5. Role authorization checks
+    if (to.name.startsWith('admin') && userData.role !== 'admin') {
+      next({ name: 'dashboard' });
+      return;
+    }
+    if (to.name.startsWith('superadmin') && userData.role !== 'superadmin') {
+      next({ name: 'dashboard' });
+      return;
+    }
   }
 
   // Protect /forgot - only accessible if explicitly allowed (clicked "Forgot Password" button)
