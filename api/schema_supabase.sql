@@ -9,9 +9,17 @@ CREATE TABLE IF NOT EXISTS public.users (
   username VARCHAR(50) NOT NULL UNIQUE,
   role VARCHAR(20) NOT NULL DEFAULT 'user'
     CHECK (role IN ('user', 'admin', 'superadmin')),
+  registration_status VARCHAR(20) NOT NULL DEFAULT 'pending'
+    CHECK (registration_status IN ('pending', 'approved', 'blocked')),
+  is_locked_out BOOLEAN NOT NULL DEFAULT FALSE,
   email VARCHAR(120) NOT NULL UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Apply this separately when upgrading an existing database:
+-- ALTER TABLE public.users ADD COLUMN IF NOT EXISTS registration_status VARCHAR(20) NOT NULL DEFAULT 'pending';
+-- ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_locked_out BOOLEAN NOT NULL DEFAULT FALSE;
+-- UPDATE public.users SET registration_status = 'approved' WHERE role IN ('admin', 'superadmin');
 
 -- 2. Profiles Table
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -88,6 +96,30 @@ BEGIN
   RETURN v_exists;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.get_pending_registrations()
+RETURNS TABLE(user_id UUID, id_number VARCHAR, username VARCHAR, email VARCHAR, created_at TIMESTAMPTZ)
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'superadmin') THEN
+    RAISE EXCEPTION 'Only superadmins can view registrations';
+  END IF;
+  RETURN QUERY SELECT u.id, u.id_number, u.username, u.email, u.created_at
+  FROM public.users u WHERE u.registration_status = 'pending' ORDER BY u.created_at ASC;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.update_registration_status(p_user_id UUID, p_status TEXT)
+RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'superadmin') THEN
+    RAISE EXCEPTION 'Only superadmins can update registrations';
+  END IF;
+  IF p_status NOT IN ('approved', 'blocked') THEN RAISE EXCEPTION 'Invalid registration status'; END IF;
+  UPDATE public.users SET registration_status = p_status, is_locked_out = (p_status = 'blocked') WHERE id = p_user_id;
+  RETURN FOUND;
+END;
+$$;
 
 
 -- B. create_user_profile: Atomic transactional user setup called right after auth.signUp

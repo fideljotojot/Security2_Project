@@ -9,6 +9,7 @@ import LoginForm from './components/LoginForm.vue';
 /* Superadmin */
 import SuperAdminDashboard from './components/superadmin/SuperadminDashboard.vue';
 import SuperAdminUsers from './components/superadmin/SuperadminUsers.vue';
+import SuperadminRegistrations from './components/superadmin/Registrations.vue';
 
 /* Admin */
 import AdminDashboard from './components/admin/AdminDashboard.vue';
@@ -25,7 +26,8 @@ const routes = [
   { path: '/superadmin', component: RouterView,
     children: [
       { path: '', name: 'superadmin', component: SuperAdminDashboard },
-      { path: 'users', name: 'superadmin-users', component: SuperAdminUsers }
+      { path: 'users', name: 'superadmin-users', component: SuperAdminUsers },
+      { path: 'registrations', name: 'superadmin-registrations', component: SuperadminRegistrations }
     ]},
   { path: '/admin', component: RouterView,
     children: [
@@ -90,7 +92,7 @@ router.beforeEach(async (to, from, next) => {
     // 3. Retrieve user database record to check lockout status and role
     const { data: userData, error } = await supabase
       .from('users')
-      .select('role, is_locked_out')
+      .select('role, is_locked_out, registration_status')
       .eq('id', session.user.id)
       .single();
 
@@ -103,7 +105,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // 4. If user is locked out, sign out and redirect to login
-    if (userData.is_locked_out) {
+    if (userData.is_locked_out || userData.registration_status !== 'approved') {
       await supabase.auth.signOut();
       localStorage.removeItem("user");
       isUserAuthenticated = false;

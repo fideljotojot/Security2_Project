@@ -176,7 +176,7 @@ export default {
         // Retrieve the user's application ID, role, and lockout status from the public.users table.
         const { data: userData, error: userLookupError } = await supabase
           .from('users')
-          .select('id_number, role, is_locked_out')
+          .select('id_number, role, is_locked_out, registration_status')
           .eq('id', data.user.id)
           .single();
 
@@ -190,6 +190,16 @@ export default {
         if (userData.is_locked_out) {
           await supabase.auth.signOut();
           this.warnings.general = ["Your account is blocked. Please contact the administrator."];
+          return;
+        }
+
+        if (userData.registration_status !== 'approved') {
+          await supabase.auth.signOut();
+          localStorage.removeItem("user");
+          isUserAuthenticated = false;
+          this.warnings.general = [userData.registration_status === 'blocked'
+            ? 'Your registration has been blocked.'
+            : 'Your registration is still pending approval.'];
           return;
         }
 
