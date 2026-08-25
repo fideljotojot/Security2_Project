@@ -1,6 +1,6 @@
 <template>
     <main class="container">
-        <div class="header-section">
+        <div class="header-section table-panel-header">
             <h2>Users</h2>
             <button @click="openAddModal">
                 <i><i class="fi fi-br-add"></i></i>
@@ -27,6 +27,9 @@
                         <td style="text-transform: capitalize;">{{ user.role }}</td>
                         <td>{{ user.is_locked_out ? 'Blocked' : 'Active' }}</td>
                         <td>
+                            <button @click="openEditModal(user)" class="edit-btn" title="Edit user" aria-label="Edit user">
+                                <i class="fi fi-br-edit"></i>
+                            </button>
                             <button @click="toggleLockout(user)" class="lock-btn"
                                 :title="user.is_locked_out ? 'Unblock' : 'Block'">
                                 <i :class="user.is_locked_out ? 'fi fi-br-user-check' : 'fi fi-br-user-forbidden'"></i>
@@ -35,12 +38,15 @@
                     </tr>
                 </tbody>
             </table>
+            <div class="table-panel-footer">
+                <span>Showing {{ users.length }} user{{ users.length === 1 ? '' : 's' }}</span>
+            </div>
         </div>
 
-        <!-- Add User Modal -->
+        <!-- Add/Edit User Modal -->
         <div v-if="showAddModal" class="modal-overlay" @click.self="closeAddModal">
             <div class="modal-card">
-                <h3 class="header-h3">Add New User/Admin</h3>
+            <h3 class="header-h3">{{ isEditing ? 'Edit User/Admin' : 'Add New User/Admin' }}</h3>
 
                 <!-- Dynamic Step Header & Indicator Side by Side -->
                 <div class="step-header-container">
@@ -197,8 +203,8 @@
                                 </div>
 
                                 <div class="password-input-wrapper">
-                                    <input :type="showPassword ? 'text' : 'password'" id="password"
-                                        v-model="form.password" required @input="validatePassword">
+                                        <input :type="showPassword ? 'text' : 'password'" id="password"
+                                        v-model="form.password" :required="!isEditing" @input="validatePassword">
                                     <svg v-if="!showPassword" @click="showPassword = !showPassword"
                                         xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                         class="size-6 eye-icon">
@@ -217,7 +223,7 @@
                                             d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 0 0-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 0 1 6.75 12Z" />
                                     </svg>
                                 </div>
-                                <label for="password">Password: <span>*</span></label>
+                                <label for="password">Password: <span v-if="!isEditing">*</span><span v-else class="optional">(Leave blank to keep current)</span></label>
                             </div>
 
                             <!-- Confirm Password -->
@@ -226,7 +232,7 @@
                                 }}</span>
                                 <div class="password-input-wrapper">
                                     <input :type="showRePassword ? 'text' : 'password'" id="repassword"
-                                        v-model="form.repassword" required @input="validateConfirmPassword">
+                                        v-model="form.repassword" :required="!isEditing && !!form.password" @input="validateConfirmPassword">
                                     <svg v-if="!showRePassword" @click="showRePassword = !showRePassword"
                                         xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                                         class="size-6 eye-icon">
@@ -246,14 +252,14 @@
                                             d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 0 0-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 0 1 6.75 12Z" />
                                     </svg>
                                 </div>
-                                <label for="repassword">Re-enter Password: <span>*</span></label>
+                                <label for="repassword">Re-enter Password: <span v-if="!isEditing">*</span></label>
                             </div>
                         </div>
                         <div class="btn-container">
                             <button type="button" @click="step = 'personal'" class="btn btn-secondary">Back</button>
                             <button type="submit" class="btn btn-primary"
                                 :disabled="!canProceedLoginDetails || isSubmitting">
-                                {{ isSubmitting ? 'Registering...' : 'Register' }}
+                                {{ isSubmitting ? (isEditing ? 'Saving...' : 'Registering...') : (isEditing ? 'Save Changes' : 'Register') }}
                             </button>
                         </div>
                     </div>
@@ -269,9 +275,9 @@
                   <div class="notification-icon" aria-hidden="true">
                       <i class="fi fi-br-check"></i>
                   </div>
-                  <h3 id="notification-title">User Added Successfully</h3>
+                                    <h3 id="notification-title">{{ notificationTitle }}</h3>
                 </div>
-                <p>The new {{ addedUserRole }} account has been added to the system.</p>
+                                <p>{{ notificationMessage }}</p>
                 <button type="button" class="btn btn-primary" @click="closeNotificationModal">OK</button>
             </div>
         </div>

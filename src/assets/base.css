@@ -501,6 +501,24 @@ i {
   color: #444;
 }
 
+.modal-card .form-group input,
+.modal-card .form-group select {
+  height: 2rem;
+  box-sizing: border-box;
+  border: 1px solid #d0d0d0;
+  border-radius: 1.1rem;
+  padding: 0rem 1rem;
+  font-family: inherit;
+  font-size: .8rem;
+  background-color: #fff;
+  color: #222;
+}
+
+.modal-card .form-group select {
+  appearance: auto;
+  cursor: pointer;
+}
+
 
 .modal-card .form-group input:focus,
 .modal-card .form-group select:focus {

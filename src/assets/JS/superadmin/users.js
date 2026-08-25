@@ -7,8 +7,13 @@ export default {
     return {
       users: [],
       showAddModal: false,
+      isEditing: false,
+      editingUserId: null,
       showNotificationModal: false,
       addedUserRole: 'user',
+      notificationTitle: 'User Added Successfully',
+      notificationMessage: '',
+      originalUniqueFields: {},
       isSubmitting: false,
       errorMessage: '',
       step: 'personal',
@@ -71,13 +76,15 @@ export default {
       const filled =
         f.idNumber && String(f.idNumber).trim() &&
         f.username && String(f.username).trim() &&
-        f.password && String(f.password).trim() &&
-        f.repassword && String(f.repassword).trim();
+        (this.isEditing || (f.password && String(f.password).trim())) &&
+        (this.isEditing || (f.repassword && String(f.repassword).trim()));
 
       if (!filled) return false;
 
       // Make sure passwords match and fields have no warnings
       if (f.password !== f.repassword) return false;
+
+      if (this.isEditing && !f.password && !f.repassword) return !this.hasFieldWarnings(['user_id', 'username']);
 
       // Check if there are any warnings for these fields
       return !this.hasFieldWarnings(['user_id', 'username', 'password', 'repassword']);
@@ -129,8 +136,32 @@ export default {
         user.is_locked_out = targetState;
       }
     },
+    async openEditModal(user) {
+      this.showAddModal = true;
+      this.isEditing = true;
+      this.editingUserId = user.user_id;
+      this.errorMessage = '';
+      this.step = 'personal';
+      this.warnings = {};
+      const { data, error } = await supabase.rpc('get_user_for_edit', { p_user_id: user.user_id });
+      if (error || !data) {
+        this.errorMessage = error?.message || 'Unable to load user information.';
+        return;
+      }
+      this.form = {
+        idNumber: data.id_number || '', firstName: data.first_name || '', middleInitial: data.middle_initial || '',
+        lastName: data.last_name || '', suffix: data.suffix || '', birthdate: data.birthdate || '', age: data.age || '',
+        sex: data.sex || 'male', purok: data.purok || '', barangay: data.barangay || '', city: data.city || '',
+        province: data.province || '', country: data.country || '', zip: data.zip || '', username: data.username || '',
+        password: '', repassword: '', email: data.email || '', role: data.role || 'user'
+      };
+      this.originalUniqueFields = { id: this.form.idNumber, username: this.form.username, email: this.form.email };
+    },
     openAddModal() {
       this.showAddModal = true;
+      this.isEditing = false;
+      this.editingUserId = null;
+      this.originalUniqueFields = {};
       this.errorMessage = '';
       this.step = 'personal';
       this.passwordStrengthScore = 0;
@@ -161,6 +192,8 @@ export default {
     },
     closeAddModal() {
       this.showAddModal = false;
+      this.isEditing = false;
+      this.editingUserId = null;
       this.errorMessage = '';
     },
     closeNotificationModal() {
@@ -458,6 +491,11 @@ export default {
       const value = input.value.trim();
       let messages = [];
 
+      if (this.isEditing && this.originalUniqueFields[type] === value) {
+        this.warnings[id] = [];
+        return;
+      }
+
       if (!value) {
         this.warnings[id] = [];
         return;
@@ -498,6 +536,25 @@ export default {
       this.errorMessage = '';
 
       try {
+        if (this.isEditing) {
+          const { error } = await supabase.rpc('update_user_profile', {
+            p_user_id: this.editingUserId,
+            p_id_number: this.form.idNumber.trim(), p_username: this.form.username.trim(), p_email: this.form.email.trim(),
+            p_first_name: this.form.firstName.trim(), p_middle_initial: this.form.middleInitial.trim(),
+            p_last_name: this.form.lastName.trim(), p_suffix: this.form.suffix.trim(), p_birthdate: this.form.birthdate || null,
+            p_age: this.form.age ? parseInt(this.form.age, 10) : null, p_sex: this.form.sex,
+            p_purok: this.form.purok.trim(), p_barangay: this.form.barangay.trim(), p_city: this.form.city.trim(),
+            p_province: this.form.province.trim(), p_country: this.form.country.trim(), p_zip: String(this.form.zip || '').trim(),
+            p_role: this.form.role, p_password: this.form.password || null
+          });
+          if (error) throw error;
+          this.showAddModal = false;
+          await this.fetchUsers();
+          this.notificationTitle = 'User Updated Successfully';
+          this.notificationMessage = `The ${this.form.role} account has been updated.`;
+          this.showNotificationModal = true;
+          return;
+        }
         const tempClient = createClient(
           import.meta.env.VITE_SUPABASE_URL,
           import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -575,6 +632,8 @@ export default {
         this.showAddModal = false;
         await this.fetchUsers();
         this.addedUserRole = this.form.role;
+        this.notificationTitle = 'User Added Successfully';
+        this.notificationMessage = `The new ${this.addedUserRole} account has been added to the system.`;
         this.showNotificationModal = true;
       } catch (err) {
         console.error(err);

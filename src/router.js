@@ -9,7 +9,7 @@ import LoginForm from './components/LoginForm.vue';
 /* Superadmin */
 import SuperAdminDashboard from './components/superadmin/SuperadminDashboard.vue';
 import SuperAdminUsers from './components/superadmin/SuperadminUsers.vue';
-import SuperadminRegistrations from './components/superadmin/Registrations.vue';
+import SuperadminRegistrations from './components/superadmin/registrationPage.vue';
 
 /* Admin */
 import AdminDashboard from './components/admin/AdminDashboard.vue';
