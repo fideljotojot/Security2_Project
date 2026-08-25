@@ -1,470 +1,71 @@
 .header-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+  margin-bottom: 1em;
+}
+
+.header-section h2 {
+  color: #121111;
+  text-transform: uppercase;
+  align-self: end;
+  font-size: 1.5rem;
 }
 
 .header-section button {
-    background-color: #d68726;
-    color: #ffffff;
-    border: none;
-    padding: 0.5em 1em;
-    border-radius: 5px;
-    cursor: pointer;
-    display: flex;
-    gap: 0.5em;
+  background: #5bd3a6;
+  color: #243238;
+  border: none;
+  min-height: 2.9em;
+  padding: 0.65em 1.25em;
+  border-radius: 0.9em;
+  box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.registration-actions { display: flex; gap: 0.5em; }
-.approve-btn, .block-btn { border: 0; border-radius: 5px; padding: 0.45em 0.8em; cursor: pointer; color: #fff; }
-.approve-btn { background: #036d30; }
-.block-btn { background: #b3261e; }
-.approve-btn:disabled, .block-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.empty-state { text-align: center; padding: 2em; color: #666; }
-
-/* Modal Overlay with Frosted Glass */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    animation: fadeIn 0.2s ease-out;
+.header-section button:hover {
+  background: #48c697;
+  transform: translateY(-1px);
+  box-shadow: 1px 3px 3px rgba(0, 0, 0, 0.35);
 }
 
-/* Modal Card */
-.modal-card {
-    background: rgba(255, 255, 255, 0.95);
-    width: 100%;
-    max-width: 60vw;
-    max-height: 90vh;
-    border-radius: 12px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    padding: 1.5em 2.5em;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5em;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+.header-section button:active {
+  transform: translateY(0);
+  box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
 
-.modal-card h3 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
+.registration-actions {
+  display: flex;
+  gap: 0.5em;
 }
 
-.header-h3 {
-    text-transform: uppercase;
-    color: #036d30;
+.approve-btn {
+  background: #036d30;
 }
 
-/* Form Styles */
-.modal-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.2em;
+.block-btn {
+  background: #b3261e;
 }
 
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1em;
+.approve-btn:disabled,
+.block-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4em;
-}
-
-.form-group.full-width {
-    grid-column: span 2;
-}
-
-.form-group label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #444;
-}
-
-.form-group label span {
-    color: #d9534f;
-}
-
-.form-group input,
-.form-group select {
-    padding: 0.6em;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-family: inherit;
-    font-size: 0.9rem;
-    background-color: #fff;
-    transition: border-color 0.2s;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-    border-color: #036d30;
-    outline: none;
-}
-
-/* Field warnings and alerts */
-.field-warning {
-    color: #d9534f;
-    font-size: 0.75rem;
-    font-weight: 500;
-    margin-top: 0.2em;
-}
-
-.alert-danger {
-    background-color: #f8d7da;
-    color: #721c24;
-    padding: 0.8em;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    border: 1px solid #f5c6cb;
-}
-
-/* Buttons */
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1em;
-    margin-top: 1em;
-}
-
-.btn-secondary {
-    background-color: #f0f0f0;
-    color: #333;
-    border: 1px solid #ccc;
-    padding: 0.6em 1.2em;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.2s;
-}
-
-.btn-secondary:hover {
-    background-color: #e4e4e4;
-}
-
-.btn-primary {
-    background-color: #036d30;
-    color: #fff;
-    border: none;
-    padding: 0.6em 1.2em;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.2s;
-}
-
-.btn-primary:hover {
-    background-color: #025224;
-}
-
-.btn-primary:disabled {
-    background-color: #a3cbb5;
-    cursor: not-allowed;
-}
-
-/* Keyframes */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-/* Multi-step Registration styles inside Superadmin Modal */
-.modal-card .steps {
-    width: 100%;
-}
-
-.modal-card .step-indicator {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-    padding: 0 2em;
-}
-
-.modal-card .step-indicator::before {
-    content: '';
-    position: absolute;
-    top: 20%;
-    left: 10%;
-    right: 10%;
-    height: 2px;
-    background-color: #cecece;
-    z-index: 0;
-}
-
-.modal-card .step-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5em;
-    position: relative;
-    z-index: 1;
-    flex: 1;
-}
-
-.modal-card .step-number {
-    width: 1.8em;
-    height: 1.8em;
-    border-radius: 50%;
-    background-color: #e0e0e0;
-    color: #666;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 0.7em;
-    transition: all 0.3s ease;
-    border: 2px solid #e0e0e0;
-}
-
-.modal-card .step-item.active .step-number {
-    background-color: #036d30;
-    color: white;
-    border-color: #036d30;
-    transform: scale(1.1);
-    box-shadow: 0 0 0 4px rgba(3, 109, 48, 0.2);
-}
-
-.modal-card .step-item.completed .step-number {
-    background-color: #28a745;
-    color: white;
-    border-color: #28a745;
-}
-
-.modal-card .step-label {
-    font-size: 0.75em;
-    color: #666;
-    text-align: center;
-    font-weight: 500;
-    max-width: 100px;
-    transition: color 0.3s ease;
-}
-
-.modal-card .step-item.active .step-label {
-    color: #036d30;
-    font-weight: 600;
-}
-
-.modal-card .step-item.completed .step-label {
-    color: #28a745;
-}
-
-.modal-card .form-content {
-    width: 100%;
-    height: 100%;
-    display: grid;
-    gap: 1em;
-}
-
-.modal-card .registration-box {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: .8em 1em;
-    width: 100%;
-    align-items: start;
-}
-
-/* Password Strength Meter */
-.modal-card .password-strength {
-    width: 90%;
-    align-self: center;
-    margin-top: 0.5em;
-}
-
-.modal-card .strength-bar {
-    height: 6px;
-    border-radius: 4px;
-    margin-bottom: 0.3em;
-    transition: background-color 0.3s, width 0.3s;
-    width: 100%;
-}
-
-.modal-card .strength-bar.weak {
-    background-color: #e74c3c;
-    width: 33%;
-}
-
-.modal-card .strength-bar.medium {
-    background-color: #f1c40f;
-    width: 66%;
-}
-
-.modal-card .strength-bar.strong {
-    background-color: #2ecc71;
-    width: 100%;
-}
-
-.modal-card .strength-text {
-    font-size: 0.85em;
-    text-align: left;
-    margin-left: 0.5em;
-    font-weight: 500;
-}
-
-/* Form group modifications matching app.css style */
-.modal-card .form-group {
-    display: flex;
-    flex-direction: column-reverse;
-    gap: .2em;
-    position: relative;
-}
-
-.modal-card .form-group label {
-    text-align: start;
-    margin-left: 1em;
-    font-size: .8rem;
-    font-weight: 600;
-    color: #444;
+.empty-state {
+  text-align: center;
+  padding: 2em;
+  color: #666;
 }
 
 
-.modal-card .form-group input:focus,
-.modal-card .form-group select:focus {
-    border-color: #036d30;
-    outline: none;
-}
-
-.modal-card .form-group.full-width {
-    grid-column: span 3;
-}
-
-/* Password Input Eye Icon wrapper */
-.modal-card .password-input-wrapper {
-    position: relative;
-    width: 90%;
-    align-self: center;
-    display: flex;
-}
-
-.modal-card .password-input-wrapper input {
-    width: 100% !important;
-}
-
-.modal-card .password-input-wrapper .toggle-password,
-.modal-card .password-input-wrapper .eye-icon {
-    position: absolute;
-    right: 0.75em;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.2em;
-    height: 1.2em;
-    color: #3d3d3d;
-}
-
-.modal-card .password-input-wrapper .toggle-password:hover,
-.modal-card .password-input-wrapper .eye-icon:hover {
-    color: #036d30;
-}
-
-/* Field Warnings in modal */
-.modal-card .field-warning {
-    color: #d9534f;
-    font-size: 0.8em;
-    width: 90%;
-    align-self: center;
-    text-align: start;
-    margin-top: 0.25em;
-    line-height: 1.2;
-}
-
-/* Step Header Container for side-by-side header and steps */
-.modal-card .step-header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 0 0.5em;
-}
-
-.modal-card .step-header-container .step-title {
-    font-weight: 700;
-    font-size: 1rem;
-}
-
-.modal-card .step-header-container .steps {
-    width: 50%;
-    max-width: 320px;
-    margin-bottom: -.5em;
-}
-
-.modal-card .step-divider {
-    width: 100%;
-    border: 0;
-    border-top: 2px solid #036d30;
-}
-
-/* Button container inside forms */
-.modal-card .btn-container {
-    display: flex;
-    gap: 1em;
-    width: 100%;
-    justify-content: flex-end;
-    margin-top: .5em;
-    padding-right: 5%;
-}
-
-.modal-card .btn {
-    border-radius: .9em;
-    padding: .6em 1.5em;
-    border: none;
-    background-color: #036d30;
-    box-shadow: 1px 1px 1px #00000095;
-    color: #ffffff;
-    text-transform: uppercase;
-    font-weight: 600;
-    font-size: .9em;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.modal-card .btn:hover {
-    background-color: #025224;
-}
-
-.modal-card .btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    box-shadow: none;
-}
-
-.modal-card .btn-secondary {
-    background-color: #f0f0f0;
-    color: #333;
-    border: 1px solid #ccc;
-    box-shadow: none;
-}
-
-.modal-card .btn-secondary:hover {
-    background-color: #e4e4e4;
-}
-
-.modal-card .question-label {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}

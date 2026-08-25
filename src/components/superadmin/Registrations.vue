@@ -16,8 +16,12 @@
             <td>{{ registration.email }}</td>
             <td>{{ formatDate(registration.created_at) }}</td>
             <td class="registration-actions">
-              <button type="button" class="approve-btn" :disabled="isUpdating" @click="updateStatus(registration, 'approved')">Accept</button>
-              <button type="button" class="block-btn" :disabled="isUpdating" @click="updateStatus(registration, 'blocked')">Block</button>
+              <button type="button" class="approve-btn" title="Accept registration" aria-label="Accept registration" :disabled="isUpdating" @click="updateStatus(registration, 'approved')">
+                <i class="fi fi-br-check" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="block-btn" title="Block registration" aria-label="Block registration" :disabled="isUpdating" @click="updateStatus(registration, 'blocked')">
+                <i class="fi fi-br-cross-small" aria-hidden="true"></i>
+              </button>
             </td>
           </tr>
           <tr v-if="!isLoading && !registrations.length"><td colspan="5" class="empty-state">No pending registrations.</td></tr>

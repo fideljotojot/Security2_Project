@@ -10,7 +10,7 @@
 main .container{
   padding: 2em;
   justify-content: start;
-} 
+}
 
 header {
   display: flex;
@@ -367,6 +367,7 @@ a.disabled {
   min-height: fit-content;
   max-height: 74vh;
   border-radius: .8em;
+  border: .5px solid #036d2f6c;
 }
 
 table {
