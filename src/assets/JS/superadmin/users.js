@@ -20,6 +20,12 @@ export default {
       passwordStrengthScore: 0,
       showPassword: false,
       showRePassword: false,
+      searchQuery: '',
+      selectedRole: 'all',
+      selectedStatus: 'all',
+      sortOrder: '',
+      currentPage: 1,
+      pageSize: 10,
       form: {
         idNumber: '',
         firstName: '',
@@ -109,6 +115,62 @@ export default {
       if (this.passwordStrengthScore <= 1) return 'Weak Password';
       if (this.passwordStrengthScore === 2) return 'Medium Password';
       return 'Strong Password';
+    },
+    filteredUsers() {
+      const query = this.searchQuery.trim().toLowerCase();
+
+      const filteredUsers = this.users.filter((user) => {
+        const matchesSearch = !query || [user.id_number, user.username, user.email]
+          .some(value => String(value || '').toLowerCase().includes(query));
+        const matchesRole = this.selectedRole === 'all' || user.role === this.selectedRole;
+        const userStatus = user.is_locked_out ? 'blocked' : 'active';
+        const matchesStatus = this.selectedStatus === 'all' || userStatus === this.selectedStatus;
+
+        return matchesSearch && matchesRole && matchesStatus;
+      });
+
+      if (!this.sortOrder) return filteredUsers;
+
+      return filteredUsers.sort((leftUser, rightUser) => {
+        const leftId = Number(String(leftUser.id_number || '').replace(/\D/g, ''));
+        const rightId = Number(String(rightUser.id_number || '').replace(/\D/g, ''));
+        const direction = this.sortOrder === 'descending' ? -1 : 1;
+
+        return (leftId - rightId) * direction;
+      });
+    },
+    pageCount() {
+      return Math.max(1, Math.ceil(this.filteredUsers.length / this.pageSize));
+    },
+    pageNumbers() {
+      return Array.from({ length: this.pageCount }, (_, index) => index + 1);
+    },
+    paginatedUsers() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      return this.filteredUsers.slice(start, start + this.pageSize);
+    },
+    pageStart() {
+      return (this.currentPage - 1) * this.pageSize + 1;
+    },
+    pageEnd() {
+      return Math.min(this.currentPage * this.pageSize, this.filteredUsers.length);
+    }
+  },
+  watch: {
+    searchQuery() {
+      this.currentPage = 1;
+    },
+    selectedRole() {
+      this.currentPage = 1;
+    },
+    selectedStatus() {
+      this.currentPage = 1;
+    },
+    sortOrder() {
+      this.currentPage = 1;
+    },
+    pageCount(pageCount) {
+      if (this.currentPage > pageCount) this.currentPage = pageCount;
     }
   },
   mounted() {
