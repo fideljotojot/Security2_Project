@@ -7,9 +7,18 @@ export default {
     return {
       users: [],
       showAddModal: false,
+      isViewing: false,
       isEditing: false,
       editingUserId: null,
       showNotificationModal: false,
+      showDeleteModal: false,
+      deletePassword: '',
+      pendingDeleteUser: null,
+      isDeleting: false,
+      showPrivilegeModal: false,
+      privilegeUser: null,
+      privilegeRole: 'user',
+      isUpdatingPrivilege: false,
       addedUserRole: 'user',
       notificationTitle: 'User Added Successfully',
       notificationMessage: '',
@@ -123,7 +132,7 @@ export default {
         const matchesSearch = !query || [user.id_number, user.username, user.email]
           .some(value => String(value || '').toLowerCase().includes(query));
         const matchesRole = this.selectedRole === 'all' || user.role === this.selectedRole;
-        const userStatus = user.is_locked_out ? 'blocked' : 'active';
+        const userStatus = this.getUserStatus(user);
         const matchesStatus = this.selectedStatus === 'all' || userStatus === this.selectedStatus;
 
         return matchesSearch && matchesRole && matchesStatus;
@@ -185,6 +194,16 @@ export default {
         this.users = data;
       }
     },
+    getUserStatus(user) {
+      // Determine user status based on registration_status and is_locked_out
+      if (user.registration_status === 'pending') {
+        return 'pending';
+      }
+      if (user.registration_status === 'blocked' || user.is_locked_out) {
+        return 'blocked';
+      }
+      return 'active';
+    },
     async toggleLockout(user) {
       const targetState = !user.is_locked_out;
       const { error } = await supabase
@@ -198,8 +217,114 @@ export default {
         user.is_locked_out = targetState;
       }
     },
+    async deleteUser(user) {
+      this.pendingDeleteUser = user;
+      this.deletePassword = '';
+      this.showDeleteModal = true;
+    },
+    openPrivilegeModal(user) {
+      this.privilegeUser = user;
+      this.privilegeRole = user.role === 'admin' ? 'user' : 'admin';
+      this.showPrivilegeModal = true;
+    },
+    closePrivilegeModal() {
+      if (this.isUpdatingPrivilege) return;
+      this.showPrivilegeModal = false;
+      this.privilegeUser = null;
+    },
+    async updatePrivilege() {
+      if (!this.privilegeUser || this.isUpdatingPrivilege) return;
+      this.isUpdatingPrivilege = true;
+      const { error } = await supabase.rpc('set_user_role', {
+        p_user_id: this.privilegeUser.user_id,
+        p_role: this.privilegeRole
+      });
+      this.isUpdatingPrivilege = false;
+      this.showPrivilegeModal = false;
+
+      if (error) {
+        console.error('Error updating user privilege:', error);
+        this.notificationTitle = 'Privilege Update Failed';
+        this.notificationMessage = error.message || 'Unable to update user privileges.';
+      } else {
+        this.notificationTitle = 'Privileges Updated';
+        this.notificationMessage = `${this.privilegeUser.username || 'User'} is now ${this.privilegeRole === 'admin' ? 'an admin' : 'a regular user'}.`;
+        await this.fetchUsers();
+      }
+      this.privilegeUser = null;
+      this.showNotificationModal = true;
+    },
+    closeDeleteModal() {
+      if (this.isDeleting) return;
+      this.showDeleteModal = false;
+      this.deletePassword = '';
+      this.pendingDeleteUser = null;
+    },
+    async confirmDeleteUser() {
+      if (!this.deletePassword || !this.pendingDeleteUser || this.isDeleting) return;
+      this.isDeleting = true;
+      const name = `${this.pendingDeleteUser.username || this.pendingDeleteUser.email || 'this user'}`;
+      let error = null;
+      let passwordError = false;
+
+      try {
+        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+        if (userError || !currentUser?.email) throw userError || new Error('Unable to identify the signed-in superadmin.');
+
+        const { error: authPasswordError } = await supabase.auth.signInWithPassword({
+          email: currentUser.email,
+          password: this.deletePassword
+        });
+        if (authPasswordError) {
+          passwordError = true;
+          throw new Error('Incorrect superadmin password.');
+        }
+
+        const result = await supabase.rpc('delete_user_account', { p_user_id: this.pendingDeleteUser.user_id });
+        error = result.error;
+      } catch (caughtError) {
+        error = caughtError;
+      }
+
+      this.isDeleting = false;
+      this.showDeleteModal = false;
+      this.deletePassword = '';
+      this.pendingDeleteUser = null;
+      if (error) {
+        if (!passwordError) console.error('Error deleting user:', error);
+        this.notificationTitle = passwordError ? 'Incorrect Password' : 'Delete Failed';
+        this.notificationMessage = error.message || 'Unable to delete the user.';
+      } else {
+        this.notificationTitle = 'User Deleted';
+        this.notificationMessage = `${name} was deleted successfully.`;
+        await this.fetchUsers();
+      }
+      this.showNotificationModal = true;
+    },
+    async viewUser(user) {
+      this.showAddModal = true;
+      this.isViewing = true;
+      this.isEditing = false;
+      this.editingUserId = user.user_id;
+      this.errorMessage = '';
+      this.step = 'personal';
+      this.warnings = {};
+      const { data, error } = await supabase.rpc('get_user_for_edit', { p_user_id: user.user_id });
+      if (error || !data) {
+        this.errorMessage = error?.message || 'Unable to load user information.';
+        return;
+      }
+      this.form = {
+        idNumber: data.id_number || '', firstName: data.first_name || '', middleInitial: data.middle_initial || '',
+        lastName: data.last_name || '', suffix: data.suffix || '', birthdate: data.birthdate || '', age: data.age || '',
+        sex: data.sex || 'male', purok: data.purok || '', barangay: data.barangay || '', city: data.city || '',
+        province: data.province || '', country: data.country || '', zip: data.zip || '', username: data.username || '',
+        password: '', repassword: '', email: data.email || '', role: data.role || 'user'
+      };
+    },
     async openEditModal(user) {
       this.showAddModal = true;
+      this.isViewing = false;
       this.isEditing = true;
       this.editingUserId = user.user_id;
       this.errorMessage = '';
@@ -221,6 +346,7 @@ export default {
     },
     openAddModal() {
       this.showAddModal = true;
+      this.isViewing = false;
       this.isEditing = false;
       this.editingUserId = null;
       this.originalUniqueFields = {};
@@ -254,6 +380,7 @@ export default {
     },
     closeAddModal() {
       this.showAddModal = false;
+      this.isViewing = false;
       this.isEditing = false;
       this.editingUserId = null;
       this.errorMessage = '';

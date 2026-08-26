@@ -312,3 +312,38 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
+
+-- H. get_all_users: Fetch all users with their status for the superadmin panel
+DROP FUNCTION IF EXISTS public.get_all_users();
+
+CREATE FUNCTION public.get_all_users()
+RETURNS TABLE(
+  user_id UUID,
+  id_number VARCHAR,
+  username VARCHAR,
+  email VARCHAR,
+  role VARCHAR,
+  registration_status VARCHAR,
+  is_locked_out BOOLEAN,
+  created_at TIMESTAMPTZ
+) LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  -- Only superadmins can view all users
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND public.users.role = 'superadmin') THEN
+    RAISE EXCEPTION 'Only superadmins can view all users';
+  END IF;
+
+  RETURN QUERY
+  SELECT 
+    public.users.id,
+    public.users.id_number,
+    public.users.username,
+    public.users.email,
+    public.users.role,
+    public.users.registration_status,
+    public.users.is_locked_out,
+    public.users.created_at
+  FROM public.users
+  ORDER BY public.users.created_at DESC;
+END;
+$$;
