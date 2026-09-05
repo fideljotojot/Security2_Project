@@ -206,15 +206,15 @@ export default {
     },
     async toggleLockout(user) {
       const targetState = !user.is_locked_out;
-      const { error } = await supabase
-        .from('users')
-        .update({ is_locked_out: targetState })
-        .eq('id', user.user_id);
+      const { error } = await supabase.rpc('admin_update_user_status', {
+        p_user_id: user.user_id,
+        p_status: targetState ? 'blocked' : 'approved'
+      });
 
       if (error) {
         console.error('Error updating lockout state:', error);
       } else {
-        user.is_locked_out = targetState;
+        await this.fetchUsers();
       }
     },
     async deleteUser(user) {

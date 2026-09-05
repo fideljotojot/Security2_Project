@@ -10,6 +10,7 @@ import LoginForm from './components/LoginForm.vue';
 import SuperAdminDashboard from './components/superadmin/SuperadminDashboard.vue';
 import SuperAdminUsers from './components/superadmin/SuperadminUsers.vue';
 import SuperadminRegistrations from './components/superadmin/RegistrationPage.vue';
+import ActivityLogs from './components/superadmin/ActivityLogs.vue';
 
 /* Admin */
 import AdminDashboard from './components/admin/AdminDashboard.vue';
@@ -28,6 +29,7 @@ const routes = [
       { path: '', name: 'superadmin', component: SuperAdminDashboard },
       { path: 'users', name: 'superadmin-users', component: SuperAdminUsers },
       { path: 'registrations', name: 'superadmin-registrations', component: SuperadminRegistrations }
+      ,{ path: 'activity-logs', name: 'superadmin-activity-logs', component: ActivityLogs }
     ]},
   { path: '/admin', component: RouterView,
     children: [
