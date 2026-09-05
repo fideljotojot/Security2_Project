@@ -68,10 +68,10 @@
               <button @click="toggleLockout(user)" :class="['lock-btn', user.is_locked_out ? 'unlock-btn' : 'block-action-btn']" :disabled="getUserStatus(user) === 'pending'" :title="getUserStatus(user) === 'pending' ? 'Cannot modify pending users' : (user.is_locked_out ? 'Unblock user' : 'Block user')">
                 <i :class="user.is_locked_out ? 'fi fi-br-user-check' : 'fi fi-br-user-forbidden'"></i>
               </button>
-              <button @click="deleteUser(user)" class="delete-btn" title="Delete user" aria-label="Delete user">
+              <button @click="deleteUser(user)" class="delete-btn" :disabled="getUserStatus(user) === 'pending'" title="Delete user" aria-label="Delete user">
                 <i class="fi fi-br-trash"></i>
               </button>
-              <button @click="openPrivilegeModal(user)" class="privilege-btn" title="Manage admin privileges" aria-label="Manage admin privileges">
+              <button @click="openPrivilegeModal(user)" class="privilege-btn" :disabled="getUserStatus(user) === 'pending'" title="Manage admin privileges" aria-label="Manage admin privileges">
                 <i class="fi fi-br-shield-check"></i>
               </button>
             </td>

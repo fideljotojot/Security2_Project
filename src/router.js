@@ -14,7 +14,7 @@ import ActivityLogs from './components/superadmin/ActivityLogs.vue';
 
 /* Admin */
 import AdminDashboard from './components/admin/AdminDashboard.vue';
-import AdminUsers from './components/admin/Users.vue';
+import AdminUsers from './components/admin/AdminUsers.vue';
 
 import { supabase } from './utils/supabase.js';
 

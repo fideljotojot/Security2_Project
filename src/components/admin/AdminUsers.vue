@@ -46,14 +46,12 @@
             <td style="text-transform: capitalize;">{{ userStatus(user) }}</td>
             <td class="actions-container"><button class="view-btn" @click="view(user)" title="View user details"
                 aria-label="View user"><i class="fi fi-br-eye"></i></button><button class="edit-btn" @click="edit(user)"
-                title="Edit user"><i class="fi fi-br-edit"></i></button><button v-if="userStatus(user) === 'pending'"
-                class="unlock-btn" @click="setStatus(user, 'approved')" title="Approve user"><i
-                  class="fi fi-rc-check-circle"></i></button><button v-if="userStatus(user) !== 'blocked'"
-                class="block-action-btn" @click="setStatus(user, 'blocked')" title="Block user"><i
+                :disabled="userStatus(user) === 'pending'" title="Edit user"><i class="fi fi-br-edit"></i></button><button v-if="userStatus(user) !== 'blocked'"
+                class="block-action-btn" :disabled="userStatus(user) === 'pending'" @click="setStatus(user, 'blocked')" title="Block user"><i
                   class="fi fi-br-user-forbidden"></i></button><button v-else class="unlock-btn"
-                @click="setStatus(user, 'approved')" title="Unblock user"><i
+                :disabled="userStatus(user) === 'pending'" @click="setStatus(user, 'approved')" title="Unblock user"><i
                   class="fi fi-br-user-check"></i></button><button class="delete-btn" @click="requestDelete(user)"
-                title="Request deletion"><i class="fi fi-br-trash"></i></button></td>
+                :disabled="userStatus(user) === 'pending'" title="Request deletion"><i class="fi fi-br-trash"></i></button></td>
           </tr>
           <tr v-if="!filtered.length">
             <td colspan="6" class="empty-state">No users found.</td>
@@ -149,12 +147,23 @@
       </div>
     </div>
     <div v-if="deleteTarget" class="modal-overlay">
-      <div class="notification-card">
+      <div class="notification-card delete-request-card">
         <h3>Request account deletion</h3>
         <p>Superadmin review is required for {{ deleteTarget.username }}.</p><textarea v-model="deleteReason" rows="4"
-          placeholder="Reason for deletion (required)"></textarea>
+          class="delete-reason-input" placeholder="Reason for deletion (required)"></textarea>
         <div class="btn-container"><button class="btn btn-secondary" @click="deleteTarget = null">Cancel</button><button
-            class="btn btn-primary" :disabled="!deleteReason.trim()" @click="submitDelete">Send request</button></div>
+            class="btn btn-primary" @click="submitDelete">Send request</button></div>
+      </div>
+    </div>
+    <div v-if="notificationMessage" class="modal-overlay" @click.self="notificationMessage = ''">
+      <div :class="['notification-card', 'request-success-card', { 'request-error-card': notificationType === 'error' }]" role="dialog" aria-modal="true">
+        <div class="notification-header">
+          <div class="notification-icon" aria-hidden="true"><i :class="notificationType === 'error' ? 'fi fi-br-cross-circle' : 'fi fi-br-check'"></i></div>
+          <h3>{{ notificationTitle }}</h3>
+        </div>
+        <p>{{ notificationMessage }}</p>
+        <div class="btn-container"><button type="button" :class="['btn', 'btn-primary', { 'request-error-button': notificationType === 'error' }]"
+            @click="notificationMessage = ''">Close</button></div>
       </div>
     </div>
   </main>

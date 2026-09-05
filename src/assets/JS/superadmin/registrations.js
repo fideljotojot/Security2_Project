@@ -2,7 +2,7 @@ import { supabase } from '@/utils/supabase.js';
 
 export default {
   name: 'SuperadminRegistrations',
-  data: () => ({ registrations: [], deleteRequests: [], registrationPage: 1, deletePage: 1, registrationPageSize: 5, deletePageSize: 2, isLoading: false, isUpdating: false, errorMessage: '' }),
+  data: () => ({ registrations: [], deleteRequests: [], registrationPage: 1, deletePage: 1, registrationPageSize: 5, deletePageSize: 5, isLoading: false, isUpdating: false, errorMessage: '' }),
   computed: {
     paginatedRegistrations() { return this.paginate(this.registrations, this.registrationPage); },
     paginatedDeleteRequests() { return this.paginate(this.deleteRequests, this.deletePage); }

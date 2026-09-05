@@ -25,3 +25,74 @@
   color: #8a8a8a !important;
   cursor: default;
 }
+
+.delete-request-card {
+  width: min(90vw, 32rem);
+  box-sizing: border-box;
+}
+
+.delete-reason-input {
+  width: 100%;
+  min-height: 7rem;
+  box-sizing: border-box;
+  padding: .85rem 1rem;
+  border: 1px solid #c8d8ce;
+  border-radius: .7rem;
+  background: #fbfdfb;
+  color: #243238;
+  font: inherit;
+  font-size: .95rem;
+  line-height: 1.45;
+  resize: vertical;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+
+.delete-reason-input::placeholder {
+  color: #7d8781;
+}
+
+.delete-reason-input:focus {
+  border-color: #036d30;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(3, 109, 48, .12);
+}
+
+.request-success-card {
+  width: min(90vw, 28rem);
+  box-sizing: border-box;
+  text-align: center;
+  top: -36%;
+}
+
+.request-success-card .notification-icon {
+  width: fit-content;
+  height: fit-content;
+  border-radius: 50%;
+  border: 1px solid #036d30;
+  padding: .5em;
+}
+
+.request-success-card h3,
+.request-success-card p {
+  text-align: center;
+}
+
+.request-error-card .notification-icon {
+  border-color: #c62828;
+  background: #fde8e8;
+  color: #c62828;
+}
+
+.request-error-card h3 {
+  color: #c62828;
+}
+
+.request-error-button {
+  background-color: #c62828 !important;
+  color: #fff !important;
+}
+
+.notification-card .request-error-button:hover {
+  background-color: #a61f1f !important;
+}

@@ -1,5 +1,5 @@
 <template>
-  <main class="container">
+  <main class="container" style="overflow: auto">
 
     <p v-if="errorMessage" class="alert-danger">{{ errorMessage }}</p>
     <div class="user-table">
