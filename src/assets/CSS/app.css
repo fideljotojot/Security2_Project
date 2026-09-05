@@ -51,8 +51,20 @@ header .header-btn p {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: opacity 0.3s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
   color: #fefefe;
+}
+
+header .header-btn a:hover p {
+  color: #8f8e8e;
+  text-shadow: 1px 1px 1px #020202;
+  border-radius: .4em;
+  transform: translateY(-2px);
+}
+
+header .header-btn a.router-link-exact-active p {
+  color: #03ff6c;
+  border-radius: .4em;
 }
 
 header .header-btn p:disabled,
