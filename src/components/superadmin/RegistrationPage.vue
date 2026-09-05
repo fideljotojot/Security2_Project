@@ -71,8 +71,16 @@
             <td>{{ request.username }} ({{ request.email }})</td>
             <td>{{ request.reason }}</td>
             <td>{{ formatDate(request.created_at) }}</td>
-            <td><button @click="reviewDelete(request, true)">Approve delete</button><button
-                @click="reviewDelete(request, false)">Reject</button></td>
+            <td class="registration-actions">
+              <button type="button" class="unlock-btn" title="Approve deletion" aria-label="Approve deletion"
+                :disabled="isUpdating" @click="reviewDelete(request, true)">
+                <i class="fi fi-rc-check-circle" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="block-action-btn reject-btn" title="Reject deletion" aria-label="Reject deletion"
+                :disabled="isUpdating" @click="reviewDelete(request, false)">
+                <i class="fi fi-br-cross-circle" aria-hidden="true"></i>
+              </button>
+            </td>
           </tr>
           <tr v-if="!deleteRequests.length">
             <td colspan="5">No pending deletion requests.</td>
