@@ -28,10 +28,13 @@
   --color-background-soft: var(--vt-c-white-soft);
   --color-background-mute: var(--vt-c-white-mute);
 
-  --color-primary: hsl(160, 100%, 37%); /* green-ish */
+  --color-primary: hsl(160, 100%, 37%);
+  /* green-ish */
   --color-primary-700: hsl(160, 90%, 30%);
-  --color-secondary: #625b71; /* muted purple for dark buttons */
-  --color-accent: #008000; /* header accent */
+  --color-secondary: #625b71;
+  /* muted purple for dark buttons */
+  --color-accent: #008000;
+  /* header accent */
 
   --color-border: var(--vt-c-divider-light-2);
   --color-border-hover: var(--vt-c-divider-light-1);
@@ -104,74 +107,74 @@ body {
 }
 
 i {
-    height: 100%;
-    align-self: center;
-    display: flex;
+  height: 100%;
+  align-self: center;
+  display: flex;
 }
 
 /* Notification Modal */
 .notification-overlay {
-    z-index: 1100;
-    width: 100%;
-    align-items: start !important;
+  z-index: 1100;
+  width: 100%;
+  align-items: start !important;
 }
 
 .notification-card {
-    position: relative;
-    top: 0%;
-    width: min(90vw, fit-content);
-    padding: 2em;
-    border-radius: 12px;
-    background: #fff;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.9em;
-    text-align: left;
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  top: 0%;
+  width: min(90vw, fit-content);
+  padding: 2em;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9em;
+  text-align: left;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .notification-header {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    justify-content: space-between;
-    gap: 1em;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
+  gap: 1em;
 }
 
 .notification-icon {
-    width: 1.5em;
-    height: fit-content;
-    border-radius: 50%;
-    border: 1px solid #036d30;
-    background: #e5f5eb;
-    color: #036d30;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: .5rem 1rem;
+  width: 1.5em;
+  height: fit-content;
+  border-radius: 50%;
+  border: 1px solid #036d30;
+  background: #e5f5eb;
+  color: #036d30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: .5rem 1rem;
 }
 
 .notification-icon i {
-    font-size: 1em;
-    height: 100%;
-    align-self: center;
-    display: flex;
+  font-size: 1em;
+  height: 100%;
+  align-self: center;
+  display: flex;
 }
 
 .notification-card h3 {
-    color: #036d30;
-    margin: 0;
-    width: 100%;
-    text-align: left;
-    font-size: 1.2rem;
-    font-weight: 700;
-    text-transform: uppercase;
+  color: #036d30;
+  margin: 0;
+  width: 100%;
+  text-align: left;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .notification-card p {
-    color: #555;
+  color: #555;
 }
 
 .notification-card .btn {
@@ -200,7 +203,8 @@ i {
 }
 
 /* Modal Card */
-.modal-card {
+.modal-card,
+.admin-edit-modal  {
   background: rgba(255, 255, 255, 0.95);
   width: 100%;
   max-width: 60vw;
@@ -219,6 +223,95 @@ i {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
+}
+
+.admin-edit-modal .edit-modal-title {
+  width: 100%;
+  text-align: center;
+}
+
+.admin-edit-grid {
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+}
+
+.admin-edit-grid .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: .4em;
+  text-align: left;
+}
+
+.admin-edit-grid .form-group label {
+  order: 0;
+  width: auto;
+  margin: 0;
+  text-align: left;
+}
+
+.admin-edit-grid .form-group input,
+.admin-edit-grid .form-group select {
+  order: 1;
+  width: 100%;
+}
+
+.admin-edit-modal>p {
+  color: #555;
+  font-size: 1.1rem;
+}
+
+.admin-edit-modal label {
+  color: #444;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.admin-edit-modal label span {
+  font-size: .7rem;
+}
+
+.admin-edit-modal .modal-input {
+  width: min(100%, 24rem);
+  padding: .75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font: inherit;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.admin-edit-modal .modal-input:focus {
+  border-color: #036d30;
+  outline: none;
+}
+
+@media (max-width: 700px) {
+  .admin-edit-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Admin edit modal: labels above fields and three columns per row. */
+.modal-card.admin-edit-modal .admin-edit-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.modal-card.admin-edit-modal .admin-edit-grid .form-group {
+  flex-direction: column;
+  gap: .4em;
+}
+
+.modal-card.admin-edit-modal .admin-edit-grid .form-group input,
+.modal-card.admin-edit-modal .admin-edit-grid .form-group select {
+  width: calc(100% - 1em);
+  margin-left: 1em;
+  padding-left: 1rem;
+}
+
+@media (max-width: 700px) {
+  .modal-card.admin-edit-modal .admin-edit-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .header-h3 {

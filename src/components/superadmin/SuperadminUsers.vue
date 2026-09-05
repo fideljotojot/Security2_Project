@@ -229,7 +229,7 @@
                 <span class="field-warning" v-if="getWarning('user_id')">{{ getWarning('user_id')
                   }}</span>
                 <input type="text" id="user_id" v-model="form.idNumber" required :readonly="isViewing" @input="checkID">
-                <label for="user_id">ID No. <span>*</span></label>
+                <label for="user_id">Employee No. <span>*</span></label>
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('username')">{{ getWarning('username')
