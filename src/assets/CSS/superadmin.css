@@ -7,9 +7,33 @@
 
 .activity-action-column,
 .activity-performer-column,
+.activity-role-column,
 .activity-date-column {
   flex: 1 1 0;
   min-width: 0;
+}
+
+tbody .activity-entity-column,
+tbody .activity-role-column {
+  text-transform: capitalize;
+}
+
+.activity-log-filters {
+  gap: 2rem;
+}
+
+.activity-log-filters .searchbar {
+  flex: 1.5 1 5rem;
+}
+
+.activity-log-filters .dropdown {
+  flex: 1.5 1 5rem;
+  min-width: 0;
+}
+
+.activity-log-filters .dropdown select {
+  flex: 1;
+  min-width: 8rem;
 }
 
 .user-details-view input,

@@ -1,5 +1,7 @@
 <script>
 import { setLockoutState } from './router.js';
+import { setUserAuthenticated } from './router.js';
+import { supabase } from './utils/supabase.js';
 
 export default {
   data() {
@@ -32,6 +34,21 @@ export default {
     }
   },
   methods: {
+    async logout() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        await supabase.rpc('create_audit_log', {
+          p_action: 'Logged out',
+          p_entity_type: 'authentication',
+          p_entity_id: session.user.id,
+          p_details: {}
+        });
+      }
+      await supabase.auth.signOut();
+      localStorage.removeItem('user');
+      setUserAuthenticated(false);
+      this.$router.push('/login');
+    },
     checkPersistedLockout() {
       // Check if lockout was active before page reload
       const persisted = sessionStorage.getItem('lockoutActive');
@@ -197,7 +214,7 @@ export default {
     <header v-else-if="$route.name === 'dashboard'">
       <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
       <div class="header-btn">
-        <router-link to="/login">
+        <router-link to="/login" @click.prevent="logout">
           <p>Logout</p>
         </router-link>
       </div>
@@ -218,7 +235,7 @@ export default {
         <router-link to="/superadmin/activity-logs">
           <p>Logs</p>
         </router-link>
-        <router-link to="/login">
+        <router-link to="/login" @click.prevent="logout">
           <p>Logout</p>
         </router-link>
       </div>
@@ -233,7 +250,7 @@ export default {
         <router-link to="/admin/users">
           <p>Users</p>
         </router-link>
-        <router-link to="/login">
+        <router-link to="/login" @click.prevent="logout">
           <p>Logout</p>
         </router-link>
       </div>

@@ -4,7 +4,7 @@
       <div class="header-section table-panel-header">
         <h2>Activity Logs</h2><button type="button" @click="loadLogs">Refresh</button>
       </div>
-      <div class="filter-container">
+      <div class="filter-container activity-log-filters">
         <div class="searchbar"><input type="search" placeholder="Search actions, entities, or users"
             v-model="searchQuery" aria-label="Search activity logs"><button v-if="searchQuery" type="button"
             class="search-clear" @click="searchQuery = ''" aria-label="Clear search"><i
@@ -15,6 +15,9 @@
           </select><select v-model="selectedAction" aria-label="Filter by action">
             <option value="all">All actions</option>
             <option v-for="action in actions" :key="action" :value="action">{{ action }}</option>
+          </select><select v-model="selectedRole" aria-label="Filter by role">
+            <option value="all">All roles</option>
+            <option v-for="role in roles" :key="role" :value="role">{{ role }}</option>
           </select><select v-model="selectedTime" aria-label="Filter by time">
             <option value="all">All time</option>
             <option value="today">Today</option>
@@ -29,6 +32,7 @@
             <th class="activity-action-column">Action</th>
             <th class="activity-entity-column">Entity</th>
             <th class="activity-performer-column">Performed By</th>
+            <th class="activity-role-column">Role</th>
             <th class="activity-date-column">Date & Time</th>
           </tr>
         </thead>
@@ -38,10 +42,11 @@
             <td class="activity-entity-column">{{ log.entity_type }}<template v-if="log.entity_id"> #{{ log.entity_id }}</template>
             </td>
             <td class="activity-performer-column">{{ log.actor_username || 'System' }}</td>
+            <td class="activity-role-column">{{ log.actor_role || 'System' }}</td>
             <td class="activity-date-column">{{ formatDate(log.created_at) }}</td>
           </tr>
           <tr v-if="!filteredLogs.length">
-            <td colspan="4" class="empty-state">No matching activity logs.</td>
+            <td colspan="5" class="empty-state">No matching activity logs.</td>
           </tr>
         </tbody>
       </table>
