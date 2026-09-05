@@ -257,6 +257,14 @@
 
 
   </form>
+  <div v-if="modalMessage" class="app-modal-overlay" @click.self="modalMessage = ''">
+    <div class="app-modal" role="alertdialog" aria-modal="true">
+      <div class="app-modal-icon">!</div>
+      <h3>Registration notice</h3>
+      <p>{{ modalMessage }}</p>
+      <button type="button" class="btn" @click="modalMessage = ''">OK</button>
+    </div>
+  </div>
 </template>
 
 <script src="../assets/JS/signup.js"></script>

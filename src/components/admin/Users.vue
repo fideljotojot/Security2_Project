@@ -1,5 +1,11 @@
 <template>
-    <main class="container">
-        <h1>Users</h1>
-    </main>
+  <main class="container"><div class="user-table"><div class="header-section table-panel-header"><h2>Users</h2></div>
+    <div class="filter-container"><div class="searchbar"><input v-model="search" type="search" placeholder="Search by Employee ID, username, or email"><i class="fi fi-br-search"></i></div><select v-model="status"><option value="all">All statuses</option><option value="pending">Pending</option><option value="active">Active</option><option value="blocked">Blocked</option></select></div>
+    <p v-if="message" class="alert-danger">{{ message }}</p><table><thead><tr><th>Employee ID</th><th>Username</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+      <tr v-for="user in filtered" :key="user.user_id"><td>{{ user.id_number }}</td><td>{{ user.username }}</td><td>{{ user.email }}</td><td>{{ userStatus(user) }}</td><td class="actions-container"><button @click="edit(user)">Edit</button><button v-if="userStatus(user)==='pending'" @click="setStatus(user,'approved')">Approve</button><button v-if="userStatus(user)!=='blocked'" @click="setStatus(user,'blocked')">Block</button><button v-else @click="setStatus(user,'approved')">Unblock</button><button class="delete-btn" @click="requestDelete(user)">Request delete</button></td></tr><tr v-if="!filtered.length"><td colspan="5">No users found.</td></tr>
+    </tbody></table></div>
+    <div v-if="editing" class="modal-overlay"><div class="notification-card"><h3>Update account</h3><p>{{ editing.username }} ({{ editing.id_number }})</p><input v-model="editForm.username" placeholder="Username"><input v-model="editForm.email" placeholder="Email"><input v-model="editForm.id_number" placeholder="Employee ID"><div class="btn-container"><button class="btn btn-secondary" @click="editing=null">Cancel</button><button class="btn btn-primary" @click="saveEdit">Save</button></div></div></div>
+    <div v-if="deleteTarget" class="modal-overlay"><div class="notification-card"><h3>Request account deletion</h3><p>Superadmin review is required for {{ deleteTarget.username }}.</p><textarea v-model="deleteReason" rows="4" placeholder="Reason for deletion (required)"></textarea><div class="btn-container"><button class="btn btn-secondary" @click="deleteTarget=null">Cancel</button><button class="btn btn-primary" :disabled="!deleteReason.trim()" @click="submitDelete">Send request</button></div></div></div>
+  </main>
 </template>
+<script src="@/assets/JS/admin/users.js"></script><style src="@/assets/CSS/superadmin.css"></style>

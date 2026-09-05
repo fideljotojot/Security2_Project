@@ -11,6 +11,7 @@ export default {
       showPassword: false,
       showRePassword: false,
       successMessage: '',
+      modalMessage: '',
       form: {
         id: '',
         firstName: '',
@@ -145,6 +146,9 @@ export default {
   },
 
   methods: {
+    showMessage(message) {
+      this.modalMessage = message;
+    },
     isStepCompleted(stepId) {
       const stepOrder = ['personal', 'login_details', 'questions'];
       const currentIndex = stepOrder.indexOf(this.step);
@@ -527,11 +531,11 @@ export default {
     async register() {
       // Basic client-side validation
       if (!this.form.username || !this.form.email || !this.form.password) {
-        alert('Please fill username, email and password');
+        this.showMessage('Please fill username, email and password');
         return;
       }
       if (this.form.password !== this.form.repassword) {
-        alert('Passwords do not match');
+        this.showMessage('Passwords do not match');
         return;
       }
 
@@ -543,12 +547,12 @@ export default {
         });
 
         if (authError) {
-          alert(authError.message || 'Registration failed');
+          this.showMessage(authError.message || 'Registration failed');
           return;
         }
 
         if (!authData?.user) {
-          alert('Failed to retrieve user information after signup.');
+          this.showMessage('Failed to retrieve user information after signup.');
           return;
         }
 
@@ -581,7 +585,7 @@ export default {
 
         if (profileError || !profileSuccess) {
           console.error('Profile creation error:', profileError);
-          alert(profileError?.message || 'Failed to create user profile database records.');
+        this.showMessage(profileError?.message || 'Failed to create user profile database records.');
           return;
         }
 
@@ -592,7 +596,7 @@ export default {
         }, 2000);
       } catch (err) {
         console.error(err);
-        alert('Network or server error');
+        this.showMessage('Network or server error');
       }
     }
   }

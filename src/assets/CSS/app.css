@@ -1,6 +1,5 @@
 #app {
-  width: 100vw;
-  height: 100vh !important;
+  min-height: 100vh !important;
   display: flex;
   flex-direction: column;
   background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(../images/background.jpg);
@@ -8,7 +7,7 @@
 }
 
 main .container{
-  padding: 2em;
+  padding: 1.5em 2em;
   justify-content: start;
 }
 
@@ -370,6 +369,7 @@ a.disabled {
   border: 1px solid #036d2f6c;
   display: flex;
   flex-direction: column;
+  margin: 0;
 }
 
 table {
@@ -501,6 +501,8 @@ tbody tr .empty-message {
 
 .edit-btn,
 .lock-btn,
+.unlock-btn,
+.block-action-btn,
 .view-btn,
 .delete-btn {
   padding: 0.5em 0.75em;
@@ -508,11 +510,16 @@ tbody tr .empty-message {
   border-radius: 0.4em;
   cursor: pointer;
   transition: background-color 0.2s ease, opacity 0.2s ease;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: .72rem;
+  font-size: .8rem;
+}
+
+.unlock-btn i,
+.reject-btn i{
+  font-size: 1rem;
 }
 
 .view-btn {
