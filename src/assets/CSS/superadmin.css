@@ -1,3 +1,13 @@
+/* Give long activity-log entity identifiers room to breathe. */
+.activity-entity-column {
+  flex: 1.6 1 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 
-
-
+.activity-action-column,
+.activity-performer-column,
+.activity-date-column {
+  flex: 1 1 0;
+  min-width: 0;
+}

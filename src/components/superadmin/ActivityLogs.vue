@@ -26,19 +26,19 @@
       <table>
         <thead>
           <tr>
-            <th>Action</th>
-            <th>Entity</th>
-            <th>Performed By</th>
-            <th>Date & Time</th>
+            <th class="activity-action-column">Action</th>
+            <th class="activity-entity-column">Entity</th>
+            <th class="activity-performer-column">Performed By</th>
+            <th class="activity-date-column">Date & Time</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="log in paginatedLogs" :key="log.log_id">
-            <td>{{ log.action }}</td>
-            <td>{{ log.entity_type }}<template v-if="log.entity_id"> #{{ log.entity_id }}</template>
+            <td class="activity-action-column">{{ log.action }}</td>
+            <td class="activity-entity-column">{{ log.entity_type }}<template v-if="log.entity_id"> #{{ log.entity_id }}</template>
             </td>
-            <td>{{ log.actor_username || 'System' }}</td>
-            <td>{{ formatDate(log.created_at) }}</td>
+            <td class="activity-performer-column">{{ log.actor_username || 'System' }}</td>
+            <td class="activity-date-column">{{ formatDate(log.created_at) }}</td>
           </tr>
           <tr v-if="!filteredLogs.length">
             <td colspan="4" class="empty-state">No matching activity logs.</td>
