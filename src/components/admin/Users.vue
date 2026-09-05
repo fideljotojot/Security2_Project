@@ -44,9 +44,10 @@
             <td>{{ user.email }}</td>
             <td style="text-transform: capitalize;">{{ user.role }}</td>
             <td style="text-transform: capitalize;">{{ userStatus(user) }}</td>
-            <td class="actions-container"><button class="edit-btn" @click="edit(user)" title="Edit user"><i
-                  class="fi fi-br-edit"></i></button><button v-if="userStatus(user) === 'pending'" class="unlock-btn"
-                @click="setStatus(user, 'approved')" title="Approve user"><i
+            <td class="actions-container"><button class="view-btn" @click="view(user)" title="View user details"
+                aria-label="View user"><i class="fi fi-br-eye"></i></button><button class="edit-btn" @click="edit(user)"
+                title="Edit user"><i class="fi fi-br-edit"></i></button><button v-if="userStatus(user) === 'pending'"
+                class="unlock-btn" @click="setStatus(user, 'approved')" title="Approve user"><i
                   class="fi fi-rc-check-circle"></i></button><button v-if="userStatus(user) !== 'blocked'"
                 class="block-action-btn" @click="setStatus(user, 'blocked')" title="Block user"><i
                   class="fi fi-br-user-forbidden"></i></button><button v-else class="unlock-btn"
@@ -69,8 +70,8 @@
       </div>
     </div>
     <div v-if="editing" class="modal-overlay">
-      <div class="modal-card admin-edit-modal">
-        <h3 class="header-h3 edit-modal-title">Edit User/Admin</h3>
+      <div class="modal-card admin-edit-modal" :class="{ 'user-details-view': viewing }">
+        <h3 class="header-h3 edit-modal-title">{{ viewing ? 'View User/Admin' : 'Edit User/Admin' }}</h3>
         <div class="step-header-container">
           <h3 class="step-title">{{ editStep === 'personal' ? 'Personal Details' : 'Address & Login Details' }}</h3>
           <div class="steps">
@@ -90,59 +91,61 @@
         <hr class="step-divider">
         <div v-if="editStep === 'personal'" class="form-grid admin-edit-grid">
           <div class="form-group"><label for="admin-edit-first">First Name: <span>*</span></label><input
-              id="admin-edit-first" v-model="editForm.first_name"></div>
+              id="admin-edit-first" v-model="editForm.first_name" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-middle">Middle Initial: <span>(Optional)</span></label><input
-              id="admin-edit-middle" v-model="editForm.middle_initial"></div>
+              id="admin-edit-middle" v-model="editForm.middle_initial" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-last">Last Name: <span>*</span></label><input
-              id="admin-edit-last" v-model="editForm.last_name"></div>
+              id="admin-edit-last" v-model="editForm.last_name" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-suffix">Suffix: <span>(Optional)</span></label><input
-              id="admin-edit-suffix" v-model="editForm.suffix"></div>
+              id="admin-edit-suffix" v-model="editForm.suffix" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-birthdate">Birthdate: <span>*</span></label><input
-              id="admin-edit-birthdate" type="date" v-model="editForm.birthdate"></div>
+              id="admin-edit-birthdate" type="date" v-model="editForm.birthdate" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-age">Age: <span>*</span></label><input id="admin-edit-age"
-              type="number" v-model="editForm.age"></div>
+              type="number" v-model="editForm.age" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-sex">Sex: <span>*</span></label><select id="admin-edit-sex"
-              v-model="editForm.sex">
+              v-model="editForm.sex" :disabled="viewing">
               <option value="male">Male</option>
               <option value="female">Female</option>
             </select></div>
           <div class="form-group"><label for="admin-edit-email">Email: <span>*</span></label><input
-              id="admin-edit-email" v-model="editForm.email"></div>
+              id="admin-edit-email" v-model="editForm.email" :readonly="viewing"></div>
         </div>
         <div v-else class="form-grid admin-edit-grid">
           <div class="form-group"><label for="admin-edit-purok">Purok: <span>*</span></label><input
-              id="admin-edit-purok" v-model="editForm.purok"></div>
+              id="admin-edit-purok" v-model="editForm.purok" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-barangay">Barangay: <span>*</span></label><input
-              id="admin-edit-barangay" v-model="editForm.barangay"></div>
+              id="admin-edit-barangay" v-model="editForm.barangay" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-city">City/Municipality: <span>*</span></label><input
-              id="admin-edit-city" v-model="editForm.city"></div>
+              id="admin-edit-city" v-model="editForm.city" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-province">Province: <span>*</span></label><input
-              id="admin-edit-province" v-model="editForm.province"></div>
+              id="admin-edit-province" v-model="editForm.province" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-country">Country: <span>*</span></label><input
-              id="admin-edit-country" v-model="editForm.country"></div>
+              id="admin-edit-country" v-model="editForm.country" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-zip">Zip Code: <span>*</span></label><input id="admin-edit-zip"
-              v-model="editForm.zip"></div>
+              v-model="editForm.zip" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-id">Employee No. <span>*</span></label><input
-              id="admin-edit-id" v-model="editForm.id_number"></div>
+              id="admin-edit-id" v-model="editForm.id_number" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-username">Username: <span>*</span></label><input
-              id="admin-edit-username" v-model="editForm.username"></div>
+              id="admin-edit-username" v-model="editForm.username" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-role">Role: <span>*</span></label><select id="admin-edit-role"
-              v-model="editForm.role">
+              v-model="editForm.role" :disabled="viewing">
               <option value="user">User</option>
               <option value="admin">Admin</option>
               <option v-if="editing.role === 'superadmin'" value="superadmin">Superadmin</option>
             </select></div>
-          <div class="form-group"><label for="admin-edit-password">Password: <span>(Leave blank to keep
+          <div v-if="!viewing" class="form-group"><label for="admin-edit-password">Password: <span>(Leave blank to keep
                 current)</span></label><input id="admin-edit-password" type="password" v-model="editForm.password">
           </div>
-          <div class="form-group"><label for="admin-edit-repassword">Re-enter Password:</label><input
+          <div v-if="!viewing" class="form-group"><label for="admin-edit-repassword">Re-enter Password:</label><input
               id="admin-edit-repassword" type="password" v-model="editForm.repassword"></div>
         </div>
         <div class="btn-container"><button v-if="editStep === 'personal'" class="btn btn-secondary"
-            @click="editing = null">Cancel</button><button v-if="editStep === 'account'" type="button"
-            class="btn btn-secondary" @click="previousEditStep">Back</button><button v-if="editStep === 'personal'"
-            type="button" class="btn btn-primary" @click="nextEditStep">Next</button><button v-else
-            class="btn btn-primary" @click="saveEdit">Save</button></div>
+            @click="editing = null">{{ viewing ? 'Close' : 'Cancel' }}</button><button v-if="editStep === 'account'"
+            type="button" class="btn btn-secondary" @click="previousEditStep">Back</button><button
+            v-if="editStep === 'personal'" type="button" class="btn btn-primary"
+            @click="nextEditStep">Next</button><button v-else v-show="!viewing" class="btn btn-primary"
+            @click="saveEdit">Save</button><button v-if="viewing && editStep === 'account'" type="button"
+            class="btn btn-primary" @click="editing = null">Close</button></div>
       </div>
     </div>
     <div v-if="deleteTarget" class="modal-overlay">

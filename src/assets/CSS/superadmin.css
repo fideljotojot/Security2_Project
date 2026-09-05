@@ -11,3 +11,17 @@
   flex: 1 1 0;
   min-width: 0;
 }
+
+.user-details-view input,
+.user-details-view select {
+  pointer-events: none;
+}
+
+/* Match readonly fields with the disabled select appearance in view mode. */
+.user-details-view input[readonly],
+.user-details-view select:disabled {
+  background-color: #f1f1f1 !important;
+  border-color: #d5d5d5 !important;
+  color: #8a8a8a !important;
+  cursor: default;
+}

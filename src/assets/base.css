@@ -308,6 +308,15 @@ i {
   padding-left: 1rem;
 }
 
+/* Match readonly fields with the disabled select appearance in view mode. */
+.modal-card.admin-edit-modal  .form-group input[readonly],
+.modal-card.admin-edit-modal .form-group select:disabled {
+  background-color: #f1f1f1 !important;
+  border-color: #d5d5d5 !important;
+  color: #8a8a8a !important;
+  cursor: default;
+}
+
 @media (max-width: 700px) {
   .modal-card.admin-edit-modal .admin-edit-grid {
     grid-template-columns: 1fr;

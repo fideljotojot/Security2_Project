@@ -105,7 +105,7 @@
 
     <!-- Add/Edit User Modal -->
     <div v-if="showAddModal" class="modal-overlay" @click.self="closeAddModal">
-      <div class="modal-card">
+      <div class="modal-card" :class="{ 'user-details-view': isViewing }">
         <h3 class="header-h3">{{ isViewing ? 'View User/Admin' : (isEditing ? 'Edit User/Admin' : 'Add New User/Admin') }}</h3>
 
         <!-- Dynamic Step Header & Indicator Side by Side -->
