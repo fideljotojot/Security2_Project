@@ -10,6 +10,9 @@ export default {
       passwordStrengthScore: 0,
       showPassword: false,
       showRePassword: false,
+      showAnswer1: false,
+      showAnswer2: false,
+      showAnswer3: false,
       successMessage: '',
       modalMessage: '',
       form: {

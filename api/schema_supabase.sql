@@ -238,12 +238,12 @@ BEGIN
     RETURN FALSE;
   END IF;
 
-  -- Compare lowercase trimmed answers with hashes using crypt
+  -- At least two of the three answers must match their hashes.
   RETURN (
-    crypt(lower(trim(p_ans1)), v_hash1) = v_hash1 AND
-    crypt(lower(trim(p_ans2)), v_hash2) = v_hash2 AND
-    crypt(lower(trim(p_ans3)), v_hash3) = v_hash3
-  );
+    (CASE WHEN crypt(lower(trim(p_ans1)), v_hash1) = v_hash1 THEN 1 ELSE 0 END) +
+    (CASE WHEN crypt(lower(trim(p_ans2)), v_hash2) = v_hash2 THEN 1 ELSE 0 END) +
+    (CASE WHEN crypt(lower(trim(p_ans3)), v_hash3) = v_hash3 THEN 1 ELSE 0 END)
+  ) >= 2;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -260,7 +260,7 @@ DECLARE
   v_user_id UUID;
   v_verified BOOLEAN;
 BEGIN
-  -- 1. Check answers
+  -- 1. Check answers (at least two of three must match)
   SELECT verify_security_answers_only(p_id_number, p_ans1, p_ans2, p_ans3) INTO v_verified;
   
   IF NOT v_verified THEN

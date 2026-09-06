@@ -15,6 +15,9 @@ export default {
       username: '',
       questionsLoaded: false,
       step: 1,
+      showAnswer1: false,
+      showAnswer2: false,
+      showAnswer3: false,
       tempAnswers: {
         answer1: '',
         answer2: '',
@@ -193,11 +196,11 @@ export default {
         }
 
         this.message = resetResult.message || 'Password changed successfully.';
-        
+
         child.success = "Successfully Changed Password";
         child.newPassword = "";
         child.confirmPassword = "";
-        
+
         // Reset form after success
         setTimeout(() => {
           this.step = 1;
