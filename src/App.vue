@@ -241,7 +241,7 @@ export default {
       </div>
     </header>
 
-    <header v-else-if="$route.name === 'admin' || $route.name === 'admin-users'">
+    <header v-else-if="['admin', 'admin-users', 'admin-registrations'].includes($route.name)">
       <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
       <div class="header-btn">
         <router-link to="/admin">
@@ -249,6 +249,9 @@ export default {
         </router-link>
         <router-link to="/admin/users">
           <p>Users</p>
+        </router-link>
+        <router-link to="/admin/registrations">
+          <p>Registrations</p>
         </router-link>
         <router-link to="/login" @click.prevent="logout">
           <p>Logout</p>
@@ -272,7 +275,7 @@ export default {
       </div>
 
       <div class="page-container"
-        v-else-if="['dashboard', 'admin', 'superadmin', 'admin-users', 'superadmin-users', 'superadmin-registrations', 'superadmin-activity-logs'].includes($route.name)">
+        v-else-if="['dashboard', 'admin', 'superadmin', 'admin-users', 'admin-registrations', 'superadmin-users', 'superadmin-registrations', 'superadmin-activity-logs'].includes($route.name)">
         <router-view></router-view>
       </div>
 

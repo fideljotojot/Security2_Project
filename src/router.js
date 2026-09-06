@@ -15,6 +15,7 @@ import ActivityLogs from './components/superadmin/ActivityLogs.vue';
 /* Admin */
 import AdminDashboard from './components/admin/AdminDashboard.vue';
 import AdminUsers from './components/admin/AdminUsers.vue';
+import AdminRegistrations from './components/admin/RegistrationPage.vue';
 
 import { supabase } from './utils/supabase.js';
 
@@ -34,7 +35,8 @@ const routes = [
   { path: '/admin', component: RouterView,
     children: [
       { path: '', name: 'admin', component: AdminDashboard },
-      { path: 'users', name: 'admin-users', component: AdminUsers }
+      { path: 'users', name: 'admin-users', component: AdminUsers },
+      { path: 'registrations', name: 'admin-registrations', component: AdminRegistrations }
     ]
   }
 ];

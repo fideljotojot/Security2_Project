@@ -101,21 +101,28 @@ CREATE OR REPLACE FUNCTION public.get_pending_registrations()
 RETURNS TABLE(user_id UUID, id_number VARCHAR, username VARCHAR, email VARCHAR, created_at TIMESTAMPTZ)
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'superadmin') THEN
-    RAISE EXCEPTION 'Only superadmins can view registrations';
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'superadmin')) THEN
+    RAISE EXCEPTION 'Only administrators can view registrations';
   END IF;
   RETURN QUERY SELECT u.id, u.id_number, u.username, u.email, u.created_at
-  FROM public.users u WHERE u.registration_status = 'pending' ORDER BY u.created_at ASC;
+  FROM public.users u
+  WHERE u.registration_status = 'pending'
+    AND (u.role <> 'superadmin' OR (SELECT role FROM public.users WHERE id = auth.uid()) = 'superadmin')
+  ORDER BY u.created_at ASC;
 END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.update_registration_status(p_user_id UUID, p_status TEXT)
 RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'superadmin') THEN
-    RAISE EXCEPTION 'Only superadmins can update registrations';
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'superadmin')) THEN
+    RAISE EXCEPTION 'Only administrators can update registrations';
   END IF;
   IF p_status NOT IN ('approved', 'blocked') THEN RAISE EXCEPTION 'Invalid registration status'; END IF;
+  IF (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin'
+     AND (SELECT role FROM public.users WHERE id = p_user_id) = 'superadmin' THEN
+    RAISE EXCEPTION 'Administrators cannot modify superadmin registrations';
+  END IF;
   UPDATE public.users SET registration_status = p_status, is_locked_out = (p_status = 'blocked') WHERE id = p_user_id;
   RETURN TRUE;
 END;
