@@ -34,9 +34,9 @@
           </select>
 
           <select name="id-sort" id="id-sort" v-model="sortOrder" aria-label="Sort ID number">
-            <option value="">Sort by default</option>
-            <option value="ascending">ID: Ascending</option>
-            <option value="descending">ID: Descending</option>
+            <option value="">Sort by Employee ID</option>
+            <option value="ascending">Ascending order</option>
+            <option value="descending">Descending order</option>
           </select>
         </div>
       </div>

@@ -150,6 +150,18 @@ CREATE OR REPLACE FUNCTION public.create_user_profile(
   p_role TEXT DEFAULT 'user'
 ) RETURNS BOOLEAN AS $$
 BEGIN
+  -- Public signups may only create regular users. Privileged accounts must
+  -- be created by an authenticated superadmin through the admin UI.
+  IF p_role <> 'user' AND NOT EXISTS (
+    SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'superadmin'
+  ) THEN
+    RAISE EXCEPTION 'Only superadmins can create privileged accounts';
+  END IF;
+
+  IF p_role NOT IN ('user', 'admin', 'superadmin') THEN
+    RAISE EXCEPTION 'Invalid role';
+  END IF;
+
   -- Insert user
   INSERT INTO public.users (id, id_number, username, email, role)
   VALUES (p_user_id, p_id_number, p_username, p_email, p_role);

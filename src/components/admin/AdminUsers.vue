@@ -20,9 +20,9 @@
             <option value="admin">Admin</option>
             <option value="superadmin">Superadmin</option>
           </select><select v-model="sortOrder" aria-label="Sort ID number">
-            <option value="">Sort by default</option>
-            <option value="ascending">ID: Ascending</option>
-            <option value="descending">ID: Descending</option>
+            <option value="">Sort by Employee ID</option>
+            <option value="ascending">Ascending order</option>
+            <option value="descending">Descending order</option>
           </select></div>
       </div>
       <p v-if="message" class="alert-danger">{{ message }}</p>

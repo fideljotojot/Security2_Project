@@ -12,6 +12,10 @@ CREATE OR REPLACE FUNCTION public.update_full_user_by_admin(p_user_id UUID,p_id_
 RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.users WHERE id=auth.uid() AND role IN ('admin','superadmin')) THEN RAISE EXCEPTION 'Only administrators can edit users'; END IF;
+  IF (SELECT role FROM public.users WHERE id=p_user_id)='superadmin'
+     AND (SELECT role FROM public.users WHERE id=auth.uid())='admin' THEN
+    RAISE EXCEPTION 'Administrators cannot edit superadmins';
+  END IF;
   IF p_role='superadmin' AND (SELECT role FROM public.users WHERE id=auth.uid())='admin' THEN RAISE EXCEPTION 'Administrators cannot assign the superadmin role'; END IF;
   IF p_role NOT IN ('user','admin','superadmin') THEN RAISE EXCEPTION 'Invalid role'; END IF;
   UPDATE auth.users SET email=p_email, encrypted_password=CASE WHEN p_password IS NULL OR p_password='' THEN encrypted_password ELSE crypt(p_password,gen_salt('bf')) END WHERE id=p_user_id;
