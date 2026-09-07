@@ -18,6 +18,10 @@ export default {
       showAnswer1: false,
       showAnswer2: false,
       showAnswer3: false,
+      otp: '',
+      recoveryEmail: '',
+      otpSent: false,
+      otpVerified: false,
       tempAnswers: {
         answer1: '',
         answer2: '',
@@ -131,7 +135,33 @@ export default {
           return;
         }
 
-        // Store answers temporarily in memory to send during final reset in step 3
+        const { data: recoveryEmail, error: emailError } = await supabase.rpc('get_recovery_email_after_answers', {
+          p_id_number: this.idNumber,
+          p_ans1: this.form.answer1,
+          p_ans2: this.form.answer2,
+          p_ans3: this.form.answer3
+        });
+
+        if (emailError || !recoveryEmail) {
+          this.warnings.server = [emailError?.message || 'Unable to send a verification code.'];
+          return;
+        }
+
+        // Ask Supabase Auth to generate and send a random email OTP.
+        // The email must already belong to an Auth user.
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: recoveryEmail,
+          options: {
+            shouldCreateUser: false
+          }
+        });
+
+        if (otpError) {
+          this.warnings.server = [otpError.message || 'Unable to send a verification code.'];
+          return;
+        }
+
+        // Store answers temporarily in memory for the recovery session.
         this.tempAnswers = {
           answer1: this.form.answer1,
           answer2: this.form.answer2,
@@ -141,6 +171,10 @@ export default {
         this.form.answer1 = '';
         this.form.answer2 = '';
         this.form.answer3 = '';
+        this.recoveryEmail = recoveryEmail;
+        this.otp = '';
+        this.otpSent = true;
+        this.otpVerified = false;
         this.warnings.server = [];
         this.step = 3;
       } catch (err) {
@@ -165,6 +199,11 @@ export default {
         return;
       }
 
+      if (!this.otpVerified) {
+        this.message = 'Verify the one-time PIN before changing your password.';
+        return;
+      }
+
       try {
         // 1. Get validated password from child component
         const validationResult = await child.submitChange();
@@ -176,26 +215,38 @@ export default {
 
         const newPassword = validationResult.newPassword;
 
-        // 2. Call Supabase RPC to verify answers and reset password atomically
-        const { data: resetResult, error: resetError } = await supabase.rpc('verify_and_reset_password', {
-          p_id_number: this.idNumber,
-          p_ans1: this.tempAnswers.answer1,
-          p_ans2: this.tempAnswers.answer2,
-          p_ans3: this.tempAnswers.answer3,
-          p_new_password: newPassword
+        // Confirm that the OTP session belongs to the account being recovered.
+        const { data: authUserData, error: authUserError } =
+          await supabase.auth.getUser();
+
+        const authEmail = authUserData?.user?.email?.trim().toLowerCase();
+        const recoveryEmail = this.recoveryEmail.trim().toLowerCase();
+
+        if (authUserError || !authEmail) {
+          child.error = 'Your recovery session has expired. Please request a new OTP.';
+          return;
+        }
+
+        if (authEmail !== recoveryEmail) {
+          console.error('Recovery account mismatch', {
+            authEmail,
+            recoveryEmail,
+          });
+          child.error = 'The recovery email does not match this account. Please start again.';
+          return;
+        }
+
+        // 2. Update the authenticated Supabase Auth user's password.
+        const { error: resetError } = await supabase.auth.updateUser({
+          password: newPassword
         });
 
         if (resetError) {
-          this.message = resetError.message || 'Database error occurred.';
+          child.error = resetError.message || 'Unable to change password.';
           return;
         }
 
-        if (!resetResult || !resetResult.ok) {
-          this.message = resetResult?.error || 'Failed to change password.';
-          return;
-        }
-
-        this.message = resetResult.message || 'Password changed successfully.';
+        this.message = 'Password changed successfully.';
 
         child.success = "Successfully Changed Password";
         child.newPassword = "";
@@ -207,12 +258,16 @@ export default {
           this.idNumber = '';
           this.warnings.idNumber = [];
           this.tempAnswers = { answer1: '', answer2: '', answer3: '' };
+          this.otp = '';
+          this.recoveryEmail = '';
+          this.otpSent = false;
+          this.otpVerified = false;
           this.$router.push("/login");
-        }, 1000);
+        }, 1500);
 
       } catch (err) {
         console.error(err);
-        this.message = 'Unexpected error occurred.';
+        child.error = 'Unexpected error occurred while changing the password.';
       }
     },
 
@@ -226,8 +281,36 @@ export default {
           await this.goToStep3();
         }
       } else if (this.step === 3) {
+        await this.verifyOtp();
+      } else if (this.step === 4) {
         await this.handleChangePassword();
       }
+    },
+
+    async verifyOtp() {
+      this.warnings.server = [];
+      const token = this.otp.trim();
+
+      if (!/^\d{8}$/.test(token)) {
+        this.warnings.server = ['Enter the 8-digit one-time PIN sent to your registered email.'];
+        return;
+      }
+
+      // Verify the random OTP generated and emailed by Supabase Auth.
+      const { error } = await supabase.auth.verifyOtp({
+        email: this.recoveryEmail,
+        token,
+        type: 'email'
+      });
+
+      if (error) {
+        this.warnings.server = [error.message || 'Invalid or expired one-time PIN.'];
+        return;
+      }
+
+      this.otpVerified = true;
+      this.warnings.server = [];
+      this.step = 4;
     },
 
     // Fetch security questions for the supplied id
@@ -281,6 +364,10 @@ export default {
       this.userId = null;
       this.step = 1;
       this.tempAnswers = { answer1: '', answer2: '', answer3: '' };
+      this.otp = '';
+      this.recoveryEmail = '';
+      this.otpSent = false;
+      this.otpVerified = false;
     }
   }
 };

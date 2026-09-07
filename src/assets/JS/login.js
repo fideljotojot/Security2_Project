@@ -196,7 +196,7 @@ export default {
         if (userData.registration_status !== 'approved') {
           await supabase.auth.signOut();
           localStorage.removeItem("user");
-          isUserAuthenticated = false;
+          setUserAuthenticated(false);
           this.warnings.general = [userData.registration_status === 'blocked'
             ? 'Your registration has been blocked.'
             : 'Your registration is still pending approval.'];

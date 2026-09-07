@@ -141,6 +141,38 @@
       </div>
 
       <div class="form-content" v-if="step === 3">
+        <h1>Verify Email</h1>
+        <div class="header">
+          <h3>One-Time PIN</h3>
+        </div>
+        <hr>
+        <div class="warning-container" v-if="warnings.server && warnings.server.length">
+          <ul>
+            <li v-for="(msg, idx) in warnings.server" :key="idx" class="warning">{{ msg }}</li>
+          </ul>
+        </div>
+        <div class="registration-box otp-box">
+          <p class="otp-message">An 8-digit PIN was sent to your registered email address.</p>
+          <div class="form-group">
+            <span class="field-warning" v-if="getWarning('otp')">{{ getWarning('otp') }}</span>
+            <input
+              type="text"
+              id="otp"
+              v-model="otp"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="8"
+              pattern="[0-9]{8}"
+              placeholder="Enter 8-digit PIN"
+              required
+              @input="otp = otp.replace(/\D/g, '').slice(0, 8)"
+            >
+            <label for="otp">One-Time PIN: <span>*</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-content" v-if="step === 4">
         <ChangePassword :id-number="idNumber" ref="changePasswordComponent"/>
       </div>
 
@@ -167,6 +199,11 @@
 
       <div class="btn-container" v-if="step === 3">
         <button type="button" @click="step = 2" class="btn">Back</button>
+        <button type="submit" class="btn" :disabled="!/^\d{8}$/.test(otp)">Verify PIN</button>
+      </div>
+
+      <div class="btn-container" v-if="step === 4">
+        <button type="button" @click="step = 3" class="btn">Back</button>
         <button type="button" @click="handleChangePassword" class="btn">Change Password</button>
       </div>
     </form>
