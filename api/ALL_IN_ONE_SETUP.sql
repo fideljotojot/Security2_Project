@@ -253,7 +253,7 @@ BEGIN
     (CASE WHEN crypt(lower(trim(p_ans2)), v_hash2) = v_hash2 THEN 1 ELSE 0 END) +
     (CASE WHEN crypt(lower(trim(p_ans3)), v_hash3) = v_hash3 THEN 1 ELSE 0 END);
 
-  RETURN v_matches >= 2;
+  RETURN v_matches = 3;
 END;
 $$;
 

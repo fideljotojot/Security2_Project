@@ -17,10 +17,10 @@
         </div>
       </div>
 
-      <div class="form-content" v-if="step === 2">
+      <div class="form-content" v-if="step === 3">
         <h1>Forgot Password</h1>
         <div class="account-info" v-if="username && userId">
-          <p><strong>Username:</strong> {{ username }}</p>
+          <p><strong>Username:</strong> {{ maskedUsername }}</p>
           <p><strong>ID:</strong> {{ userId }}</p>
         </div>
         <div class="header">
@@ -37,7 +37,7 @@
           </ul>
         </div>
         <div class="registration-box">
-          <div class="form-group">
+          <div class="form-group question-answer-row">
             <div class="form-group">
               <span class="field-warning" v-if="getWarning('answer1')">{{ getWarning('answer1') }}</span>
               <div class="password-input-wrapper answer-input-wrapper">
@@ -66,12 +66,19 @@
             </div>
 
             <div class="form-group">
-              <input type="text" id="question1" v-model="form.question1" disabled class="question-display" />
+              <span class="field-warning" v-if="getWarning('question1')">{{ getWarning('question1') }}</span>
+              <select id="question1" v-model="form.question1" @change="validateQuestion" class="question-display" required>
+                <option value="" disabled>Select question 1</option>
+                <option v-for="question in questionList" :key="`q1-${question.value}`" :value="question.value"
+                  :disabled="[form.question2, form.question3].includes(question.value)">
+                  {{ question.choice }}
+                </option>
+              </select>
               <label for="question1" class="question-label">Question 1: <span>*</span></label>
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group question-answer-row">
             <div class="form-group">
               <span class="field-warning" v-if="getWarning('answer2')">{{ getWarning('answer2') }}</span>
               <div class="password-input-wrapper answer-input-wrapper">
@@ -100,11 +107,18 @@
             </div>
 
             <div class="form-group">
-              <input type="text" id="question2" v-model="form.question2" disabled class="question-display" />
+              <span class="field-warning" v-if="getWarning('question2')">{{ getWarning('question2') }}</span>
+              <select id="question2" v-model="form.question2" @change="validateQuestion" class="question-display" required>
+                <option value="" disabled>Select question 2</option>
+                <option v-for="question in questionList" :key="`q2-${question.value}`" :value="question.value"
+                  :disabled="[form.question1, form.question3].includes(question.value)">
+                  {{ question.choice }}
+                </option>
+              </select>
               <label for="question2" class="question-label">Question 2: <span>*</span></label>
             </div>
           </div>
-            <div class="form-group">
+            <div class="form-group question-answer-row">
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('answer3')">{{ getWarning('answer3') }}</span>
                 <div class="password-input-wrapper answer-input-wrapper">
@@ -133,28 +147,29 @@
               </div>
 
               <div class="form-group">
-                <input type="text" id="question3" v-model="form.question3" disabled class="question-display" />
+                <span class="field-warning" v-if="getWarning('question3')">{{ getWarning('question3') }}</span>
+                <select id="question3" v-model="form.question3" @change="validateQuestion" class="question-display" required>
+                  <option value="" disabled>Select question 3</option>
+                  <option v-for="question in questionList" :key="`q3-${question.value}`" :value="question.value"
+                    :disabled="[form.question1, form.question2].includes(question.value)">
+                    {{ question.choice }}
+                  </option>
+                </select>
                 <label for="question3" class="question-label">Question 3: <span>*</span></label>
               </div>
             </div>
         </div>
       </div>
 
-      <div class="form-content" v-if="step === 3">
+      <div class="form-content" v-if="step === 2">
         <h1>Verify Email</h1>
         <div class="header">
           <h3>One-Time PIN</h3>
         </div>
         <hr>
-        <div class="warning-container" v-if="warnings.server && warnings.server.length">
-          <ul>
-            <li v-for="(msg, idx) in warnings.server" :key="idx" class="warning">{{ msg }}</li>
-          </ul>
-        </div>
         <div class="registration-box otp-box">
-          <p class="otp-message">An 8-digit PIN was sent to your registered email address.</p>
+            <p class="otp-message">An 8-digit PIN was sent to your registered email address.</p>
           <div class="form-group">
-            <span class="field-warning" v-if="getWarning('otp')">{{ getWarning('otp') }}</span>
             <input
               type="text"
               id="otp"
@@ -168,6 +183,7 @@
               @input="otp = otp.replace(/\D/g, '').slice(0, 8)"
             >
             <label for="otp">One-Time PIN: <span>*</span></label>
+            <span class="field-warning" v-if="getWarning('otp')">{{ getWarning('otp') }}</span>
           </div>
         </div>
       </div>
@@ -186,19 +202,18 @@
         </button>
       </div>
 
-      <div class="btn-container" v-if="step === 2">
-        <button type="button" @click="resetQuestionsAndBack" class="btn">Back</button>
+      <div class="btn-container" v-if="step === 3">
+        <button type="button" @click="step = 2" class="btn">Back</button>
         <button type="submit"
-          @click="goToStep3"
           class="btn"
-          :disabled="!isStep2Valid || isStep2Loading"
+          :disabled="isStep2Loading"
         >
           Next
         </button>
       </div>
 
-      <div class="btn-container" v-if="step === 3">
-        <button type="button" @click="step = 2" class="btn">Back</button>
+      <div class="btn-container" v-if="step === 2">
+        <button type="button" @click="step = 1" class="btn">Back</button>
         <button type="submit" class="btn" :disabled="!/^\d{8}$/.test(otp)">Verify PIN</button>
       </div>
 

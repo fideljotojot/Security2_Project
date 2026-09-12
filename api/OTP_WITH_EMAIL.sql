@@ -6,6 +6,67 @@
 
 CREATE EXTENSION IF NOT EXISTS http WITH SCHEMA extensions;
 
+-- Return the registered Auth email after the ID number is confirmed.
+-- This supports the recovery order: ID number -> OTP -> security questions.
+CREATE OR REPLACE FUNCTION public.get_recovery_email_by_id(p_id_number TEXT)
+RETURNS TEXT
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT au.email
+  FROM public.users u
+  JOIN auth.users au ON au.id = u.id
+  WHERE u.id_number = p_id_number
+  LIMIT 1;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_recovery_email_by_id(TEXT) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.verify_otp_code(p_id_number TEXT, p_code VARCHAR)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID;
+  v_otp_id BIGINT;
+BEGIN
+  SELECT id INTO v_user_id FROM public.users WHERE id_number = p_id_number;
+
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'User not found');
+  END IF;
+
+  SELECT id INTO v_otp_id
+  FROM public.otp_codes
+  WHERE user_id = v_user_id
+    AND code = p_code
+    AND verified_at IS NULL
+    AND expires_at > now()
+    AND attempts < 3
+  ORDER BY created_at DESC
+  LIMIT 1;
+
+  IF v_otp_id IS NULL THEN
+    UPDATE public.otp_codes
+    SET attempts = attempts + 1
+    WHERE id = (
+      SELECT id FROM public.otp_codes
+      WHERE user_id = v_user_id AND verified_at IS NULL AND expires_at > now()
+      ORDER BY created_at DESC LIMIT 1
+    );
+    RETURN jsonb_build_object('ok', false, 'error', 'Invalid or expired OTP code');
+  END IF;
+
+  UPDATE public.otp_codes SET verified_at = now() WHERE id = v_otp_id;
+  RETURN jsonb_build_object('ok', true, 'message', 'OTP verified successfully');
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.verify_otp_code(TEXT, VARCHAR) TO anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.send_otp_code(p_id_number TEXT, p_email TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql

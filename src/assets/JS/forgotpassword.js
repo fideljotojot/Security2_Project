@@ -42,9 +42,15 @@ export default {
         {choice: 'What is your favorite movie or TV show?', value: 'What is your favorite movie or TV show?'},
         {choice: 'What is your favorite book?', value: 'What is your favorite book?'},
       ],
+      savedQuestions: [],
     };
   },
   computed: {
+    maskedUsername() {
+      const value = String(this.username || '');
+      if (value.length <= 2) return value ? `${value[0]}*` : '';
+      return `${value[0]}${'*'.repeat(value.length - 2)}${value[value.length - 1]}`;
+    },
     isIdValid() {
       return (
         this.idNumber.trim() !== '' &&
@@ -111,13 +117,81 @@ export default {
       this.isStep2Loading = false;
     },
 
-    async goToStep3() {
+    validateQuestion(evt) {
+      this.warnings[evt.target.id] = evt.target.value
+        ? []
+        : ['Please select a question.'];
+      const answerId = evt.target.id.replace('question', 'answer');
+      this.warnings[answerId] = [];
+      this.isStep2Loading = false;
+    },
+
+    async goToStep4() {
       this.isStep2Loading = true;
       this.warnings.server = [];
+      this.warnings.otp = [];
+
+      const selectedQuestions = [this.form.question1, this.form.question2, this.form.question3];
+      const questionKeys = ['question1', 'question2', 'question3'];
+      let invalidQuestion = false;
+
+      ['answer1', 'answer2', 'answer3'].forEach((key) => {
+        this.warnings[key] = [];
+      });
+
+      selectedQuestions.forEach((question, index) => {
+        if (!question) {
+          this.warnings[questionKeys[index]] = ['Please select a question.'];
+          invalidQuestion = true;
+        } else if (this.savedQuestions[index] !== question) {
+          this.warnings[questionKeys[index]] = [`This must match the saved Question ${index + 1}.`];
+          invalidQuestion = true;
+        } else {
+          this.warnings[questionKeys[index]] = [];
+        }
+      });
+
+      if (new Set(selectedQuestions.filter(Boolean)).size !== selectedQuestions.filter(Boolean).length) {
+        questionKeys.forEach((key) => {
+          this.warnings[key] = ['Please choose different questions.'];
+        });
+        invalidQuestion = true;
+      }
+
+      const answers = [this.form.answer1, this.form.answer2, this.form.answer3];
+      answers.forEach((answer, index) => {
+        const key = `answer${index + 1}`;
+        const value = String(answer || '').trim();
+        this.warnings[key] = value ? [] : ['Answer is required.'];
+        if (!value) invalidQuestion = true;
+      });
+
+      if (invalidQuestion) {
+        for (let index = 0; index < 3; index += 1) {
+          if (this.warnings[questionKeys[index]].length > 0 && answers[index]) {
+            this.warnings[`answer${index + 1}`] = [
+              `Answer ${index + 1} cannot be verified with the selected question.`
+            ];
+          } else if (this.warnings[questionKeys[index]].length === 0 && answers[index]) {
+            const { data: answerMatches } = await supabase.rpc('verify_security_answer', {
+              p_id_number: this.idNumber,
+              p_question: selectedQuestions[index],
+              p_answer: answers[index],
+              p_position: index
+            });
+            if (!answerMatches) this.warnings[`answer${index + 1}`] = [`Answer ${index + 1} is incorrect.`];
+          }
+        }
+        this.isStep2Loading = false;
+        return;
+      }
 
       try {
-        const { data: matched, error } = await supabase.rpc('verify_security_answers_only', {
+        const { data: matched, error } = await supabase.rpc('verify_security_answers_selected', {
           p_id_number: this.idNumber,
+          p_question1: this.form.question1,
+          p_question2: this.form.question2,
+          p_question3: this.form.question3,
           p_ans1: this.form.answer1,
           p_ans2: this.form.answer2,
           p_ans3: this.form.answer3
@@ -130,53 +204,16 @@ export default {
         }
 
         if (!matched) {
-          this.warnings.server = ['Your answers do not match our records.'];
+          this.warnings.answer1 = ['Answer 1 is incorrect.'];
+          this.warnings.answer2 = ['Answer 2 is incorrect.'];
+          this.warnings.answer3 = ['Answer 3 is incorrect.'];
+          this.warnings.server = [];
           this.isStep2Loading = true;
           return;
         }
 
-        const { data: recoveryEmail, error: emailError } = await supabase.rpc('get_recovery_email_after_answers', {
-          p_id_number: this.idNumber,
-          p_ans1: this.form.answer1,
-          p_ans2: this.form.answer2,
-          p_ans3: this.form.answer3
-        });
-
-        if (emailError || !recoveryEmail) {
-          this.warnings.server = [emailError?.message || 'Unable to send a verification code.'];
-          return;
-        }
-
-        // Ask Supabase Auth to generate and send a random email OTP.
-        // The email must already belong to an Auth user.
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: recoveryEmail,
-          options: {
-            shouldCreateUser: false
-          }
-        });
-
-        if (otpError) {
-          this.warnings.server = [otpError.message || 'Unable to send a verification code.'];
-          return;
-        }
-
-        // Store answers temporarily in memory for the recovery session.
-        this.tempAnswers = {
-          answer1: this.form.answer1,
-          answer2: this.form.answer2,
-          answer3: this.form.answer3
-        };
-
-        this.form.answer1 = '';
-        this.form.answer2 = '';
-        this.form.answer3 = '';
-        this.recoveryEmail = recoveryEmail;
-        this.otp = '';
-        this.otpSent = true;
-        this.otpVerified = false;
         this.warnings.server = [];
-        this.step = 3;
+        this.step = 4;
       } catch (err) {
         console.error(err);
         this.warnings.server = ['Network or database error occurred.'];
@@ -215,28 +252,6 @@ export default {
 
         const newPassword = validationResult.newPassword;
 
-        // Confirm that the OTP session belongs to the account being recovered.
-        const { data: authUserData, error: authUserError } =
-          await supabase.auth.getUser();
-
-        const authEmail = authUserData?.user?.email?.trim().toLowerCase();
-        const recoveryEmail = this.recoveryEmail.trim().toLowerCase();
-
-        if (authUserError || !authEmail) {
-          child.error = 'Your recovery session has expired. Please request a new OTP.';
-          return;
-        }
-
-        if (authEmail !== recoveryEmail) {
-          console.error('Recovery account mismatch', {
-            authEmail,
-            recoveryEmail,
-          });
-          child.error = 'The recovery email does not match this account. Please start again.';
-          return;
-        }
-
-        // 2. Update the authenticated Supabase Auth user's password.
         const { error: resetError } = await supabase.auth.updateUser({
           password: newPassword
         });
@@ -276,11 +291,11 @@ export default {
         if (this.validateIdNumber()) {
           await this.fetchQuestions();
         }
-      } else if (this.step === 2) {
-        if (this.isStep2Valid && !this.isStep2Loading) {
-          await this.goToStep3();
-        }
       } else if (this.step === 3) {
+        if (!this.isStep2Loading) {
+          await this.goToStep4();
+        }
+      } else if (this.step === 2) {
         await this.verifyOtp();
       } else if (this.step === 4) {
         await this.handleChangePassword();
@@ -289,14 +304,14 @@ export default {
 
     async verifyOtp() {
       this.warnings.server = [];
+      this.warnings.otp = [];
       const token = this.otp.trim();
 
       if (!/^\d{8}$/.test(token)) {
-        this.warnings.server = ['Enter the 8-digit one-time PIN sent to your registered email.'];
+        this.warnings.otp = ['Enter the 8-digit one-time PIN sent to your registered email.'];
         return;
       }
 
-      // Verify the random OTP generated and emailed by Supabase Auth.
       const { error } = await supabase.auth.verifyOtp({
         email: this.recoveryEmail,
         token,
@@ -304,13 +319,13 @@ export default {
       });
 
       if (error) {
-        this.warnings.server = [error.message || 'Invalid or expired one-time PIN.'];
+        this.warnings.otp = [error.message || 'Invalid or expired one-time PIN.'];
         return;
       }
 
       this.otpVerified = true;
       this.warnings.server = [];
-      this.step = 4;
+      this.step = 3;
     },
 
     // Fetch security questions for the supplied id
@@ -337,18 +352,51 @@ export default {
         }
 
         const questions = data.map(row => row.question);
+        this.savedQuestions = questions;
         const username = data[0].username;
         const userId = data[0].user_id;
 
-        this.questionList = questions.map(q => ({ choice: q, value: q }));
+        // Keep the complete registration question list in the dropdown.
+        // The selected question is verified against this user's saved record
+        // by verify_security_answers_selected.
         this.userId = this.idNumber;
         this.username = username;
 
-        this.form.question1 = questions[0] || '';
-        this.form.question2 = questions[1] || '';
-        this.form.question3 = questions[2] || '';
+        // Keep the questions blank so the user must select each one.
+        this.form.question1 = '';
+        this.form.question2 = '';
+        this.form.question3 = '';
         this.questionsLoaded = true;
         this.message = '';
+        const { data: recoveryEmail, error: emailError } = await supabase.rpc('get_recovery_email_by_id', {
+          p_id_number: this.idNumber
+        });
+
+        if (emailError || !recoveryEmail) {
+          this.warnings.idNumber = [emailError?.message || 'Unable to send a verification code.'];
+          return;
+        }
+
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: recoveryEmail,
+          options: { shouldCreateUser: false }
+        });
+
+        if (otpError) {
+          // The request may have reached Supabase and sent the email even if
+          // the browser loses the response (ERR_CONNECTION_CLOSED).
+          const requestFailed = /fetch|connection closed|network/i.test(otpError.message || '');
+          if (!requestFailed) {
+            this.warnings.idNumber = [otpError.message || 'Unable to send a verification code.'];
+            return;
+          }
+          this.warnings.server = ['The OTP may have been sent. Enter it below if you received it.'];
+        }
+
+        this.recoveryEmail = recoveryEmail;
+        this.otp = '';
+        this.otpSent = true;
+        this.otpVerified = false;
         this.step = 2;
       } catch (err) {
         console.error(err);

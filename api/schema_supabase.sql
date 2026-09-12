@@ -260,7 +260,7 @@ DECLARE
   v_user_id UUID;
   v_verified BOOLEAN;
 BEGIN
-  -- 1. Check answers (at least two of three must match)
+  -- 1. Check all three answers against their corresponding questions
   SELECT verify_security_answers_only(p_id_number, p_ans1, p_ans2, p_ans3) INTO v_verified;
   
   IF NOT v_verified THEN
