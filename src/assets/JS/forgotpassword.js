@@ -22,6 +22,8 @@ export default {
       recoveryEmail: '',
       otpSent: false,
       otpVerified: false,
+      rateLimitSeconds: 0,
+      rateLimitTimer: null,
       tempAnswers: {
         answer1: '',
         answer2: '',
@@ -85,8 +87,33 @@ export default {
     getWarning(id) {
       const w = this.warnings[id];
       if (!w) return '';
-      if (Array.isArray(w)) return w[0] || '';
-      return w;
+      const message = Array.isArray(w) ? (w[0] || '') : w;
+
+      if (id === 'idNumber' && this.rateLimitSeconds > 0 && /only request this after \d+ seconds?/i.test(message)) {
+        return `For security purposes, you can only request this after ${this.rateLimitSeconds} seconds.`;
+      }
+
+      return message;
+    },
+    startRateLimitCountdown(seconds) {
+      if (this.rateLimitTimer) clearInterval(this.rateLimitTimer);
+
+      this.rateLimitSeconds = Math.max(0, Number.parseInt(seconds, 10) || 0);
+      if (!this.rateLimitSeconds) return;
+
+      this.rateLimitTimer = setInterval(() => {
+        this.rateLimitSeconds -= 1;
+        if (this.rateLimitSeconds <= 0) {
+          clearInterval(this.rateLimitTimer);
+          this.rateLimitTimer = null;
+          this.rateLimitSeconds = 0;
+
+          // The rate-limit message is no longer relevant once the user can retry.
+          if (this.warnings.idNumber?.some?.((message) => /only request this after \d+ seconds?/i.test(message))) {
+            this.warnings.idNumber = [];
+          }
+        }
+      }, 1000);
     },
     containsSymbol(value) {
       return /[^a-zA-Z0-9\s]/.test(value);
@@ -204,11 +231,35 @@ export default {
         }
 
         if (!matched) {
-          this.warnings.answer1 = ['Answer 1 is incorrect.'];
-          this.warnings.answer2 = ['Answer 2 is incorrect.'];
-          this.warnings.answer3 = ['Answer 3 is incorrect.'];
+          const answerChecks = await Promise.all(
+            selectedQuestions.map((question, index) => supabase.rpc('verify_security_answer', {
+              p_id_number: this.idNumber,
+              p_question: question,
+              p_answer: answers[index],
+              p_position: index
+            }))
+          );
+
+          const correctAnswers = answerChecks.filter(({ data: answerMatches }) => answerMatches).length;
+
+          if (correctAnswers >= 2) {
+            this.warnings.answer1 = [];
+            this.warnings.answer2 = [];
+            this.warnings.answer3 = [];
+            this.warnings.server = [];
+            this.isStep2Loading = false;
+            this.step = 4;
+            return;
+          }
+
+          answerChecks.forEach(({ data: answerMatches, error: answerError }, index) => {
+            const key = `answer${index + 1}`;
+            this.warnings[key] = answerError || !answerMatches
+              ? [`Answer ${index + 1} is incorrect.`]
+              : [];
+          });
           this.warnings.server = [];
-          this.isStep2Loading = true;
+          this.isStep2Loading = false;
           return;
         }
 
@@ -332,6 +383,11 @@ export default {
     async fetchQuestions() {
       this.message = '';
       this.warnings.idNumber = [];
+      this.rateLimitSeconds = 0;
+      if (this.rateLimitTimer) {
+        clearInterval(this.rateLimitTimer);
+        this.rateLimitTimer = null;
+      }
 
       if (!this.validateIdNumber()) {
         this.warnings.idNumber = ['Please enter your ID number in the format 0000-0000.'];
@@ -387,6 +443,8 @@ export default {
           // the browser loses the response (ERR_CONNECTION_CLOSED).
           const requestFailed = /fetch|connection closed|network/i.test(otpError.message || '');
           if (!requestFailed) {
+            const rateLimitMatch = (otpError.message || '').match(/only request this after (\d+) seconds?/i);
+            if (rateLimitMatch) this.startRateLimitCountdown(rateLimitMatch[1]);
             this.warnings.idNumber = [otpError.message || 'Unable to send a verification code.'];
             return;
           }
@@ -417,5 +475,8 @@ export default {
       this.otpSent = false;
       this.otpVerified = false;
     }
+  },
+  beforeUnmount() {
+    if (this.rateLimitTimer) clearInterval(this.rateLimitTimer);
   }
 };

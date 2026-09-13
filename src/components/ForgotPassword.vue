@@ -167,9 +167,10 @@
           <h3>One-Time PIN</h3>
         </div>
         <hr>
-        <div class="registration-box otp-box">
+        <div class="registration-box">
             <p class="otp-message">An 8-digit PIN was sent to your registered email address.</p>
           <div class="form-group">
+            <span class="field-warning" v-if="getWarning('otp')">{{ getWarning('otp') }}</span>
             <input
               type="text"
               id="otp"
@@ -183,7 +184,6 @@
               @input="otp = otp.replace(/\D/g, '').slice(0, 8)"
             >
             <label for="otp">One-Time PIN: <span>*</span></label>
-            <span class="field-warning" v-if="getWarning('otp')">{{ getWarning('otp') }}</span>
           </div>
         </div>
       </div>
@@ -197,8 +197,8 @@
         <button type="button"
           @click="() => { if (validateIdNumber()) fetchQuestions(); }"
           class="btn"
-          :disabled="!isIdValid">
-          Next
+          :disabled="!isIdValid || rateLimitSeconds > 0">
+          {{ rateLimitSeconds > 0 ? `Wait ${rateLimitSeconds}s` : 'Next' }}
         </button>
       </div>
 

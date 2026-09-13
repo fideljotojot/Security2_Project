@@ -27,16 +27,10 @@
 
   </div>
 
-  <div v-if="newPassword" class="password-strength-container">
-    <p class="strength-text">{{ passwordStrengthLabel }}</p>
-    <div class="strength-bar-background">
-      <div class="strength-bar-fill" :class="passwordStrengthClass" :style="{ width: strengthWidth }"></div>
-    </div>
-  </div>
 
   <!-- New Password -->
   <div class="form-group password-group">
-    <span class="field-warning" v-if="getWarning('newPassword')">{{ getWarning('newPassword') }}</span>
+    <label for="newPassword">New Password</label>
     <div class="password-input-wrapper">
       <input
         :type="showNewPassword ? 'text' : 'password'"
@@ -77,12 +71,17 @@
         </svg>
       </span>
     </div>
-    <label for="newPassword">New Password</label>
+    <div v-if="newPassword" class="password-strength-container">
+      <p class="strength-text">{{ passwordStrengthLabel }}</p>
+      <div class="strength-bar-background">
+        <div class="strength-bar-fill" :class="passwordStrengthClass" :style="{ width: strengthWidth }"></div>
+      </div>
+    </div>
+    <span class="field-warning" v-if="getWarning('newPassword')">{{ getWarning('newPassword') }}</span>
   </div>
 
   <!-- Confirm Password -->
-  <div class="form-group password-group">
-    <span class="field-warning" v-if="getWarning('confirmPassword')">{{ getWarning('confirmPassword') }}</span>
+  <div class="form-group password-group"><label for="confirmPassword">Confirm New Password</label>
     <div class="password-input-wrapper">
       <input
         :type="showConfirmPassword ? 'text' : 'password'"
@@ -123,7 +122,7 @@
         </svg>
       </span>
     </div>
-    <label for="confirmPassword">Confirm New Password</label>
+    <span class="field-warning" v-if="getWarning('confirmPassword')">{{ getWarning('confirmPassword') }}</span>
   </div>
 </template>
 
