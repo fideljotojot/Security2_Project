@@ -55,4 +55,4 @@
   </main>
 </template>
 <script>export default { name: 'UserDashboard' }</script>
-<style src="../assets/CSS/landing_page.css"></style>
+<style src="../assets/CSS/landing_page.css" scoped></style>

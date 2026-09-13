@@ -13,6 +13,7 @@ export default {
       showNotificationModal: false,
       showDeleteModal: false,
       deletePassword: '',
+      showDeletePassword: false,
       pendingDeleteUser: null,
       isDeleting: false,
       showPrivilegeModal: false,
@@ -319,7 +320,7 @@ export default {
         lastName: data.last_name || '', suffix: data.suffix || '', birthdate: data.birthdate || '', age: data.age || '',
         sex: data.sex || 'male', purok: data.purok || '', barangay: data.barangay || '', city: data.city || '',
         province: data.province || '', country: data.country || '', zip: data.zip || '', username: data.username || '',
-        password: '', repassword: '', email: data.email || '', role: data.role || 'user'
+        password: '', repassword: '', email: data.email || '', role: data.role || 'user', position: data.position || ''
       };
     },
     async openEditModal(user) {
@@ -340,7 +341,7 @@ export default {
         lastName: data.last_name || '', suffix: data.suffix || '', birthdate: data.birthdate || '', age: data.age || '',
         sex: data.sex || 'male', purok: data.purok || '', barangay: data.barangay || '', city: data.city || '',
         province: data.province || '', country: data.country || '', zip: data.zip || '', username: data.username || '',
-        password: '', repassword: '', email: data.email || '', role: data.role || 'user'
+        password: '', repassword: '', email: data.email || '', role: data.role || 'user', position: data.position || ''
       };
       this.originalUniqueFields = { id: this.form.idNumber, username: this.form.username, email: this.form.email };
     },
@@ -375,6 +376,7 @@ export default {
         repassword: '',
         email: '',
         role: 'user'
+        , position: ''
       };
       this.warnings = {};
     },
@@ -734,7 +736,7 @@ export default {
             p_age: this.form.age ? parseInt(this.form.age, 10) : null, p_sex: this.form.sex,
             p_purok: this.form.purok.trim(), p_barangay: this.form.barangay.trim(), p_city: this.form.city.trim(),
             p_province: this.form.province.trim(), p_country: this.form.country.trim(), p_zip: String(this.form.zip || '').trim(),
-            p_role: this.form.role, p_password: this.form.password || null
+            p_role: this.form.role, p_position: this.form.role === 'user' ? (this.form.position || '') : null, p_password: this.form.password || null
           });
           if (error) throw error;
           this.showAddModal = false;

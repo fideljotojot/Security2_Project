@@ -100,6 +100,27 @@ main {
   user-select: none;
 }
 
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1em;
+  background: #edeaea !important;
+  backdrop-filter: blur(3px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.container h1 {
+  font: 5.5em "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
 .logo-container {
   flex: 1;
   display: flex;
@@ -107,9 +128,9 @@ main {
 }
 
 .logo-container img {
-  margin: auto;
   width: 30em;
   border-radius: 1em;
+  background: #fcfcfc;
   box-shadow: 0 12px 40px color-mix(in srgb, var(--color-primary) 15%, rgba(0,0,0,0.4));
 }
 
@@ -118,11 +139,13 @@ main {
   -webkit-mask: url('@/assets/images/icon.png') no-repeat center / contain;
   mask: url('@/assets/images/icon.png') no-repeat center / contain;
   display: inline-block;
+  transition: filter 0.3s ease, background-color 0.3s ease;
 }
 
 .mask:hover {
-  background-color: #4e4e4e;
-  transition: 0.3s ease;
+  background-color: #fafafa;
+  filter: drop-shadow(0 0 6px rgba(172, 221, 176, 0.9))
+          drop-shadow(0 8px 14px rgba(0, 0, 0, 0.45));
 }
 
 h1 {
@@ -335,6 +358,20 @@ a {
 .password-input-wrapper .toggle-password:hover,
 .password-input-wrapper .eye-icon:hover {
   color: #576b58;
+}
+
+.delete-password-wrapper {
+  width: 100%;
+}
+
+.delete-password-wrapper input {
+  padding-right: 3rem;
+}
+
+.delete-password-wrapper .toggle-password {
+  border: 0;
+  background: transparent;
+  font-size: 1rem;
 }
 
 .btn[disabled] {

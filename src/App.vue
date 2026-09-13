@@ -285,11 +285,11 @@ export default {
 
     </main>
 
-    <!-- 🔹 FOOTER -->
+    <!-- FOOTER -->
     <footer>
       <p>&copy; 2025 CSUCC - All Rights Reserved</p>
     </footer>
   </div>
 </template>
 
-<style src="./assets/CSS/app.css" scoped></style>
+<style src="./assets/CSS/app.css"></style>

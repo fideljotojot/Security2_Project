@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   birthdate DATE NULL,
   age INT NULL,
   sex VARCHAR(10) CHECK (sex IN ('male', 'female')) NULL
+  ,position VARCHAR(150) NULL
 );
 
 -- 3. Addresses Table

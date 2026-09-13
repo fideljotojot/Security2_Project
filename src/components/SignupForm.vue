@@ -337,4 +337,4 @@
 
 <style src="../assets/CSS/signup.css" scoped></style>
 
-<style src="../assets/CSS/app.css"></style>
+<style src="../assets/CSS/app.css" scoped></style>

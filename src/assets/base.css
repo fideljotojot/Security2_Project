@@ -121,7 +121,7 @@ i {
 
 .notification-card {
   position: relative;
-  top: 0%;
+  top: -25%;
   width: min(90vw, fit-content);
   padding: 2em;
   border-radius: 12px;
@@ -175,6 +175,7 @@ i {
 
 .notification-card p {
   color: #555;
+  font-size: .8rem;
 }
 
 .notification-card .btn {

@@ -247,6 +247,10 @@
                 </select>
                 <label for="role">Role: <span>*</span></label>
               </div>
+              <div v-if="form.role === 'user'" class="form-group">
+                <input type="text" id="position" v-model="form.position" :readonly="isViewing">
+                <label for="position">Position:</label>
+              </div>
 
               <!-- Password -->
               <div v-if="!isViewing" class="form-group">
@@ -354,14 +358,24 @@
           <h3 id="delete-title">Confirm User Deletion</h3>
         </div>
         <p>Enter your superadmin password to delete this user. This action cannot be undone.</p>
-        <input
-          v-model="deletePassword"
-          type="password"
-          class="delete-password-input"
-          placeholder="Superadmin password"
-          autocomplete="current-password"
-          @keyup.enter="confirmDeleteUser"
-        >
+        <div class="password-input-wrapper delete-password-wrapper">
+          <input
+            v-model="deletePassword"
+            :type="showDeletePassword ? 'text' : 'password'"
+            class="delete-password-input"
+            placeholder="Superadmin password"
+            autocomplete="current-password"
+            @keyup.enter="confirmDeleteUser"
+          >
+          <button
+            type="button"
+            class="toggle-password"
+            :aria-label="showDeletePassword ? 'Hide password' : 'Show password'"
+            @click="showDeletePassword = !showDeletePassword"
+          >
+            <i :class="showDeletePassword ? 'fi fi-br-eye-crossed' : 'fi fi-br-eye'" aria-hidden="true"></i>
+          </button>
+        </div>
         <div class="btn-container">
           <button type="button" class="btn btn-secondary" @click="closeDeleteModal">Cancel</button>
           <button type="button" class="btn btn-primary" :disabled="!deletePassword || isDeleting" @click="confirmDeleteUser">
