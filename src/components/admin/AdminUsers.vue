@@ -136,10 +136,12 @@
           <div v-if="editForm.role === 'user'" class="form-group"><label for="admin-edit-position">Position:</label><input
               id="admin-edit-position" v-model="editForm.position" :readonly="viewing"></div>
           <div v-if="!viewing" class="form-group"><label for="admin-edit-password">Password: <span>(Leave blank to keep
-                current)</span></label><input id="admin-edit-password" type="password" v-model="editForm.password">
+                current)</span></label><input id="admin-edit-password" type="password" v-model="editForm.password"
+              :disabled="!hasPermission(editing, 'reset_passwords')">
           </div>
           <div v-if="!viewing" class="form-group"><label for="admin-edit-repassword">Re-enter Password:</label><input
-              id="admin-edit-repassword" type="password" v-model="editForm.repassword"></div>
+              id="admin-edit-repassword" type="password" v-model="editForm.repassword"
+              :disabled="!hasPermission(editing, 'reset_passwords')"></div>
         </div>
         <div class="btn-container"><button v-if="editStep === 'personal'" class="btn btn-secondary"
             @click="editing = null">{{ viewing ? 'Close' : 'Cancel' }}</button><button v-if="editStep === 'account'"
