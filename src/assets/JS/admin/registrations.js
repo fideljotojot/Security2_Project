@@ -76,6 +76,7 @@ export default {
       this.page = 1;
     },
     async updateStatus(registration, status) {
+      if (!this.hasPermission('manage_registrations')) return;
       this.isUpdating = true;
       const { error } = await supabase.rpc('update_registration_status', {
         p_user_id: registration.user_id,
@@ -87,6 +88,12 @@ export default {
         return;
       }
       await this.fetchRegistrations();
+    },
+    hasPermission(permission) {
+      return this.registrations.some(registration =>
+        Array.isArray(registration.viewer_permissions)
+          && registration.viewer_permissions.includes(permission)
+      );
     },
     formatDate(value) {
       return value ? new Date(value).toLocaleDateString() : '-';

@@ -12,6 +12,9 @@ BEGIN
   IF p_user_id = auth.uid() THEN
     RAISE EXCEPTION 'You cannot change your own privileges';
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = p_user_id AND role IN ('user', 'admin')) THEN
+    RAISE EXCEPTION 'Only user and admin accounts can have their privileges changed';
+  END IF;
   UPDATE public.users SET role = p_role WHERE id = p_user_id;
   RETURN FOUND;
 END;

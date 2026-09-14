@@ -46,11 +46,11 @@
             <td>{{ formatDate(registration.created_at) }}</td>
             <td class="registration-actions">
               <button type="button" class="unlock-btn" title="Approve registration" aria-label="Approve registration"
-                :disabled="isUpdating" @click="updateStatus(registration, 'approved')">
+                :disabled="isUpdating || !hasPermission('manage_registrations')" @click="updateStatus(registration, 'approved')">
                 <i class="fi fi-rc-check-circle" aria-hidden="true"></i>
               </button>
               <button type="button" class="block-action-btn reject-btn" title="Block registration" aria-label="Block registration"
-                :disabled="isUpdating" @click="updateStatus(registration, 'blocked')">
+                :disabled="isUpdating || !hasPermission('manage_registrations')" @click="updateStatus(registration, 'blocked')">
                 <i class="fi fi-br-cross-circle" aria-hidden="true"></i>
               </button>
             </td>

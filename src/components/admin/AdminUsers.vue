@@ -46,12 +46,14 @@
             <td style="text-transform: capitalize;">{{ userStatus(user) }}</td>
             <td class="actions-container"><button class="view-btn" @click="view(user)" title="View user details"
                 aria-label="View user"><i class="fi fi-br-eye"></i></button><button class="edit-btn" @click="edit(user)"
-                :disabled="userStatus(user) === 'pending'" title="Edit user"><i class="fi fi-br-edit"></i></button><button v-if="userStatus(user) !== 'blocked'"
-                class="block-action-btn" :disabled="userStatus(user) === 'pending'" @click="setStatus(user, 'blocked')" title="Block user"><i
+                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'manage_account_info')" title="Edit user"><i class="fi fi-br-edit"></i></button><button v-if="userStatus(user) !== 'blocked'"
+                class="block-action-btn" :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'block_accounts')" @click="setStatus(user, 'blocked')" title="Block user"><i
                   class="fi fi-br-user-forbidden"></i></button><button v-else class="unlock-btn"
-                :disabled="userStatus(user) === 'pending'" @click="setStatus(user, 'approved')" title="Unblock user"><i
+                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'block_accounts')" @click="setStatus(user, 'approved')" title="Unblock user"><i
                   class="fi fi-br-user-check"></i></button><button class="delete-btn" @click="requestDelete(user)"
-                :disabled="userStatus(user) === 'pending'" title="Request deletion"><i class="fi fi-br-trash"></i></button></td>
+                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'delete_accounts')"
+                :title="hasPermission(user, 'delete_accounts') ? 'Request deletion' : 'Deletion privilege disabled'">
+                <i class="fi fi-br-trash"></i></button></td>
           </tr>
           <tr v-if="!filtered.length">
             <td colspan="6" class="empty-state">No users found.</td>

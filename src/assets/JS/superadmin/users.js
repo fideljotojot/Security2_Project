@@ -19,6 +19,14 @@ export default {
       showPrivilegeModal: false,
       privilegeUser: null,
       privilegeRole: 'user',
+      selectedPrivileges: [],
+      availablePrivileges: [
+        { key: 'manage_registrations', label: 'Can Manage Registrations' },
+        { key: 'manage_account_info', label: 'Can Manage Account Info' },
+        { key: 'block_accounts', label: 'Can Block/Unblock' },
+        { key: 'reset_passwords', label: 'Can Reset Password' },
+        { key: 'delete_accounts', label: 'Can Delete' }
+      ],
       isUpdatingPrivilege: false,
       addedUserRole: 'user',
       notificationTitle: 'User Added Successfully',
@@ -191,7 +199,9 @@ export default {
       const { data, error } = await supabase.rpc('get_all_users');
       if (error) {
         console.error('Error fetching users:', error);
+        this.errorMessage = error.message || 'Unable to load users.';
       } else {
+        this.errorMessage = '';
         this.users = data;
       }
     },
@@ -204,6 +214,10 @@ export default {
         return 'blocked';
       }
       return 'active';
+    },
+    canManagePrivileges(user) {
+      // Only active admin accounts can have individual privileges managed.
+      return this.getUserStatus(user) !== 'pending' && user.role === 'admin';
     },
     async toggleLockout(user) {
       const targetState = !user.is_locked_out;
@@ -224,21 +238,31 @@ export default {
       this.showDeleteModal = true;
     },
     openPrivilegeModal(user) {
+      if (!this.canManagePrivileges(user)) return;
       this.privilegeUser = user;
-      this.privilegeRole = user.role === 'admin' ? 'user' : 'admin';
+      // The modal edits an account's capabilities. Keep an admin account in
+      // the admin role while its individual privileges are being edited.
+      this.privilegeRole = user.role === 'admin' ? 'admin' : 'user';
+      this.selectedPrivileges = user.role === 'admin'
+        ? (Array.isArray(user.admin_permissions)
+          ? user.admin_permissions
+          : this.availablePrivileges.map(privilege => privilege.key))
+        : [];
       this.showPrivilegeModal = true;
     },
     closePrivilegeModal() {
       if (this.isUpdatingPrivilege) return;
       this.showPrivilegeModal = false;
       this.privilegeUser = null;
+      this.selectedPrivileges = [];
     },
     async updatePrivilege() {
       if (!this.privilegeUser || this.isUpdatingPrivilege) return;
       this.isUpdatingPrivilege = true;
       const { error } = await supabase.rpc('set_user_role', {
         p_user_id: this.privilegeUser.user_id,
-        p_role: this.privilegeRole
+        p_role: this.privilegeRole,
+        p_permissions: this.selectedPrivileges
       });
       this.isUpdatingPrivilege = false;
       this.showPrivilegeModal = false;

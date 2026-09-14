@@ -7,6 +7,7 @@ export default {
   methods: {
     async load() { const { data, error } = await supabase.rpc('get_admin_users'); if (error) this.message = error.message; else this.users = data || []; },
     userStatus(u) { return u.registration_status === 'pending' ? 'pending' : (u.registration_status === 'blocked' || u.is_locked_out ? 'blocked' : 'active'); },
+    hasPermission(u, permission) { return u.role === 'superadmin' || (Array.isArray(u.viewer_permissions) && u.viewer_permissions.includes(permission)); },
     async setStatus(u, status) { const { error } = await supabase.rpc('admin_update_user_status', { p_user_id: u.user_id, p_status: status }); if (error) this.message = error.message; else await this.load(); },
     async view(u) { const { data, error } = await supabase.rpc('get_full_user_for_admin_edit', { p_user_id: u.user_id }); if (error) this.message = error.message; else { this.editing = u; this.viewing = true; this.editForm = { ...data, password: '', repassword: '' }; this.editStep = 'personal'; } },
     async edit(u) { const { data, error } = await supabase.rpc('get_full_user_for_admin_edit', { p_user_id: u.user_id }); if (error) this.message = error.message; else { this.editing = u; this.viewing = false; this.editForm = { ...data, password: '', repassword: '' }; this.editStep = 'personal'; } },

@@ -116,13 +116,16 @@ i {
 .notification-overlay {
   z-index: 1100;
   width: 100%;
-  align-items: start !important;
+  align-items: center !important;
+  overflow-y: auto;
 }
 
 .notification-card {
   position: relative;
-  top: -25%;
+  top: 0;
   width: min(90vw, fit-content);
+  max-height: calc(100vh - 2rem);
+  box-sizing: border-box;
   padding: 2em;
   border-radius: 12px;
   background: #fff;

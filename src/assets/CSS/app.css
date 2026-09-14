@@ -668,6 +668,37 @@ tbody tr .empty-message {
   border-radius: 0.4rem;
 }
 
+.privilege-modal-card {
+  width: min(100% - 2rem, 32rem);
+  overflow: hidden;
+  border-radius: 1.35rem;
+  background: #fff;
+  box-shadow: 0 1.25rem 3rem rgb(42 28 71 / 24%);
+  top: 50%;
+}
+
+.privilege-modal-header,
+.privilege-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.15rem 1.5rem;
+  border-bottom: 1px solid #eeeef4;
+}
+
+.privilege-modal-header h3 { margin: 0; color: #29273b; }
+.privilege-close { border: 0; background: none; color: #8d8aa0; font-size: 1.65rem; cursor: pointer; }
+.privilege-modal-body { padding: 0 1.5rem 1.15rem; }
+.privilege-description { color: #68677d; line-height: 1.35; margin: 0.1rem 0 1.1rem; }
+.privilege-label { display: block; margin: 0 0 0.45rem; color: #5d5b73; font-size: 0.82rem; font-weight: 700; }
+.privilege-hint { margin: 0.8rem 0 1rem; color: #9896a8; font-size: 0.85rem; }
+.privilege-options { display: grid; gap: 0.7rem; }
+.privilege-option { display: flex; align-items: center; gap: 0.65rem; color: #4b495d; cursor: pointer; }
+.privilege-option input { width: 1.1rem; height: 1.1rem; accent-color: #7646a5; }
+.privilege-modal-footer { justify-content: flex-end; gap: 0.7rem; border-top: 1px solid #eeeef4; border-bottom: 0; }
+.privilege-modal-footer .btn-primary { background: linear-gradient(110deg, #6874df, #7941a4); }
+.users-load-error { width: 100%; box-sizing: border-box; margin: 0 0 1rem; }
+
 .edit-btn:disabled,
 .lock-btn:disabled,
 .block-action-btn:disabled,
