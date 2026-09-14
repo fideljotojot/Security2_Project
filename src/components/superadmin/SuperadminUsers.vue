@@ -378,7 +378,7 @@
         </div>
         <div class="btn-container">
           <button type="button" class="btn btn-secondary" @click="closeDeleteModal">Cancel</button>
-          <button type="button" class="btn btn-primary" :disabled="!deletePassword || isDeleting" @click="confirmDeleteUser">
+          <button type="button" class="btn btn-primary delete-confirm-button" :disabled="!deletePassword || isDeleting" @click="confirmDeleteUser">
             {{ isDeleting ? 'Deleting...' : 'Delete User' }}
           </button>
         </div>

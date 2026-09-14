@@ -380,6 +380,14 @@ a {
   box-shadow: none;
 }
 
+.delete-confirm-button {
+  background-color: #c62828 !important;
+}
+
+.delete-confirm-button:hover:not(:disabled) {
+  background-color: #a61f1f !important;
+}
+
 a.disabled {
   pointer-events: none;
   color: gray;
