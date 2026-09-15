@@ -446,6 +446,10 @@ export default {
       this.editingUserId = null;
       this.errorMessage = '';
     },
+    normalizePosition() {
+      if (!arguments.length) return;
+      this.form.position = this.form.role === 'user' ? 'Student' : 'Staff';
+    },
     cancelCreateConfirmation() {
       if (this.isSubmitting) return;
       this.showCreateConfirmation = false;
@@ -821,6 +825,7 @@ export default {
         });
     },
     async registerUser() {
+      this.normalizePosition();
       if (this.form.role === 'user' && !String(this.form.position || '').trim()) {
         this.warnings.position = ['Position is required for user accounts.'];
         this.errorMessage = 'Position is required for user accounts.';

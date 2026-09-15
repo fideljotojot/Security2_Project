@@ -155,7 +155,7 @@
               <label for="username">Username: <span>*</span></label>
             </div>
             <div class="form-group">
-              <select id="role" v-model="form.role" required>
+                <select id="role" v-model="form.role" required @change="normalizePosition">
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
                 <option value="superadmin">Superadmin</option>
@@ -167,7 +167,7 @@
               <select id="position" v-model="form.position" @change="validatePosition">
                 <option value="Instructor">Instructor</option>
                 <option value="Staff">Staff</option>
-                <option value="Student" selected>Student</option>
+                <option v-if="form.role === 'user'" value="Student">Student</option>
               </select>
               <label for="position">Position: <span>*</span></label>
             </div>
@@ -313,7 +313,7 @@
 
               <!-- Role selection (exclusive to Superadmin Users UI) -->
               <div class="form-group">
-                <select id="role" v-model="form.role" required :disabled="isViewing">
+                <select id="role" v-model="form.role" required :disabled="isViewing" @change="normalizePosition">
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
                   <option value="superadmin">Superadmin</option>
@@ -325,7 +325,7 @@
                 <select id="position" v-model="form.position" :disabled="isViewing" @change="validatePosition">
                   <option value="Instructor">Instructor</option>
                   <option value="Staff">Staff</option>
-                  <option value="Student">Student</option>
+                  <option v-if="form.role === 'user'" value="Student">Student</option>
                 </select>
                 <label for="position">Position: <span>*</span></label>
               </div>
