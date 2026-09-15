@@ -118,9 +118,9 @@
           <label for="zip">Zip Code: <span>*</span></label>
         </div>
         <!-- Login Details Fields -->
-        <div class="form-group">
+        <div class="form-group" v-if="isCompletingProfile">
           <span class="field-warning" v-if="getWarning('user_id')">{{ getWarning('user_id') }}</span>
-          <input type="text" id="user_id" name="user_id" v-model="form.id" required :readonly="isCompletingProfile" @input="checkID">
+          <input type="text" id="user_id" name="user_id" v-model="form.id" required readonly>
           <label for="id">ID No. <span>*</span></label>
         </div>
         <div class="form-group">

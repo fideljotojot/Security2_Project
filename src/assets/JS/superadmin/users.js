@@ -437,6 +437,16 @@ export default {
         position: 'Student'
       };
       this.warnings = {};
+      this.generateIdNumber();
+    },
+    async generateIdNumber() {
+      const { data, error } = await supabase.rpc('generate_next_id_number');
+      if (!error && data) {
+        this.form.idNumber = data;
+        return data;
+      }
+      this.errorMessage = error?.message || 'Unable to generate a unique ID number. Please try again.';
+      return null;
     },
     closeAddModal() {
       if (this.isSubmitting) return;
@@ -826,6 +836,9 @@ export default {
     },
     async registerUser() {
       this.normalizePosition();
+      if (!this.isEditing && !this.isViewing && !this.form.idNumber) {
+        await this.generateIdNumber();
+      }
       if (this.form.role === 'user' && !String(this.form.position || '').trim()) {
         this.warnings.position = ['Position is required for user accounts.'];
         this.errorMessage = 'Position is required for user accounts.';

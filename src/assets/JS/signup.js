@@ -108,8 +108,17 @@ export default {
   },
   mounted() {
     if (this.isCompletingProfile) this.loadInitialAccount();
+    else this.generateIdNumber();
   },
   methods: {
+    async generateIdNumber() {
+      const { data, error } = await supabase.rpc('generate_next_id_number');
+      if (!error && data) {
+        this.form.id = data;
+        return data;
+      }
+      throw error || new Error('Unable to generate a unique ID number. Please try again.');
+    },
     async loadInitialAccount() {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
@@ -520,6 +529,7 @@ export default {
       }
 
       try {
+        if (!this.isCompletingProfile && !this.form.id) await this.generateIdNumber();
         if (this.isCompletingProfile) {
           const { data: { user }, error: authError } = await supabase.auth.getUser();
           if (authError || !user) throw authError || new Error('Your session has expired.');
