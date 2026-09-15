@@ -756,6 +756,16 @@ tbody tr .empty-message {
   height: 1.1rem;
   accent-color: #7646a5;
 }
+.privilege-option-disabled {
+  color: #aaa !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.privilege-option-disabled input {
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
 
 .privilege-modal-footer {
   justify-content: flex-end;

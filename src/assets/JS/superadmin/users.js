@@ -7,6 +7,7 @@ export default {
   data() {
     return {
       users: [],
+      currentUserId: null,
       showAddModal: false,
       isViewing: false,
       isEditing: false,
@@ -208,7 +209,9 @@ export default {
       if (this.currentPage > pageCount) this.currentPage = pageCount;
     }
   },
-  mounted() {
+  async mounted() {
+    const { data: { user } } = await supabase.auth.getUser();
+    this.currentUserId = user?.id || null;
     this.fetchUsers();
   },
   methods: {
@@ -236,8 +239,8 @@ export default {
       return 'active';
     },
     canManagePrivileges(user) {
-      // Only active admin accounts can have individual privileges managed.
-      return this.getUserStatus(user) !== '-' && this.getUserStatus(user) !== 'pending' && user.role === 'admin';
+      // Active user/admin accounts can have individual privileges managed.
+      return this.getUserStatus(user) !== '-' && this.getUserStatus(user) !== 'pending' && user.user_id !== this.currentUserId;
     },
     async toggleLockout(user) {
       if (!await confirmCurrentPassword('Enter your password to block or unblock this account:')) return;
@@ -264,11 +267,9 @@ export default {
       // The modal edits an account's capabilities. Keep an admin account in
       // the admin role while its individual privileges are being edited.
       this.privilegeRole = user.role === 'admin' ? 'admin' : 'user';
-      this.selectedPrivileges = user.role === 'admin'
-        ? (Array.isArray(user.admin_permissions)
-          ? user.admin_permissions
-          : this.availablePrivileges.map(privilege => privilege.key))
-        : [];
+      this.selectedPrivileges = user.role === 'user'
+        ? []
+        : (Array.isArray(user.admin_permissions) ? user.admin_permissions : []);
       this.showPrivilegeModal = true;
     },
     closePrivilegeModal() {
@@ -276,6 +277,13 @@ export default {
       this.showPrivilegeModal = false;
       this.privilegeUser = null;
       this.selectedPrivileges = [];
+    },
+    privilegeRoleChanged() {
+      if (this.privilegeRole === 'superadmin') {
+        this.selectedPrivileges = this.availablePrivileges.map(privilege => privilege.key);
+      } else if (this.privilegeRole === 'user') {
+        this.selectedPrivileges = [];
+      }
     },
     async updatePrivilege() {
       if (!this.privilegeUser || this.isUpdatingPrivilege) return;
@@ -294,7 +302,8 @@ export default {
         this.notificationMessage = error.message || 'Unable to update user privileges.';
       } else {
         this.notificationTitle = 'Privileges Updated';
-        this.notificationMessage = `${this.privilegeUser.username || 'User'} is now ${this.privilegeRole === 'admin' ? 'an admin' : 'a regular user'}.`;
+        const roleLabel = this.privilegeRole === 'admin' ? 'an admin' : this.privilegeRole === 'superadmin' ? 'a superadmin' : 'a regular user';
+        this.notificationMessage = `${this.privilegeUser.username || 'User'} is now ${roleLabel}.`;
         await this.fetchUsers();
       }
       this.privilegeUser = null;

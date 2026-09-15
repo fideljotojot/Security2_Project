@@ -30,14 +30,14 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.users AS viewer WHERE viewer.id = auth.uid() AND viewer.role = 'superadmin') THEN
     RAISE EXCEPTION 'Only superadmins can manage privileges';
   END IF;
-  IF p_role NOT IN ('user', 'admin') THEN RAISE EXCEPTION 'Invalid role'; END IF;
+  IF p_role NOT IN ('user', 'admin', 'superadmin') THEN RAISE EXCEPTION 'Invalid role'; END IF;
   IF p_user_id = auth.uid() THEN RAISE EXCEPTION 'You cannot change your own privileges'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.users AS target WHERE target.id = p_user_id AND target.role IN ('user', 'admin')) THEN
-    RAISE EXCEPTION 'Only user and admin accounts can have their privileges changed';
+  IF NOT EXISTS (SELECT 1 FROM public.users AS target WHERE target.id = p_user_id AND target.role IN ('user', 'admin', 'superadmin')) THEN
+    RAISE EXCEPTION 'Only user, admin, and superadmin accounts can have their privileges changed';
   END IF;
   UPDATE users
   SET role = p_role,
-      admin_permissions = CASE WHEN p_role = 'admin' THEN COALESCE(p_permissions, '[]'::jsonb) ELSE '[]'::jsonb END
+      admin_permissions = CASE WHEN p_role = 'superadmin' THEN to_jsonb(ARRAY['manage_registrations','manage_account_info','block_accounts','reset_passwords','delete_accounts']) ELSE COALESCE(p_permissions, '[]'::jsonb) END
   WHERE id = p_user_id;
   RETURN FOUND;
 END;

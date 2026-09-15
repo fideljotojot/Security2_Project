@@ -77,7 +77,7 @@
               </button>
               <button @click="openPrivilegeModal(user)" class="privilege-btn"
                 :disabled="!canManagePrivileges(user)"
-                :title="canManagePrivileges(user) ? 'Manage admin privileges' : 'Superadmin privileges cannot be changed here'"
+                :title="canManagePrivileges(user) ? 'Manage privileges' : 'You cannot change your own privileges'"
                 aria-label="Manage admin privileges">
                 <i class="fi fi-br-shield-check"></i>
               </button>
@@ -447,10 +447,16 @@
         </div>
         <div class="privilege-modal-body">
           <p class="privilege-description">Choose what this account is allowed to do.<br>Requires your security key.</p>
+          <label class="privilege-label" for="privilege-role">Role</label>
+          <select id="privilege-role" v-model="privilegeRole" @change="privilegeRoleChanged" class="privilege-select">
+            <option value="admin">Admin</option>
+            <option value="user">Regular User</option>
+            <option value="superadmin">Superadmin</option>
+          </select>
           <span class="privilege-label">Privileges</span>
           <div class="privilege-options">
-            <label v-for="privilege in availablePrivileges" :key="privilege.key" class="privilege-option">
-              <input type="checkbox" v-model="selectedPrivileges" :value="privilege.key">
+            <label v-for="privilege in availablePrivileges" :key="privilege.key" class="privilege-option" :class="{ 'privilege-option-disabled': privilegeRole !== 'admin' }">
+              <input type="checkbox" v-model="selectedPrivileges" :value="privilege.key" :disabled="privilegeRole !== 'admin'">
               <span>{{ privilege.label }}</span>
             </label>
           </div>
