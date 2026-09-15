@@ -5,7 +5,7 @@
         <h2>Users</h2>
         <button @click="openAddModal">
           <i><i class="fi fi-br-add"></i></i>
-          Add User
+          Add Account
         </button>
       </div>
       <div class="filter-container">
@@ -113,7 +113,7 @@
     <!-- Add/Edit User Modal -->
     <div v-if="showAddModal" class="modal-overlay" @click.self="closeAddModal">
       <div class="modal-card" :class="{ 'user-details-view': isViewing }">
-        <h3 class="header-h3">{{ isViewing ? 'View User/Admin' : (isEditing ? 'Edit User/Admin' : 'Add New User/Admin') }}</h3>
+        <h3 class="header-h3">{{ isViewing ? 'View Account' : (isEditing ? 'Edit Account' : 'Add New Account') }}</h3>
 
         <!-- Dynamic Step Header & Indicator Side by Side -->
         <div v-if="isEditing || isViewing" class="step-header-container">
@@ -315,7 +315,7 @@
                 </select>
                 <label for="role">Role: <span>*</span></label>
               </div>
-              <div v-if="form.role === 'user'" class="form-group">
+              <div class="form-group">
                 <select id="position" v-model="form.position" :disabled="isViewing">
                   <option value="">Select position</option>
                   <option value="Staff">Staff</option>

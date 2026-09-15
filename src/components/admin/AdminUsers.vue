@@ -75,7 +75,7 @@
     </div>
     <div v-if="editing" class="modal-overlay">
       <div class="modal-card admin-edit-modal" :class="{ 'user-details-view': viewing }">
-        <h3 class="header-h3 edit-modal-title">{{ viewing ? 'View User/Admin' : 'Edit User/Admin' }}</h3>
+        <h3 class="header-h3 edit-modal-title">{{ viewing ? 'View Account' : 'Edit Account' }}</h3>
         <div class="step-header-container">
           <h3 class="step-title">{{ editStep === 'personal' ? 'Personal Details' : 'Address & Login Details' }}</h3>
           <div class="steps">
