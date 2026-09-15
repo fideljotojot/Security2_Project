@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase.js';
+import { confirmCurrentPassword } from '@/utils/confirm-password.js';
 
 export default {
   name: 'SuperadminUsers',
@@ -220,6 +221,7 @@ export default {
       return this.getUserStatus(user) !== 'pending' && user.role === 'admin';
     },
     async toggleLockout(user) {
+      if (!await confirmCurrentPassword('Enter your password to block or unblock this account:')) return;
       const targetState = !user.is_locked_out;
       const { error } = await supabase.rpc('admin_update_user_status', {
         p_user_id: user.user_id,
@@ -746,6 +748,7 @@ export default {
         });
     },
     async registerUser() {
+      if (this.isEditing && !await confirmCurrentPassword('Enter your password to save these account changes:')) return;
       if (!this.canSubmitRegister) return;
       this.isSubmitting = true;
       this.errorMessage = '';

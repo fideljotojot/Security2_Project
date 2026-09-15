@@ -1,4 +1,5 @@
 import { supabase } from '@/utils/supabase.js';
+import { confirmCurrentPassword } from '@/utils/confirm-password.js';
 
 export default {
   name: 'AdminRegistrations',
@@ -77,6 +78,7 @@ export default {
     },
     async updateStatus(registration, status) {
       if (!this.hasPermission('manage_registrations')) return;
+      if (!await confirmCurrentPassword('Enter your password to approve or reject this registration:')) return;
       this.isUpdating = true;
       const { error } = await supabase.rpc('update_registration_status', {
         p_user_id: registration.user_id,

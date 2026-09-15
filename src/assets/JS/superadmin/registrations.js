@@ -1,4 +1,5 @@
 import { supabase } from '@/utils/supabase.js';
+import { confirmCurrentPassword } from '@/utils/confirm-password.js';
 
 export default {
   name: 'SuperadminRegistrations',
@@ -20,6 +21,7 @@ export default {
       else { this.errorMessage = ''; this.registrations = data || []; this.registrationPage = 1; }
     },
     async updateStatus(registration, status) {
+      if (!await confirmCurrentPassword('Enter your password to approve or reject this registration:')) return;
       this.isUpdating = true;
       const { error } = await supabase.rpc('update_registration_status', {
         p_user_id: registration.user_id, p_status: status
@@ -36,7 +38,7 @@ export default {
     pageNumbers(items) { return Array.from({ length: this.pageCount(items) }, (_, index) => index + 1); },
     pageStart(items) { const page = items === this.filteredRegistrations ? this.registrationPage : this.deletePage; return items.length ? (page - 1) * this.pageSize(items) + 1 : 0; },
     pageEnd(items) { const page = items === this.filteredRegistrations ? this.registrationPage : this.deletePage; return Math.min(items.length, page * this.pageSize(items)); },
-    async reviewDelete(request, approve) { if (approve && !window.confirm(`Delete ${request.username} permanently?`)) return; const { error } = await supabase.rpc('review_delete_request', { p_request_id: request.request_id, p_approve: approve }); if (error) this.errorMessage = error.message; else await this.fetchDeleteRequests(); },
+    async reviewDelete(request, approve) { if (approve && !window.confirm(`Delete ${request.username} permanently?`)) return; if (!await confirmCurrentPassword('Enter your password to approve or reject this deletion request:')) return; const { error } = await supabase.rpc('review_delete_request', { p_request_id: request.request_id, p_approve: approve }); if (error) this.errorMessage = error.message; else await this.fetchDeleteRequests(); },
     formatDate(value) { return value ? new Date(value).toLocaleDateString() : '—'; }
   }
 };

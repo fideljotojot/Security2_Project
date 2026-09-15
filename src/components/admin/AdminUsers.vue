@@ -46,10 +46,14 @@
             <td style="text-transform: capitalize;">{{ userStatus(user) }}</td>
             <td class="actions-container"><button class="view-btn" @click="view(user)" title="View user details"
                 aria-label="View user"><i class="fi fi-br-eye"></i></button><button class="edit-btn" @click="edit(user)"
-                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'manage_account_info')" title="Edit user"><i class="fi fi-br-edit"></i></button><button v-if="userStatus(user) !== 'blocked'"
-                class="block-action-btn" :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'block_accounts')" @click="setStatus(user, 'blocked')" title="Block user"><i
+                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'manage_account_info')"
+                title="Edit user"><i class="fi fi-br-edit"></i></button><button v-if="userStatus(user) !== 'blocked'"
+                class="block-action-btn"
+                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'block_accounts')"
+                @click="setStatus(user, 'blocked')" title="Block user"><i
                   class="fi fi-br-user-forbidden"></i></button><button v-else class="unlock-btn"
-                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'block_accounts')" @click="setStatus(user, 'approved')" title="Unblock user"><i
+                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'block_accounts')"
+                @click="setStatus(user, 'approved')" title="Unblock user"><i
                   class="fi fi-br-user-check"></i></button><button class="delete-btn" @click="requestDelete(user)"
                 :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'delete_accounts')"
                 :title="hasPermission(user, 'delete_accounts') ? 'Request deletion' : 'Deletion privilege disabled'">
@@ -133,8 +137,9 @@
               <option value="admin">Admin</option>
               <option v-if="editing.role === 'superadmin'" value="superadmin">Superadmin</option>
             </select></div>
-          <div v-if="editForm.role === 'user'" class="form-group"><label for="admin-edit-position">Position:</label><input
-              id="admin-edit-position" v-model="editForm.position" :readonly="viewing"></div>
+          <div v-if="editForm.role === 'user'" class="form-group"><label
+              for="admin-edit-position">Position:</label><input id="admin-edit-position" v-model="editForm.position"
+              :readonly="viewing"></div>
           <div v-if="!viewing" class="form-group"><label for="admin-edit-password">Password: <span>(Leave blank to keep
                 current)</span></label><input id="admin-edit-password" type="password" v-model="editForm.password"
               :disabled="!hasPermission(editing, 'reset_passwords')">
@@ -148,7 +153,7 @@
             type="button" class="btn btn-secondary" @click="previousEditStep">Back</button><button
             v-if="editStep === 'personal'" type="button" class="btn btn-primary"
             @click="nextEditStep">Next</button><button v-else v-show="!viewing" class="btn btn-primary"
-            @click="saveEdit">Save</button><button v-if="viewing && editStep === 'account'" type="button"
+            @click="beginSaveEdit">Save</button><button v-if="viewing && editStep === 'account'" type="button"
             class="btn btn-primary" @click="editing = null">Close</button></div>
       </div>
     </div>
@@ -161,14 +166,40 @@
             class="btn btn-primary" @click="submitDelete">Send request</button></div>
       </div>
     </div>
+    <div v-if="showPasswordModal" class="modal-overlay" @click.self="closePasswordModal">
+      <div class="notification-card" role="dialog" aria-modal="true">
+        <div class="notification-header"><div class="notification-icon delete-modal-icon" aria-hidden="true"><i class="fi fi-br-lock"></i></div><h3>CONFIRM ACTION</h3></div>
+        <p>Enter your password to save these account changes.</p>
+        <div class="password-input-wrapper delete-password-wrapper">
+          <input v-model="confirmationPassword" :type="showConfirmationPassword ? 'text' : 'password'"
+            class="delete-password-input" placeholder="Password" autocomplete="current-password" @keyup.enter="confirmSaveEdit">
+          <button type="button" class="toggle-password" @click="showConfirmationPassword = !showConfirmationPassword"
+            :aria-label="showConfirmationPassword ? 'Hide password' : 'Show password'"><i
+              :class="showConfirmationPassword ? 'fi fi-br-eye-crossed' : 'fi fi-br-eye'"></i></button>
+        </div>
+        <div class="btn-container">
+          <button class="btn btn-secondary" @click="closePasswordModal">
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary delete-confirm-button" :disabled="!confirmationPassword || isConfirmingPassword"
+            @click="confirmSaveEdit">{{ isConfirmingPassword ? 'Checking...' : 'Save Changes' }}
+          </button>
+        </div>
+      </div>
+    </div>
     <div v-if="notificationMessage" class="modal-overlay" @click.self="notificationMessage = ''">
-      <div :class="['notification-card', 'request-success-card', { 'request-error-card': notificationType === 'error' }]" role="dialog" aria-modal="true">
+      <div
+        :class="['notification-card', 'request-success-card', { 'request-error-card': notificationType === 'error' }]"
+        role="dialog" aria-modal="true">
         <div class="notification-header">
-          <div class="notification-icon" aria-hidden="true"><i :class="notificationType === 'error' ? 'fi fi-br-cross-circle' : 'fi fi-br-check'"></i></div>
+          <div class="notification-icon" aria-hidden="true"><i
+              :class="notificationType === 'error' ? 'fi fi-br-cross-circle' : 'fi fi-br-check'"></i></div>
           <h3>{{ notificationTitle }}</h3>
         </div>
         <p>{{ notificationMessage }}</p>
-        <div class="btn-container"><button type="button" :class="['btn', 'btn-primary', { 'request-error-button': notificationType === 'error' }]"
+        <div class="btn-container"><button type="button"
+            :class="['btn', 'btn-primary', { 'request-error-button': notificationType === 'error' }]"
             @click="notificationMessage = ''">Close</button></div>
       </div>
     </div>
