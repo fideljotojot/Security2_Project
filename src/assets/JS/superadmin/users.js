@@ -12,6 +12,10 @@ export default {
       isEditing: false,
       editingUserId: null,
       showNotificationModal: false,
+      showCreateConfirmation: false,
+      isCreateConfirmed: false,
+      createPassword: '',
+      showCreatePassword: false,
       showDeleteModal: false,
       deletePassword: '',
       showDeletePassword: false,
@@ -125,6 +129,12 @@ export default {
         this.canProceedLoginDetails
       );
     },
+    canCreateAccount() {
+      return Boolean(
+        this.form.idNumber && this.form.username && this.form.password &&
+        !this.hasFieldWarnings(['user_id', 'username', 'password'])
+      );
+    },
     passwordStrengthClass() {
       if (this.passwordStrengthScore <= 1) return 'weak';
       if (this.passwordStrengthScore === 2) return 'medium';
@@ -211,6 +221,9 @@ export default {
       if (user.registration_status === 'pending') {
         return 'pending';
       }
+      if (user.registration_status === 'incomplete') {
+        return '-';
+      }
       if (user.registration_status === 'blocked' || user.is_locked_out) {
         return 'blocked';
       }
@@ -218,7 +231,7 @@ export default {
     },
     canManagePrivileges(user) {
       // Only active admin accounts can have individual privileges managed.
-      return this.getUserStatus(user) !== 'pending' && user.role === 'admin';
+      return this.getUserStatus(user) !== '-' && this.getUserStatus(user) !== 'pending' && user.role === 'admin';
     },
     async toggleLockout(user) {
       if (!await confirmCurrentPassword('Enter your password to block or unblock this account:')) return;
@@ -407,11 +420,38 @@ export default {
       this.warnings = {};
     },
     closeAddModal() {
+      if (this.isSubmitting) return;
       this.showAddModal = false;
       this.isViewing = false;
       this.isEditing = false;
       this.editingUserId = null;
       this.errorMessage = '';
+    },
+    cancelCreateConfirmation() {
+      if (this.isSubmitting) return;
+      this.showCreateConfirmation = false;
+      this.createPassword = '';
+      this.showCreatePassword = false;
+    },
+    async confirmCreateAccount() {
+      if (this.isSubmitting || !this.createPassword) return;
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user?.email) {
+        this.errorMessage = 'Unable to identify the signed-in superadmin.';
+        return;
+      }
+      const { error: passwordError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: this.createPassword
+      });
+      if (passwordError) {
+        this.errorMessage = 'Incorrect superadmin password.';
+        return;
+      }
+      this.createPassword = '';
+      this.showCreatePassword = false;
+      this.isCreateConfirmed = true;
+      await this.registerUser();
     },
     closeNotificationModal() {
       this.showNotificationModal = false;
@@ -749,7 +789,13 @@ export default {
     },
     async registerUser() {
       if (this.isEditing && !await confirmCurrentPassword('Enter your password to save these account changes:')) return;
-      if (!this.canSubmitRegister) return;
+      if (!this.isEditing && !this.isViewing && !this.isCreateConfirmed) {
+        if (!this.canCreateAccount) return;
+        this.showCreateConfirmation = true;
+        return;
+      }
+      if (this.isEditing && !this.canSubmitRegister) return;
+      if (!this.isEditing && !this.isViewing && !this.canCreateAccount) return;
       this.isSubmitting = true;
       this.errorMessage = '';
 
@@ -781,9 +827,10 @@ export default {
           }
         );
 
-        // 1. Sign up the user in Supabase Auth
+        // 1. Sign up the user in Supabase Auth with an internal email until first login.
+        const internalEmail = `${this.form.username.trim()}@accounts.local`;
         const { data: authData, error: authError } = await tempClient.auth.signUp({
-          email: this.form.email.trim(),
+          email: internalEmail,
           password: this.form.password
         });
 
@@ -799,32 +846,14 @@ export default {
           return;
         }
 
-        // 2. Call the create_user_profile RPC to insert profile and default security questions/selected role
-        const { data: profileSuccess, error: profileError } = await supabase.rpc('create_user_profile', {
+        // 2. Create only the account shell. The user completes the profile on first login.
+        const { data: profileSuccess, error: profileError } = await supabase.rpc('create_initial_account', {
           p_user_id: authData.user.id,
           p_id_number: this.form.idNumber.trim(),
           p_username: this.form.username.trim(),
-          p_email: this.form.email.trim(),
-          p_first_name: this.form.firstName.trim(),
-          p_middle_initial: this.form.middleInitial.trim(),
-          p_last_name: this.form.lastName.trim(),
-          p_suffix: this.form.suffix.trim(),
-          p_birthdate: this.form.birthdate || null,
-          p_age: this.form.age ? parseInt(this.form.age, 10) : null,
-          p_sex: this.form.sex,
-          p_purok: this.form.purok.trim(),
-          p_barangay: this.form.barangay.trim(),
-          p_city: this.form.city.trim(),
-          p_province: this.form.province.trim(),
-          p_country: this.form.country.trim(),
-          p_zip: String(this.form.zip || '').trim(),
-          p_q1: 'What is your favorite color?',
-          p_a1: 'default',
-          p_q2: 'What is your favorite place?',
-          p_a2: 'default',
-          p_q3: 'What was the name of your first pet?',
-          p_a3: 'default',
-          p_role: this.form.role
+          p_email: internalEmail,
+          p_role: this.form.role,
+          p_position: this.form.position || null
         });
 
         if (profileError || !profileSuccess) {
@@ -834,19 +863,11 @@ export default {
           return;
         }
 
-        // Accounts created directly by a superadmin do not need registration approval.
-        const { error: statusError } = await supabase.rpc('update_registration_status', {
-          p_user_id: authData.user.id,
-          p_status: 'approved'
-        });
-        if (statusError) {
-          console.error('User approval status error:', statusError);
-          this.errorMessage = statusError.message || 'User was created but could not be approved.';
-          this.isSubmitting = false;
-          return;
-        }
-
         // 4. Success - close modal, reload user list, and notify the superadmin
+        this.showCreateConfirmation = false;
+        this.isCreateConfirmed = false;
+        this.createPassword = '';
+        this.showCreatePassword = false;
         this.showAddModal = false;
         await this.fetchUsers();
         this.addedUserRole = this.form.role;

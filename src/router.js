@@ -23,6 +23,7 @@ const routes = [
   { path: '/', name: 'home', component: Home },
   { path: '/login', name: 'login', component: LoginForm },
   { path: '/signup', name: 'signup', component: SignupForm },
+  { path: '/complete-profile', name: 'complete-profile', component: SignupForm },
   { path: '/dashboard', name: 'dashboard', component: Dashboard },
   { path: '/forgot', name: 'forgot', component: ForgotPassword },
   { path: '/superadmin', component: RouterView,
@@ -109,7 +110,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // 4. If user is locked out, sign out and redirect to login
-    if (userData.is_locked_out || userData.registration_status !== 'approved') {
+    if (userData.is_locked_out || (userData.registration_status !== 'approved' && !(to.name === 'complete-profile' && userData.registration_status === 'incomplete'))) {
       await supabase.auth.signOut();
       localStorage.removeItem("user");
       isUserAuthenticated = false;

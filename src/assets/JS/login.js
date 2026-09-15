@@ -193,6 +193,20 @@ export default {
           return;
         }
 
+        if (userData.registration_status === 'incomplete') {
+          const loggedInUser = {
+            id: userData.id_number,
+            uuid: data.user.id,
+            username,
+            email,
+            role: userData.role
+          };
+          localStorage.setItem('user', JSON.stringify(loggedInUser));
+          setUserAuthenticated(true);
+          this.$router.push('/complete-profile');
+          return;
+        }
+
         if (userData.registration_status !== 'approved') {
           await supabase.auth.signOut();
           localStorage.removeItem("user");

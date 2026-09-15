@@ -1,6 +1,7 @@
 <template>
   <form method="POST" @submit.prevent="register">
-    <h1>Sign Up</h1>
+    <h1>{{ isCompletingProfile ? 'Complete Your Profile' : 'Sign Up' }}</h1>
+    <p v-if="isCompletingProfile" class="completion-notice">Finish your account details to continue to your dashboard.</p>
 
     <div class="steps">
       <div class="step-indicator">
@@ -119,12 +120,12 @@
         <!-- Login Details Fields -->
         <div class="form-group">
           <span class="field-warning" v-if="getWarning('user_id')">{{ getWarning('user_id') }}</span>
-          <input type="text" id="user_id" name="user_id" v-model="form.id" required @input="checkID">
+          <input type="text" id="user_id" name="user_id" v-model="form.id" required :readonly="isCompletingProfile" @input="checkID">
           <label for="id">ID No. <span>*</span></label>
         </div>
         <div class="form-group">
           <span class="field-warning" v-if="getWarning('username')">{{ getWarning('username') }}</span>
-          <input type="text" id="username" name="username" v-model="form.username" required @input="checkUsername">
+          <input type="text" id="username" name="username" v-model="form.username" required :readonly="isCompletingProfile" @input="checkUsername">
           <label for="username">Username: <span>*</span></label>
         </div>
         <div class="form-group">
@@ -317,7 +318,7 @@
       </div>
       <div class="btn-container">
         <button type="button" @click="step = 'login_details'" class="btn">Back</button>
-        <button type="submit" class="btn" :disabled="!canSubmitRegister">Register</button>
+        <button type="submit" class="btn" :disabled="!canSubmitRegister">{{ isCompletingProfile ? 'Save Details' : 'Register' }}</button>
       </div>
     </div>
 

@@ -28,6 +28,7 @@
 
           <select name="user-status" id="user-status" v-model="selectedStatus">
             <option value="all">All</option>
+            <option value="-">-</option>
             <option value="pending">Pending</option>
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
@@ -65,13 +66,13 @@
               <button @click="viewUser(user)" class="view-btn" :title="'View user details'" aria-label="View user">
                 <i class="fi fi-br-eye"></i>
               </button>
-              <button @click="openEditModal(user)" class="edit-btn" :disabled="getUserStatus(user) === 'pending' || getUserStatus(user) === 'blocked'" :title="getUserStatus(user) === 'pending' ? 'Cannot edit pending users' : (getUserStatus(user) === 'blocked' ? 'Cannot edit blocked users' : 'Edit user')" aria-label="Edit user">
+              <button @click="openEditModal(user)" class="edit-btn" :disabled="getUserStatus(user) === '-' || getUserStatus(user) === 'pending' || getUserStatus(user) === 'blocked'" :title="getUserStatus(user) === '-' ? 'Cannot edit incomplete users' : (getUserStatus(user) === 'pending' ? 'Cannot edit pending users' : (getUserStatus(user) === 'blocked' ? 'Cannot edit blocked users' : 'Edit user'))" aria-label="Edit user">
                 <i class="fi fi-br-edit"></i>
               </button>
-              <button @click="toggleLockout(user)" :class="['lock-btn', user.is_locked_out ? 'unlock-btn' : 'block-action-btn']" :disabled="getUserStatus(user) === 'pending'" :title="getUserStatus(user) === 'pending' ? 'Cannot modify pending users' : (user.is_locked_out ? 'Unblock user' : 'Block user')">
+              <button @click="toggleLockout(user)" :class="['lock-btn', user.is_locked_out ? 'unlock-btn' : 'block-action-btn']" :disabled="getUserStatus(user) === '-' || getUserStatus(user) === 'pending'" :title="getUserStatus(user) === '-' ? 'Cannot modify incomplete users' : (getUserStatus(user) === 'pending' ? 'Cannot modify pending users' : (user.is_locked_out ? 'Unblock user' : 'Block user'))">
                 <i :class="user.is_locked_out ? 'fi fi-br-user-check' : 'fi fi-br-user-forbidden'"></i>
               </button>
-              <button @click="deleteUser(user)" class="delete-btn" :disabled="getUserStatus(user) === 'pending'" title="Delete user" aria-label="Delete user">
+              <button @click="deleteUser(user)" class="delete-btn" :disabled="getUserStatus(user) === '-' || getUserStatus(user) === 'pending'" title="Delete user" aria-label="Delete user">
                 <i class="fi fi-br-trash"></i>
               </button>
               <button @click="openPrivilegeModal(user)" class="privilege-btn"
@@ -115,7 +116,7 @@
         <h3 class="header-h3">{{ isViewing ? 'View User/Admin' : (isEditing ? 'Edit User/Admin' : 'Add New User/Admin') }}</h3>
 
         <!-- Dynamic Step Header & Indicator Side by Side -->
-        <div class="step-header-container">
+        <div v-if="isEditing || isViewing" class="step-header-container">
           <h3 class="step-title">{{ step === 'personal' ? 'Personal Details' : 'Address & Login Details' }}
           </h3>
           <div class="steps">
@@ -130,13 +131,49 @@
             </div>
           </div>
         </div>
-        <hr class="step-divider">
+        <hr v-if="isEditing || isViewing" class="step-divider">
 
         <div v-if="errorMessage" class="alert-danger">
           {{ errorMessage }}
         </div>
 
-        <form @submit.prevent="registerUser" class="modal-form">
+        <form v-if="!isEditing && !isViewing" @submit.prevent="registerUser" class="modal-form compact-create-form">
+          <div class="registration-box">
+            <div class="form-group">
+              <span class="field-warning" v-if="getWarning('user_id')">{{ getWarning('user_id') }}</span>
+              <input type="text" id="user_id" v-model="form.idNumber" required @input="checkID">
+              <label for="user_id">ID Number: <span>*</span></label>
+            </div>
+            <div class="form-group">
+              <span class="field-warning" v-if="getWarning('username')">{{ getWarning('username') }}</span>
+              <input type="text" id="username" v-model="form.username" required @input="checkUsername">
+              <label for="username">Username: <span>*</span></label>
+            </div>
+            <div class="form-group">
+              <select id="role" v-model="form.role" required>
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+                <option value="superadmin">Superadmin</option>
+              </select>
+              <label for="role">Role: <span>*</span></label>
+            </div>
+            <div class="form-group">
+              <input type="text" id="position" v-model="form.position">
+              <label for="position">Position:</label>
+            </div>
+            <div class="form-group">
+              <span class="field-warning" v-if="getWarning('password')">{{ getWarning('password') }}</span>
+              <input type="password" id="password" v-model="form.password" required @input="validatePassword">
+              <label for="password">Password: <span>*</span></label>
+            </div>
+          </div>
+          <div class="btn-container">
+            <button type="button" @click="closeAddModal" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary" :disabled="!canCreateAccount">Continue</button>
+          </div>
+        </form>
+
+        <form v-else @submit.prevent="registerUser" class="modal-form">
 
           <!-- Step 1: Personal Details -->
           <div class="form-content" v-if="step === 'personal'">
@@ -330,6 +367,42 @@
           </div>
 
         </form>
+      </div>
+    </div>
+
+    <!-- Create-account confirmation modal -->
+    <div v-if="showCreateConfirmation" class="modal-overlay" @click.self="cancelCreateConfirmation">
+      <div class="notification-card" role="dialog" aria-modal="true" aria-labelledby="create-confirm-title">
+        <div class="notification-header">
+          <div class="notification-icon" aria-hidden="true"><i class="fi fi-br-user-add"></i></div>
+          <h3 id="create-confirm-title">Confirm Account Creation</h3>
+        </div>
+        <p>Create the {{ form.role }} account for <strong>{{ form.username }}</strong>? The account will show status <strong>-</strong> until the user completes their details on first login.</p>
+        <div v-if="errorMessage" class="alert-danger">{{ errorMessage }}</div>
+        <div class="password-input-wrapper delete-password-wrapper">
+          <input
+            v-model="createPassword"
+            :type="showCreatePassword ? 'text' : 'password'"
+            class="delete-password-input"
+            placeholder="Superadmin password"
+            autocomplete="current-password"
+            @keyup.enter="confirmCreateAccount"
+          >
+          <button
+            type="button"
+            class="toggle-password"
+            :aria-label="showCreatePassword ? 'Hide password' : 'Show password'"
+            @click="showCreatePassword = !showCreatePassword"
+          >
+            <i :class="showCreatePassword ? 'fi fi-br-eye-crossed' : 'fi fi-br-eye'" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="btn-container">
+          <button type="button" class="btn btn-secondary" @click="cancelCreateConfirmation">Cancel</button>
+          <button type="button" class="btn btn-primary" :disabled="isSubmitting || !createPassword" @click="confirmCreateAccount">
+            {{ isSubmitting ? 'Saving...' : 'Confirm and Save' }}
+          </button>
+        </div>
       </div>
     </div>
 

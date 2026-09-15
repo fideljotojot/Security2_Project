@@ -187,7 +187,7 @@ export default {
     </header>
 
 
-    <header v-else-if="$route.name === 'signup'" class="portal">
+    <header v-else-if="$route.name === 'signup' || $route.name === 'complete-profile'" class="portal">
       <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
       <div class="header-btn">
         <router-link to="/">
@@ -261,7 +261,7 @@ export default {
 
     <main>
       <div class="page-container"
-        v-if="$route.name === 'signup' || $route.name === 'login' || $route.name === 'forgot'">
+        v-if="$route.name === 'signup' || $route.name === 'complete-profile' || $route.name === 'login' || $route.name === 'forgot'">
         <div class="logo-container">
           <div class="mask">
             <img src="./assets/images/icon.png" alt="Logo">

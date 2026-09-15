@@ -51,6 +51,9 @@ export default {
     }
   },
   computed: {
+    isCompletingProfile() {
+      return this.$route?.name === 'complete-profile';
+    },
     steps() {
       return [
         { id: 'personal', label: 'Personal Details' },
@@ -59,82 +62,39 @@ export default {
       ];
     },
     allWarnings() {
-      // flatten arrays and return non-empty trimmed messages
       const vals = Object.values(this.warnings || {});
       const flat = [];
-      for (const v of vals) {
-        if (Array.isArray(v)) {
-          for (const m of v) {
-            if (m && String(m).trim()) flat.push(String(m).trim());
-          }
-        } else if (v && String(v).trim()) {
-          flat.push(String(v).trim());
-        }
+      for (const value of vals) {
+        if (Array.isArray(value)) flat.push(...value.filter(Boolean).map(String));
+        else if (value) flat.push(String(value));
       }
       return flat;
     },
     // whether required fields for each step are filled
     canProceedPersonal() {
-      // require firstName, lastName, birthdate and email to be non-empty and have no warnings
       const f = this.form;
       const filled = Boolean(f.firstName && String(f.firstName).trim() && f.lastName && String(f.lastName).trim() && f.birthdate && f.email && String(f.email).trim());
       if (!filled) return false;
-      // check field-specific warnings (use input ids)
       return !this.hasFieldWarnings(['fname','mname', 'lname', 'suffix', 'birthdate','email','age']);
     },
     canProceedAddress() {
       const f = this.form;
-      const filled = Boolean(
-        f.purok && String(f.purok).trim() &&
-        f.barangay && String(f.barangay).trim() &&
-        f.city && String(f.city).trim() &&
-        f.province && String(f.province).trim() &&
-        f.country && String(f.country).trim() &&
-        f.zip && String(f.zip).trim()
-      );
+      const filled = Boolean(f.purok && String(f.purok).trim() && f.barangay && String(f.barangay).trim() && f.city && String(f.city).trim() && f.province && String(f.province).trim() && f.country && String(f.country).trim() && f.zip && String(f.zip).trim());
       if (!filled) return false;
       return !this.hasFieldWarnings(['purok','barangay','city','province','country','zip']);
     },
     canProceedLogin() {
       const f = this.form;
-      const filled =
-        f.id && String(f.id).trim() &&
-        f.username && String(f.username).trim() &&
-        f.password && String(f.password).trim() &&
-        f.repassword && String(f.repassword).trim();
-
-      if (!filled) return false;
-
-      // Make sure passwords match and fields have no warnings
-      if (f.password !== f.repassword) return false;
-
-      // Check if there are any warnings for these fields
+      const filled = f.id && String(f.id).trim() && f.username && String(f.username).trim() && f.password && String(f.password).trim() && f.repassword && String(f.repassword).trim();
+      if (!filled || f.password !== f.repassword) return false;
       return !this.hasFieldWarnings(['user_id', 'username', 'password', 'repassword']);
     },
-    canProceedLoginDetails() {
-      // Combine address and login validations
-      const addressValid = this.canProceedAddress;
-      const loginValid = this.canProceedLogin;
-      return addressValid && loginValid;
-    },
+    canProceedLoginDetails() { return this.canProceedAddress && this.canProceedLogin; },
     canProceedQuestions() {
       const f = this.form;
-      const filled = (
-        f.question1 && f.answer1.trim() &&
-        f.question2 && f.answer2.trim() &&
-        f.question3 && f.answer3.trim()
-      );
-      if (!filled) return false;
-      return !this.hasFieldWarnings(['answer1', 'answer2', 'answer3']);
+      return Boolean(f.question1 && f.answer1.trim() && f.question2 && f.answer2.trim() && f.question3 && f.answer3.trim()) && !this.hasFieldWarnings(['answer1', 'answer2', 'answer3']);
     },
-    canSubmitRegister() {
-      // Combine all step validations
-      return (
-        this.canProceedPersonal &&
-        this.canProceedLoginDetails &&
-        this.canProceedQuestions
-      );
-    },
+    canSubmitRegister() { return this.canProceedPersonal && this.canProceedLoginDetails && this.canProceedQuestions; },
     passwordStrengthClass() {
       if (this.passwordStrengthScore <= 1) return 'weak';
       if (this.passwordStrengthScore === 2) return 'medium';
@@ -144,11 +104,28 @@ export default {
       if (this.passwordStrengthScore <= 1) return 'Weak Password';
       if (this.passwordStrengthScore === 2) return 'Medium Password';
       return 'Strong Password';
+    }
+  },
+  mounted() {
+    if (this.isCompletingProfile) this.loadInitialAccount();
+  },
+  methods: {
+    async loadInitialAccount() {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        this.showMessage('Your session has expired. Please log in again.');
+        return;
+      }
+      const { data, error } = await supabase.from('users').select('id_number, username, email').eq('id', user.id).single();
+      if (error || !data) {
+        this.showMessage(error?.message || 'Unable to load your account.');
+        return;
+      }
+      this.form.id = data.id_number || '';
+      this.form.username = data.username || '';
+      this.form.email = data.email?.endsWith('@accounts.local') ? '' : (data.email || '');
     },
 
-  },
-
-  methods: {
     showMessage(message) {
       this.modalMessage = message;
     },
@@ -543,6 +520,43 @@ export default {
       }
 
       try {
+        if (this.isCompletingProfile) {
+          const { data: { user }, error: authError } = await supabase.auth.getUser();
+          if (authError || !user) throw authError || new Error('Your session has expired.');
+          const { error } = await supabase.rpc('complete_initial_account', {
+            p_user_id: user.id,
+            p_id_number: this.form.id.trim(),
+            p_username: this.form.username.trim(),
+            p_email: this.form.email.trim(),
+            p_first_name: this.form.firstName.trim(),
+            p_middle_initial: this.form.middleInitial.trim(),
+            p_last_name: this.form.lastName.trim(),
+            p_suffix: this.form.suffix.trim(),
+            p_birthdate: this.form.birthdate || null,
+            p_age: this.form.age ? parseInt(this.form.age, 10) : null,
+            p_sex: this.form.sex,
+            p_purok: this.form.purok.trim(),
+            p_barangay: this.form.barangay.trim(),
+            p_city: this.form.city.trim(),
+            p_province: this.form.province.trim(),
+            p_country: this.form.country.trim(),
+            p_zip: String(this.form.zip || '').trim(),
+            p_q1: this.form.question1,
+            p_a1: this.form.answer1,
+            p_q2: this.form.question2,
+            p_a2: this.form.answer2,
+            p_q3: this.form.question3,
+            p_a3: this.form.answer3,
+            p_password: this.form.password
+          });
+          if (error) throw error;
+          const { data: account, error: accountError } = await supabase.from('users').select('id_number, role').eq('id', user.id).single();
+          if (accountError || !account) throw accountError || new Error('Unable to load the completed account.');
+          localStorage.setItem('user', JSON.stringify({ id: account.id_number, uuid: user.id, username: this.form.username, email: this.form.email, role: account.role }));
+          this.successMessage = 'Profile saved. Redirecting to your dashboard...';
+          setTimeout(() => this.$router.push(account.role === 'admin' ? '/admin' : account.role === 'superadmin' ? '/superadmin' : '/dashboard'), 800);
+          return;
+        }
         // 1. Sign up user in Supabase Auth
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: (this.form.email || '').trim(),
@@ -599,7 +613,7 @@ export default {
         }, 2000);
       } catch (err) {
         console.error(err);
-        this.showMessage('Network or server error');
+        this.showMessage(err?.message || 'Network or server error');
       }
     }
   }
