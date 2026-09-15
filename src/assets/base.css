@@ -659,7 +659,7 @@ i {
 .modal-card .password-input-wrapper .toggle-password,
 .modal-card .password-input-wrapper .eye-icon {
   position: absolute;
-  right: 0.75em;
+  right: 0.5em;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
@@ -670,6 +670,9 @@ i {
   width: 1.2em;
   height: 1.2em;
   color: #3d3d3d;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .modal-card .password-input-wrapper .toggle-password:hover,
