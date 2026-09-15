@@ -158,13 +158,13 @@
               <label for="role">Role: <span>*</span></label>
             </div>
             <div class="form-group">
-              <select id="position" v-model="form.position">
-                <option value="">Select position</option>
-                <option value="Staff">Staff</option>
+              <span class="field-warning" v-if="getWarning('position')">{{ getWarning('position') }}</span>
+              <select id="position" v-model="form.position" @change="validatePosition">
                 <option value="Instructor">Instructor</option>
-                <option value="Student">Student</option>
+                <option value="Staff">Staff</option>
+                <option value="Student" selected>Student</option>
               </select>
-              <label for="position">Position:</label>
+              <label for="position">Position: <span>*</span></label>
             </div>
             <div class="form-group">
               <span class="field-warning" v-if="getWarning('password')">{{ getWarning('password') }}</span>
@@ -316,13 +316,13 @@
                 <label for="role">Role: <span>*</span></label>
               </div>
               <div class="form-group">
-                <select id="position" v-model="form.position" :disabled="isViewing">
-                  <option value="">Select position</option>
-                  <option value="Staff">Staff</option>
+                <span class="field-warning" v-if="getWarning('position')">{{ getWarning('position') }}</span>
+                <select id="position" v-model="form.position" :disabled="isViewing" @change="validatePosition">
                   <option value="Instructor">Instructor</option>
+                  <option value="Staff">Staff</option>
                   <option value="Student">Student</option>
                 </select>
-                <label for="position">Position:</label>
+                <label for="position">Position: <span>*</span></label>
               </div>
 
               <!-- Password -->

@@ -68,7 +68,8 @@ export default {
         password: '',
         repassword: '',
         email: '',
-        role: 'user'
+        role: 'user',
+        position: ''
       },
       warnings: {}
     };
@@ -102,9 +103,12 @@ export default {
     },
     canProceedLogin() {
       const f = this.form;
+      const needsPosition = this.form.role === 'user';
+      const hasPosition = !needsPosition || !!(f.position && String(f.position).trim());
       const filled =
         f.idNumber && String(f.idNumber).trim() &&
         f.username && String(f.username).trim() &&
+        hasPosition &&
         (this.isEditing || (f.password && String(f.password).trim())) &&
         (this.isEditing || (f.repassword && String(f.repassword).trim()));
 
@@ -113,10 +117,10 @@ export default {
       // Make sure passwords match and fields have no warnings
       if (f.password !== f.repassword) return false;
 
-      if (this.isEditing && !f.password && !f.repassword) return !this.hasFieldWarnings(['user_id', 'username']);
+      if (this.isEditing && !f.password && !f.repassword) return !this.hasFieldWarnings(['user_id', 'username', 'position']);
 
       // Check if there are any warnings for these fields
-      return !this.hasFieldWarnings(['user_id', 'username', 'password', 'repassword']);
+      return !this.hasFieldWarnings(['user_id', 'username', 'password', 'repassword', 'position']);
     },
     canProceedLoginDetails() {
       const addressValid = this.canProceedAddress;
@@ -130,9 +134,11 @@ export default {
       );
     },
     canCreateAccount() {
+      const needsPosition = this.form.role === 'user';
+      const hasPosition = !needsPosition || !!(this.form.position && String(this.form.position).trim());
       return Boolean(
-        this.form.idNumber && this.form.username && this.form.password &&
-        !this.hasFieldWarnings(['user_id', 'username', 'password'])
+        this.form.idNumber && this.form.username && this.form.password && hasPosition &&
+        !this.hasFieldWarnings(['user_id', 'username', 'password', 'position'])
       );
     },
     passwordStrengthClass() {
@@ -414,8 +420,8 @@ export default {
         password: '',
         repassword: '',
         email: '',
-        role: 'user'
-        , position: ''
+        role: 'user',
+        position: 'Student'
       };
       this.warnings = {};
     },
@@ -698,6 +704,20 @@ export default {
       if (!zipFormatRegex.test(input.value)) messages.push('Zipcode must be 4 digits!');
       this.warnings[id] = messages;
     },
+    validatePosition(evt) {
+      const input = evt && evt.target ? evt.target : { id: 'position', value: this.form.position || '' };
+      const id = input.id || 'position';
+      const value = String(input.value || '').trim();
+      const messages = [];
+
+      if (this.form.role === 'user' && !value) {
+        messages.push('Position is required for user accounts.');
+      } else if (this.form.role === 'user' && value.length < 2) {
+        messages.push('Position must be at least 2 characters.');
+      }
+
+      this.warnings[id] = messages;
+    },
     validatePassword(evt) {
       const input = evt.target;
       const id = input.id;
@@ -788,6 +808,11 @@ export default {
         });
     },
     async registerUser() {
+      if (this.form.role === 'user' && !String(this.form.position || '').trim()) {
+        this.warnings.position = ['Position is required for user accounts.'];
+        this.errorMessage = 'Position is required for user accounts.';
+        return;
+      }
       if (this.isEditing && !await confirmCurrentPassword('Enter your password to save these account changes:')) return;
       if (!this.isEditing && !this.isViewing && !this.isCreateConfirmed) {
         if (!this.canCreateAccount) return;

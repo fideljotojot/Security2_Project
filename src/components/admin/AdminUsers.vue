@@ -137,9 +137,13 @@
               <option value="admin">Admin</option>
               <option v-if="editing.role === 'superadmin'" value="superadmin">Superadmin</option>
             </select></div>
-          <div v-if="editForm.role === 'user'" class="form-group"><label
-              for="admin-edit-position">Position:</label><select id="admin-edit-position" v-model="editForm.position"
-              :disabled="viewing"><option value="">Select position</option><option value="Staff">Staff</option><option value="Instructor">Instructor</option><option value="Student">Student</option></select></div>
+          <div v-if="editForm.role === 'user'" class="form-group"><label for="admin-edit-position">Position:
+              <span>*</span></label><select id="admin-edit-position" v-model="editForm.position" :disabled="viewing"
+              @change="validatePosition">
+              <option value="Instructor">Instructor</option>
+              <option value="Staff">Staff</option>
+              <option value="Student">Student</option>
+            </select></div>
           <div v-if="!viewing" class="form-group"><label for="admin-edit-password">Password: <span>(Leave blank to keep
                 current)</span></label><input id="admin-edit-password" type="password" v-model="editForm.password"
               :disabled="!hasPermission(editing, 'reset_passwords')">
@@ -168,11 +172,15 @@
     </div>
     <div v-if="showPasswordModal" class="modal-overlay" @click.self="closePasswordModal">
       <div class="notification-card" role="dialog" aria-modal="true">
-        <div class="notification-header"><div class="notification-icon delete-modal-icon" aria-hidden="true"><i class="fi fi-br-lock"></i></div><h3>CONFIRM ACTION</h3></div>
+        <div class="notification-header">
+          <div class="notification-icon delete-modal-icon" aria-hidden="true"><i class="fi fi-br-lock"></i></div>
+          <h3>CONFIRM ACTION</h3>
+        </div>
         <p>Enter your password to save these account changes.</p>
         <div class="password-input-wrapper delete-password-wrapper">
           <input v-model="confirmationPassword" :type="showConfirmationPassword ? 'text' : 'password'"
-            class="delete-password-input" placeholder="Password" autocomplete="current-password" @keyup.enter="confirmSaveEdit">
+            class="delete-password-input" placeholder="Password" autocomplete="current-password"
+            @keyup.enter="confirmSaveEdit">
           <button type="button" class="toggle-password" @click="showConfirmationPassword = !showConfirmationPassword"
             :aria-label="showConfirmationPassword ? 'Hide password' : 'Show password'"><i
               :class="showConfirmationPassword ? 'fi fi-br-eye-crossed' : 'fi fi-br-eye'"></i></button>
@@ -181,9 +189,9 @@
           <button class="btn btn-secondary" @click="closePasswordModal">
             Cancel
           </button>
-          <button
-            class="btn btn-primary delete-confirm-button" :disabled="!confirmationPassword || isConfirmingPassword"
-            @click="confirmSaveEdit">{{ isConfirmingPassword ? 'Checking...' : 'Save Changes' }}
+          <button class="btn btn-primary delete-confirm-button"
+            :disabled="!confirmationPassword || isConfirmingPassword" @click="confirmSaveEdit">{{ isConfirmingPassword ?
+              'Checking...' : 'Save Changes' }}
           </button>
         </div>
       </div>
