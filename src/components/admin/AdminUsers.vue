@@ -138,8 +138,8 @@
               <option v-if="editing.role === 'superadmin'" value="superadmin">Superadmin</option>
             </select></div>
           <div v-if="editForm.role === 'user'" class="form-group"><label
-              for="admin-edit-position">Position:</label><input id="admin-edit-position" v-model="editForm.position"
-              :readonly="viewing"></div>
+              for="admin-edit-position">Position:</label><select id="admin-edit-position" v-model="editForm.position"
+              :disabled="viewing"><option value="">Select position</option><option value="Staff">Staff</option><option value="Instructor">Instructor</option><option value="Student">Student</option></select></div>
           <div v-if="!viewing" class="form-group"><label for="admin-edit-password">Password: <span>(Leave blank to keep
                 current)</span></label><input id="admin-edit-password" type="password" v-model="editForm.password"
               :disabled="!hasPermission(editing, 'reset_passwords')">

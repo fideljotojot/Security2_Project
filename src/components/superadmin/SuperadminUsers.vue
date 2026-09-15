@@ -158,7 +158,12 @@
               <label for="role">Role: <span>*</span></label>
             </div>
             <div class="form-group">
-              <input type="text" id="position" v-model="form.position">
+              <select id="position" v-model="form.position">
+                <option value="">Select position</option>
+                <option value="Staff">Staff</option>
+                <option value="Instructor">Instructor</option>
+                <option value="Student">Student</option>
+              </select>
               <label for="position">Position:</label>
             </div>
             <div class="form-group">
@@ -291,7 +296,12 @@
                 <label for="role">Role: <span>*</span></label>
               </div>
               <div v-if="form.role === 'user'" class="form-group">
-                <input type="text" id="position" v-model="form.position" :readonly="isViewing">
+                <select id="position" v-model="form.position" :disabled="isViewing">
+                  <option value="">Select position</option>
+                  <option value="Staff">Staff</option>
+                  <option value="Instructor">Instructor</option>
+                  <option value="Student">Student</option>
+                </select>
                 <label for="position">Position:</label>
               </div>
 
