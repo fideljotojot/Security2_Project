@@ -1,10 +1,16 @@
 CREATE OR REPLACE FUNCTION public.get_full_user_for_admin_edit(p_user_id UUID)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE result JSONB;
+  viewer_role TEXT;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id=auth.uid() AND role IN ('admin','superadmin')) THEN RAISE EXCEPTION 'Only administrators can edit users'; END IF;
+  SELECT role INTO viewer_role FROM public.users WHERE id=auth.uid();
+  IF viewer_role IS NULL OR viewer_role NOT IN ('admin','superadmin') THEN RAISE EXCEPTION 'Only administrators can view users'; END IF;
+  IF viewer_role = 'admin' AND (SELECT role FROM public.users WHERE id=p_user_id) = 'superadmin' THEN RAISE EXCEPTION 'Administrators cannot view superadmins'; END IF;
   SELECT jsonb_build_object('user_id',u.id,'id_number',u.id_number,'username',u.username,'email',u.email,'role',u.role,'first_name',p.first_name,'middle_initial',p.middle_initial,'last_name',p.last_name,'suffix',p.suffix,'birthdate',p.birthdate,'age',p.age,'sex',p.sex,'purok',a.purok,'barangay',a.barangay,'city',a.city,'province',a.province,'country',a.country,'zip',a.zip) INTO result
-  FROM public.users u JOIN public.profiles p ON p.user_id=u.id LEFT JOIN public.addresses a ON a.user_id=u.id WHERE u.id=p_user_id;
+  -- Viewing is allowed for both admins and superadmins, including superadmin
+  -- targets. Keep the profile join optional so an account can still be viewed
+  -- even if its profile row is missing or incomplete.
+  FROM public.users u LEFT JOIN public.profiles p ON p.user_id=u.id LEFT JOIN public.addresses a ON a.user_id=u.id WHERE u.id=p_user_id;
   RETURN result;
 END; $$;
 

@@ -61,14 +61,18 @@ $$;
 
 DROP FUNCTION IF EXISTS public.get_admin_users();
 CREATE OR REPLACE FUNCTION public.get_admin_users()
-RETURNS TABLE(user_id UUID,id_number VARCHAR,username VARCHAR,email VARCHAR,role VARCHAR,registration_status VARCHAR,is_locked_out BOOLEAN,created_at TIMESTAMPTZ,admin_permissions JSONB,viewer_permissions JSONB)
+RETURNS TABLE(user_id UUID,id_number VARCHAR,username VARCHAR,email VARCHAR,role VARCHAR,registration_status VARCHAR,is_locked_out BOOLEAN,created_at TIMESTAMPTZ,admin_permissions JSONB,viewer_permissions JSONB,"position" VARCHAR)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE viewer_role TEXT;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public.users AS viewer WHERE viewer.id = auth.uid() AND viewer.role IN ('admin','superadmin')) THEN
+  SELECT u.role INTO viewer_role FROM public.users AS u WHERE u.id = auth.uid();
+  IF viewer_role IS NULL OR viewer_role NOT IN ('admin','superadmin') THEN
     RAISE EXCEPTION 'Only administrators can view users';
   END IF;
-  RETURN QUERY SELECT u.id,u.id_number,u.username,u.email,u.role,u.registration_status,u.is_locked_out,u.created_at,COALESCE(u.admin_permissions, '[]'::jsonb),COALESCE((SELECT viewer.admin_permissions FROM public.users AS viewer WHERE viewer.id = auth.uid()), '[]'::jsonb)
-    FROM public.users AS u WHERE u.id <> auth.uid() ORDER BY u.created_at DESC;
+  RETURN QUERY SELECT u.id,u.id_number,u.username,u.email,u.role,u.registration_status,u.is_locked_out,u.created_at,COALESCE(u.admin_permissions, '[]'::jsonb),COALESCE((SELECT viewer.admin_permissions FROM public.users AS viewer WHERE viewer.id = auth.uid()), '[]'::jsonb),p.position
+    FROM public.users AS u LEFT JOIN public.profiles AS p ON p.user_id = u.id
+    WHERE (viewer_role = 'superadmin' OR u.role <> 'superadmin')
+    ORDER BY u.created_at DESC;
 END;
 $$;
 
@@ -94,13 +98,13 @@ GRANT EXECUTE ON FUNCTION public.set_user_role(UUID, TEXT, JSONB) TO authenticat
 
 DROP FUNCTION IF EXISTS public.get_all_users();
 CREATE OR REPLACE FUNCTION public.get_all_users()
-RETURNS TABLE(user_id UUID,id_number VARCHAR,username VARCHAR,email VARCHAR,role VARCHAR,registration_status VARCHAR,is_locked_out BOOLEAN,created_at TIMESTAMPTZ,admin_permissions JSONB)
+RETURNS TABLE(user_id UUID,id_number VARCHAR,username VARCHAR,email VARCHAR,role VARCHAR,registration_status VARCHAR,is_locked_out BOOLEAN,created_at TIMESTAMPTZ,admin_permissions JSONB,"position" VARCHAR)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.users AS viewer WHERE viewer.id = auth.uid() AND viewer.role = 'superadmin') THEN
     RAISE EXCEPTION 'Only superadmins can view all users';
   END IF;
-  RETURN QUERY SELECT u.id,u.id_number,u.username,u.email,u.role,u.registration_status,u.is_locked_out,u.created_at,COALESCE(u.admin_permissions, '[]'::jsonb)
-  FROM users u ORDER BY u.created_at DESC;
+  RETURN QUERY SELECT u.id,u.id_number,u.username,u.email,u.role,u.registration_status,u.is_locked_out,u.created_at,COALESCE(u.admin_permissions, '[]'::jsonb),p.position
+  FROM users u LEFT JOIN profiles p ON p.user_id = u.id ORDER BY u.created_at DESC;
 END;
 $$;

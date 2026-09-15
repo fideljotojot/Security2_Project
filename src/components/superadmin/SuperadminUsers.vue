@@ -33,6 +33,9 @@
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
           </select>
+          <select name="user-position" id="user-position" v-model="selectedPosition">
+            <option value="all">All Positions</option><option value="Staff">Staff</option><option value="Instructor">Instructor</option><option value="Student">Student</option>
+          </select>
 
           <select name="id-sort" id="id-sort" v-model="sortOrder" aria-label="Sort ID number">
             <option value="">Sort by Employee ID</option>
@@ -51,6 +54,7 @@
             <th>Username</th>
             <th>Email</th>
             <th>Role</th>
+            <th>Position</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -61,6 +65,7 @@
             <td>{{ user.username }}</td>
             <td>{{ user.email }}</td>
             <td style="text-transform: capitalize;">{{ user.role }}</td>
+            <td>{{ user.position || '-' }}</td>
             <td style="text-transform: capitalize;">{{ getUserStatus(user) }}</td>
             <td class="actions-container">
               <button @click="viewUser(user)" class="view-btn" :title="'View user details'" aria-label="View user">
@@ -84,7 +89,7 @@
             </td>
           </tr>
           <tr v-if="filteredUsers.length === 0">
-            <td colspan="6" class="empty-message">No users match the selected filters.</td>
+            <td colspan="7" class="empty-message">No users match the selected filters.</td>
           </tr>
         </tbody>
       </table>

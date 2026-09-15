@@ -463,7 +463,7 @@ BEGIN
   IF NOT EXISTS(SELECT 1 FROM public.users AS viewer WHERE viewer.id=auth.uid() AND viewer.role IN('admin','superadmin')) THEN 
     RAISE EXCEPTION 'Only administrators can view users'; 
   END IF; 
-  RETURN QUERY SELECT u.id,u.id_number,u.username,u.email,u.role,u.registration_status,u.is_locked_out,u.created_at FROM public.users AS u WHERE u.id<>auth.uid() ORDER BY u.created_at DESC; 
+  RETURN QUERY SELECT u.id,u.id_number,u.username,u.email,u.role,u.registration_status,u.is_locked_out,u.created_at FROM public.users AS u WHERE ((SELECT role FROM public.users WHERE id=auth.uid())='superadmin' OR u.role<>'superadmin') ORDER BY u.created_at DESC;
 END $$;
 
 -- N. admin_update_user_status: Update user status (admin/superadmin)

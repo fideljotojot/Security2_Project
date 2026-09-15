@@ -9,21 +9,28 @@
             aria-label="Search users"><button v-if="search" type="button" class="search-clear" @click="search = ''"
             aria-label="Clear search"><i class="fi fi-br-cross-small"></i></button><i v-else class="fi fi-br-search"
             aria-hidden="true"></i></div>
-        <div class="dropdown"><select v-model="status" aria-label="Filter by status">
+        <div class="dropdown">
+          <select v-model="status" aria-label="Filter by status">
             <option value="all">All statuses</option>
             <option value="pending">Pending</option>
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
-          </select><select v-model="selectedRole" aria-label="Filter by role">
+          </select>
+          <select v-model="selectedRole" aria-label="Filter by role">
             <option value="all">All roles</option>
             <option value="user">User</option>
             <option value="admin">Admin</option>
-            <option value="superadmin">Superadmin</option>
+          </select><select v-model="selectedPosition" aria-label="Filter by position">
+            <option value="all">All Positions</option>
+            <option value="Staff">Staff</option>
+            <option value="Instructor">Instructor</option>
+            <option value="Student">Student</option>
           </select><select v-model="sortOrder" aria-label="Sort ID number">
             <option value="">Sort by Employee ID</option>
             <option value="ascending">Ascending order</option>
             <option value="descending">Descending order</option>
-          </select></div>
+          </select>
+        </div>
       </div>
       <p v-if="message" class="alert-danger">{{ message }}</p>
       <table>
@@ -33,6 +40,7 @@
             <th>Username</th>
             <th>Email</th>
             <th>Role</th>
+            <th>Position</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -43,6 +51,7 @@
             <td>{{ user.username }}</td>
             <td>{{ user.email }}</td>
             <td style="text-transform: capitalize;">{{ user.role }}</td>
+            <td>{{ user.position || '-' }}</td>
             <td style="text-transform: capitalize;">{{ userStatus(user) }}</td>
             <td class="actions-container"><button class="view-btn" @click="view(user)" title="View user details"
                 aria-label="View user"><i class="fi fi-br-eye"></i></button><button class="edit-btn" @click="edit(user)"
@@ -60,7 +69,7 @@
                 <i class="fi fi-br-trash"></i></button></td>
           </tr>
           <tr v-if="!filtered.length">
-            <td colspan="6" class="empty-state">No users found.</td>
+            <td colspan="7" class="empty-state">No users found.</td>
           </tr>
         </tbody>
       </table>
@@ -137,7 +146,7 @@
               <option value="admin">Admin</option>
               <option v-if="editing.role === 'superadmin'" value="superadmin">Superadmin</option>
             </select></div>
-          <div v-if="editForm.role === 'user'" class="form-group"><label for="admin-edit-position">Position:
+          <div class="form-group"><label for="admin-edit-position">Position:
               <span>*</span></label><select id="admin-edit-position" v-model="editForm.position" :disabled="viewing"
               @change="validatePosition">
               <option value="Instructor">Instructor</option>

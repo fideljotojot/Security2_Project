@@ -47,6 +47,7 @@ export default {
       searchQuery: '',
       selectedRole: 'all',
       selectedStatus: 'all',
+      selectedPosition: 'all',
       sortOrder: '',
       currentPage: 1,
       pageSize: 10,
@@ -159,10 +160,11 @@ export default {
         const matchesSearch = !query || [user.id_number, user.username, user.email]
           .some(value => String(value || '').toLowerCase().includes(query));
         const matchesRole = this.selectedRole === 'all' || user.role === this.selectedRole;
+        const matchesPosition = this.selectedPosition === 'all' || user.position === this.selectedPosition;
         const userStatus = this.getUserStatus(user);
         const matchesStatus = this.selectedStatus === 'all' || userStatus === this.selectedStatus;
 
-        return matchesSearch && matchesRole && matchesStatus;
+        return matchesSearch && matchesRole && matchesStatus && matchesPosition;
       });
 
       if (!this.sortOrder) return filteredUsers;
@@ -202,6 +204,7 @@ export default {
     selectedStatus() {
       this.currentPage = 1;
     },
+    selectedPosition() { this.currentPage = 1; },
     sortOrder() {
       this.currentPage = 1;
     },
@@ -279,7 +282,7 @@ export default {
       this.selectedPrivileges = [];
     },
     privilegeRoleChanged() {
-      if (this.privilegeRole === 'superadmin') {
+      if (this.privilegeRole === 'superadmin' || this.privilegeRole === 'admin') {
         this.selectedPrivileges = this.availablePrivileges.map(privilege => privilege.key);
       } else if (this.privilegeRole === 'user') {
         this.selectedPrivileges = [];
@@ -287,6 +290,7 @@ export default {
     },
     async updatePrivilege() {
       if (!this.privilegeUser || this.isUpdatingPrivilege) return;
+      if (!await confirmCurrentPassword('Enter your password to save these privilege changes:')) return;
       this.isUpdatingPrivilege = true;
       const { error } = await supabase.rpc('set_user_role', {
         p_user_id: this.privilegeUser.user_id,
@@ -843,7 +847,7 @@ export default {
             p_age: this.form.age ? parseInt(this.form.age, 10) : null, p_sex: this.form.sex,
             p_purok: this.form.purok.trim(), p_barangay: this.form.barangay.trim(), p_city: this.form.city.trim(),
             p_province: this.form.province.trim(), p_country: this.form.country.trim(), p_zip: String(this.form.zip || '').trim(),
-            p_role: this.form.role, p_position: this.form.role === 'user' ? (this.form.position || '') : null, p_password: this.form.password || null
+            p_role: this.form.role, p_position: this.form.position || null, p_password: this.form.password || null
           });
           if (error) throw error;
           this.showAddModal = false;
