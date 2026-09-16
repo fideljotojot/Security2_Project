@@ -8,7 +8,7 @@ ALTER TABLE public.users
 
 ALTER TABLE public.users
   ADD CONSTRAINT users_registration_status_check
-  CHECK (registration_status IN ('pending', 'approved', 'blocked'));
+  CHECK (registration_status IN ('pending', 'approved', 'blocked', 'inactive', 'incomplete'));
 
 -- Preserve access for existing staff accounts after adding the new default.
 UPDATE public.users

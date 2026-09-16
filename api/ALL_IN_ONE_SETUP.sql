@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   role VARCHAR(20) NOT NULL DEFAULT 'user'
     CHECK (role IN ('user', 'admin', 'superadmin')),
   registration_status VARCHAR(20) NOT NULL DEFAULT 'pending'
-    CHECK (registration_status IN ('pending', 'approved', 'blocked')),
+    CHECK (registration_status IN ('pending', 'approved', 'blocked', 'inactive', 'incomplete')),
   is_locked_out BOOLEAN NOT NULL DEFAULT FALSE,
   email VARCHAR(120) NOT NULL UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -473,7 +473,7 @@ BEGIN
   IF NOT EXISTS(SELECT 1 FROM public.users AS viewer WHERE viewer.id=auth.uid() AND viewer.role IN('admin','superadmin')) THEN 
     RAISE EXCEPTION 'Only administrators can update status'; 
   END IF; 
-  IF p_status NOT IN('approved','blocked') THEN 
+  IF p_status NOT IN('approved','blocked','inactive') THEN
     RAISE EXCEPTION 'Invalid status'; 
   END IF; 
   IF (SELECT viewer.role FROM public.users AS viewer WHERE viewer.id=auth.uid())='admin' AND (SELECT target.role FROM public.users AS target WHERE target.id=p_user_id)='superadmin' THEN 

@@ -234,16 +234,15 @@ export default {
         return 'pending';
       }
       if (user.registration_status === 'incomplete') {
-        return '-';
+        return 'incomplete';
       }
-      if (user.registration_status === 'blocked' || user.is_locked_out) {
-        return 'blocked';
-      }
+      if (user.registration_status === 'inactive') return 'inactive';
+      if (user.registration_status === 'blocked' || user.is_locked_out) return 'blocked';
       return 'active';
     },
     canManagePrivileges(user) {
       // Active user/admin accounts can have individual privileges managed.
-      return this.getUserStatus(user) !== '-' && this.getUserStatus(user) !== 'pending' && user.user_id !== this.currentUserId;
+      return !['incomplete', 'pending', 'inactive'].includes(this.getUserStatus(user)) && user.user_id !== this.currentUserId;
     },
     async toggleLockout(user) {
       if (!await confirmCurrentPassword('Enter your password to block or unblock this account:')) return;
@@ -256,6 +255,19 @@ export default {
       if (error) {
         console.error('Error updating lockout state:', error);
       } else {
+        // Check the database status of this browser's account. During a
+        // superadmin handoff it is changed to blocked, even though the
+        // Supabase auth session itself remains valid until explicitly ended.
+        const { data: { user: signedInUser } } = await supabase.auth.getUser();
+        const { data: currentAccount } = signedInUser
+          ? await supabase.from('users').select('registration_status, is_locked_out').eq('id', signedInUser.id).single()
+          : { data: null };
+        if (currentAccount?.registration_status === 'blocked' || currentAccount?.registration_status === 'inactive' || currentAccount?.is_locked_out) {
+          await supabase.auth.signOut();
+          localStorage.removeItem('user');
+          this.$router.push({ name: 'login', query: { handoff: 'true' } });
+          return;
+        }
         await this.fetchUsers();
       }
     },

@@ -15,6 +15,8 @@
             <option value="pending">Pending</option>
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
+            <option value="inactive">Inactive</option>
+            <option value="incomplete">Incomplete</option>
           </select>
           <select v-model="selectedRole" aria-label="Filter by role">
             <option value="all">All roles</option>
@@ -58,13 +60,13 @@
                 :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'manage_account_info')"
                 title="Edit user"><i class="fi fi-br-edit"></i></button><button v-if="userStatus(user) !== 'blocked'"
                 class="block-action-btn"
-                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'block_accounts')"
+                :disabled="userStatus(user) === 'pending' || user.user_id === currentUserId || !hasPermission(user, 'block_accounts')"
                 @click="setStatus(user, 'blocked')" title="Block user"><i
                   class="fi fi-br-user-forbidden"></i></button><button v-else class="unlock-btn"
-                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'block_accounts')"
+                :disabled="userStatus(user) === 'pending' || user.user_id === currentUserId || !hasPermission(user, 'block_accounts')"
                 @click="setStatus(user, 'approved')" title="Unblock user"><i
                   class="fi fi-br-user-check"></i></button><button class="delete-btn" @click="requestDelete(user)"
-                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'delete_accounts')"
+                :disabled="userStatus(user) === 'pending' || user.user_id === currentUserId || !hasPermission(user, 'delete_accounts')"
                 :title="hasPermission(user, 'delete_accounts') ? 'Request deletion' : 'Deletion privilege disabled'">
                 <i class="fi fi-br-trash"></i></button></td>
           </tr>

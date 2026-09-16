@@ -189,7 +189,7 @@ export default {
 
         if (userData.is_locked_out) {
           await supabase.auth.signOut();
-          this.warnings.general = ["Your account is blocked. Please contact the administrator."];
+          this.warnings.general = [userData.registration_status === 'inactive' ? 'Your account is inactive because you are no longer with the company.' : "Your account is blocked. Please contact the administrator."];
           return;
         }
 
@@ -211,7 +211,7 @@ export default {
           await supabase.auth.signOut();
           localStorage.removeItem("user");
           setUserAuthenticated(false);
-          this.warnings.general = [userData.registration_status === 'blocked'
+          this.warnings.general = [userData.registration_status === 'inactive' ? 'Your account is inactive because you are no longer with the company.' : userData.registration_status === 'blocked'
             ? 'Your registration has been blocked.'
             : 'Your registration is still pending approval.'];
           return;

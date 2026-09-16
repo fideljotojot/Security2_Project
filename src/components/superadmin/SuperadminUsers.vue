@@ -32,6 +32,8 @@
             <option value="pending">Pending</option>
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
+            <option value="inactive">Inactive</option>
+            <option value="incomplete">Incomplete</option>
           </select>
           <select name="user-position" id="user-position" v-model="selectedPosition">
             <option value="all">All Positions</option><option value="Staff">Staff</option><option value="Instructor">Instructor</option><option value="Student">Student</option>
@@ -74,10 +76,10 @@
               <button @click="openEditModal(user)" class="edit-btn" :disabled="getUserStatus(user) === '-' || getUserStatus(user) === 'pending' || getUserStatus(user) === 'blocked'" :title="getUserStatus(user) === '-' ? 'Cannot edit incomplete users' : (getUserStatus(user) === 'pending' ? 'Cannot edit pending users' : (getUserStatus(user) === 'blocked' ? 'Cannot edit blocked users' : 'Edit user'))" aria-label="Edit user">
                 <i class="fi fi-br-edit"></i>
               </button>
-              <button @click="toggleLockout(user)" :class="['lock-btn', user.is_locked_out ? 'unlock-btn' : 'block-action-btn']" :disabled="getUserStatus(user) === '-' || getUserStatus(user) === 'pending'" :title="getUserStatus(user) === '-' ? 'Cannot modify incomplete users' : (getUserStatus(user) === 'pending' ? 'Cannot modify pending users' : (user.is_locked_out ? 'Unblock user' : 'Block user'))">
+              <button @click="toggleLockout(user)" :class="['lock-btn', user.is_locked_out ? 'unlock-btn' : 'block-action-btn']" :disabled="getUserStatus(user) === 'incomplete' || getUserStatus(user) === 'pending' || user.user_id === currentUserId" :title="user.user_id === currentUserId ? 'You cannot block your own account' : (getUserStatus(user) === 'incomplete' ? 'Cannot modify incomplete users' : (getUserStatus(user) === 'pending' ? 'Cannot modify pending users' : (user.is_locked_out ? 'Unblock user' : 'Block user'))) ">
                 <i :class="user.is_locked_out ? 'fi fi-br-user-check' : 'fi fi-br-user-forbidden'"></i>
               </button>
-              <button @click="deleteUser(user)" class="delete-btn" :disabled="getUserStatus(user) === '-' || getUserStatus(user) === 'pending'" title="Delete user" aria-label="Delete user">
+              <button @click="deleteUser(user)" class="delete-btn" :disabled="getUserStatus(user) === 'incomplete' || getUserStatus(user) === 'pending' || user.user_id === currentUserId || user.role === 'superadmin'" title="Delete user" aria-label="Delete user">
                 <i class="fi fi-br-trash"></i>
               </button>
               <button @click="openPrivilegeModal(user)" class="privilege-btn"

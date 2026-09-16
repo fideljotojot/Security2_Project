@@ -110,7 +110,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // 4. If user is locked out, sign out and redirect to login
-    if (userData.is_locked_out || (userData.registration_status !== 'approved' && !(to.name === 'complete-profile' && userData.registration_status === 'incomplete'))) {
+    if (userData.is_locked_out || userData.registration_status === 'inactive' || (userData.registration_status !== 'approved' && !(to.name === 'complete-profile' && userData.registration_status === 'incomplete'))) {
       await supabase.auth.signOut();
       localStorage.removeItem("user");
       isUserAuthenticated = false;

@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_registration_status_check;
 ALTER TABLE public.users ADD CONSTRAINT users_registration_status_check
-  CHECK (registration_status IN ('pending', 'approved', 'blocked', 'incomplete'));
+  CHECK (registration_status IN ('pending', 'approved', 'blocked', 'inactive', 'incomplete'));
 
 ALTER TABLE public.profiles ALTER COLUMN first_name DROP NOT NULL;
 ALTER TABLE public.profiles ALTER COLUMN last_name DROP NOT NULL;
@@ -26,6 +26,9 @@ BEGIN
   IF p_role NOT IN ('user', 'admin', 'superadmin') THEN
     RAISE EXCEPTION 'Invalid role';
   END IF;
+  IF p_role = 'superadmin' AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved') THEN
+    RAISE EXCEPTION 'Only one active superadmin is allowed';
+  END IF;
 
   INSERT INTO public.users (id, id_number, username, email, role, registration_status)
   VALUES (p_user_id, p_id_number, p_username, p_email, p_role, 'incomplete');
@@ -33,6 +36,53 @@ BEGIN
   INSERT INTO public.profiles (user_id, position)
   VALUES (p_user_id, NULLIF(p_position, ''));
   RETURN TRUE;
+END;
+$$;
+
+-- Status changes for ordinary accounts and the single-superadmin handoff.
+CREATE OR REPLACE FUNCTION public.admin_update_user_status(p_user_id UUID, p_status TEXT)
+RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE viewer_role TEXT; target_role TEXT; target_status TEXT;
+BEGIN
+  SELECT role INTO viewer_role FROM public.users WHERE id = auth.uid();
+  SELECT role, registration_status INTO target_role, target_status FROM public.users WHERE id = p_user_id FOR UPDATE;
+  IF viewer_role IS NULL OR viewer_role NOT IN ('admin','superadmin') THEN RAISE EXCEPTION 'Only administrators can update status'; END IF;
+  IF p_status NOT IN ('approved','blocked','inactive') THEN RAISE EXCEPTION 'Invalid status'; END IF;
+  IF target_role = 'superadmin' THEN
+    IF viewer_role <> 'superadmin' OR target_status = 'approved' OR p_user_id = auth.uid() THEN
+      RAISE EXCEPTION 'Only the active superadmin can replace another superadmin';
+    END IF;
+    IF p_status = 'approved' THEN
+      UPDATE public.users SET registration_status = 'blocked', is_locked_out = TRUE
+        WHERE id = auth.uid() AND role = 'superadmin' AND registration_status = 'approved';
+      UPDATE public.users SET registration_status = 'approved', is_locked_out = FALSE WHERE id = p_user_id;
+    ELSE
+      UPDATE public.users SET registration_status = p_status, is_locked_out = (p_status <> 'approved') WHERE id = p_user_id;
+    END IF;
+  ELSE
+    UPDATE public.users SET registration_status = p_status, is_locked_out = (p_status <> 'approved') WHERE id = p_user_id;
+  END IF;
+  RETURN FOUND;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.set_user_role(p_user_id UUID, p_role TEXT, p_permissions JSONB DEFAULT '[]'::jsonb)
+RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE viewer_role TEXT; target_role TEXT; target_status TEXT;
+BEGIN
+  SELECT role INTO viewer_role FROM public.users WHERE id = auth.uid();
+  SELECT role, registration_status INTO target_role, target_status FROM public.users WHERE id = p_user_id FOR UPDATE;
+  IF viewer_role <> 'superadmin' THEN RAISE EXCEPTION 'Only superadmins can manage privileges'; END IF;
+  IF p_role NOT IN ('user','admin','superadmin') THEN RAISE EXCEPTION 'Invalid role'; END IF;
+  IF p_user_id = auth.uid() THEN RAISE EXCEPTION 'You cannot change your own privileges'; END IF;
+  IF p_role = 'superadmin' AND target_role <> 'superadmin' AND target_status = 'approved'
+     AND EXISTS (SELECT 1 FROM public.users WHERE role='superadmin' AND registration_status='approved') THEN
+    RAISE EXCEPTION 'Only one active superadmin is allowed';
+  END IF;
+  UPDATE public.users SET role=p_role,
+    admin_permissions=CASE WHEN p_role='superadmin' THEN to_jsonb(ARRAY['manage_registrations','manage_account_info','block_accounts','reset_passwords','delete_accounts']) ELSE COALESCE(p_permissions,'[]'::jsonb) END
+    WHERE id=p_user_id;
+  RETURN FOUND;
 END;
 $$;
 
@@ -69,6 +119,9 @@ BEGIN
   IF auth.uid() <> p_user_id THEN RAISE EXCEPTION 'You can only complete your own account'; END IF;
   SELECT role INTO v_role FROM public.users WHERE id = p_user_id AND registration_status = 'incomplete';
   IF v_role IS NULL THEN RAISE EXCEPTION 'This account is not awaiting completion'; END IF;
+  IF v_role = 'superadmin' AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved') THEN
+    RAISE EXCEPTION 'Only one active superadmin is allowed';
+  END IF;
 
   UPDATE auth.users
   SET email = p_email,

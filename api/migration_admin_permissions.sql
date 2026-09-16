@@ -45,16 +45,24 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.update_registration_status(p_user_id UUID, p_status TEXT)
 RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE viewer_role TEXT; target_role TEXT; admin_permissions JSONB;
+DECLARE viewer_role TEXT; target_role TEXT; target_status TEXT; admin_permissions JSONB;
 BEGIN
   SELECT u.role, u.admin_permissions INTO viewer_role, admin_permissions
   FROM public.users u WHERE u.id = auth.uid();
-  SELECT u.role INTO target_role FROM public.users u WHERE u.id = p_user_id;
+  SELECT u.role, u.registration_status INTO target_role, target_status FROM public.users u WHERE u.id = p_user_id FOR UPDATE;
   IF viewer_role IS NULL OR viewer_role NOT IN ('admin','superadmin') THEN RAISE EXCEPTION 'Only administrators can update registrations'; END IF;
-  IF viewer_role = 'admin' AND NOT (admin_permissions ? 'manage_registrations') THEN RAISE EXCEPTION 'You do not have permission to manage registrations'; END IF;
-  IF p_status NOT IN ('approved','blocked') THEN RAISE EXCEPTION 'Invalid registration status'; END IF;
-  IF viewer_role = 'admin' AND target_role = 'superadmin' THEN RAISE EXCEPTION 'Administrators cannot modify superadmin registrations'; END IF;
-  UPDATE public.users SET registration_status=p_status,is_locked_out=(p_status='blocked') WHERE id=p_user_id;
+  IF p_status NOT IN ('approved','blocked','inactive') THEN RAISE EXCEPTION 'Invalid registration status'; END IF;
+  IF target_role = 'superadmin' THEN
+    IF viewer_role <> 'superadmin' OR target_status = 'approved' OR p_user_id = auth.uid() THEN RAISE EXCEPTION 'Only the active superadmin can replace another superadmin'; END IF;
+    IF p_status = 'approved' THEN
+      UPDATE public.users SET registration_status='blocked', is_locked_out=TRUE WHERE id=auth.uid() AND role='superadmin' AND registration_status='approved';
+      UPDATE public.users SET registration_status='approved', is_locked_out=FALSE WHERE id=p_user_id;
+    ELSE UPDATE public.users SET registration_status=p_status, is_locked_out=TRUE WHERE id=p_user_id;
+    END IF;
+  ELSE
+    IF viewer_role='admin' AND NOT (admin_permissions ? 'manage_registrations' OR admin_permissions ? 'block_accounts') THEN RAISE EXCEPTION 'You do not have permission to manage this account'; END IF;
+    UPDATE public.users SET registration_status=p_status,is_locked_out=(p_status<>'approved') WHERE id=p_user_id;
+  END IF;
   RETURN FOUND;
 END;
 $$;

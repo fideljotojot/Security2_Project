@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   role VARCHAR(20) NOT NULL DEFAULT 'user'
     CHECK (role IN ('user', 'admin', 'superadmin')),
   registration_status VARCHAR(20) NOT NULL DEFAULT 'pending'
-    CHECK (registration_status IN ('pending', 'approved', 'blocked')),
+    CHECK (registration_status IN ('pending', 'approved', 'blocked', 'inactive', 'incomplete')),
   is_locked_out BOOLEAN NOT NULL DEFAULT FALSE,
   email VARCHAR(120) NOT NULL UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
