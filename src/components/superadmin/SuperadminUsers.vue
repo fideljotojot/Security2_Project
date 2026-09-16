@@ -446,13 +446,18 @@
     <div v-if="showPrivilegeModal" class="modal-overlay" @click.self="closePrivilegeModal">
       <div class="privilege-modal-card" role="dialog" aria-modal="true" aria-labelledby="privilege-title">
         <div class="privilege-modal-header">
-          <h3 id="privilege-title">Role &amp; Privileges</h3>
+          <div class="privilege-title-group">
+            <div class="privilege-title-icon" aria-hidden="true">
+              <i class="fi fi-br-lock"></i>
+            </div>
+            <h3 id="privilege-title">Role &amp; Privileges</h3>
+          </div>
           <button type="button" class="privilege-close" @click="closePrivilegeModal" aria-label="Close">
             &times;
           </button>
         </div>
         <div class="privilege-modal-body">
-          <p class="privilege-description">Choose what this account is allowed to do.<br>Requires your security key.</p>
+          <p class="privilege-description">Choose what this account is allowed to do. Requires your security key.</p>
           <label class="privilege-label" for="privilege-role">Role</label>
           <select id="privilege-role" v-model="privilegeRole" @change="privilegeRoleChanged" class="privilege-select">
             <option value="admin">Admin</option>

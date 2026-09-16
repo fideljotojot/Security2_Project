@@ -122,7 +122,7 @@ i {
 
 .notification-card {
   position: relative;
-  top: 0;
+  top: -25%;
   width: min(90vw, fit-content);
   max-height: calc(100vh - 2rem);
   box-sizing: border-box;
@@ -179,6 +179,7 @@ i {
 .notification-card p {
   color: #555;
   font-size: .8rem;
+  max-width: 30rem;
 }
 
 .notification-card .btn {

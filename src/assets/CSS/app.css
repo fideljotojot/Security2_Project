@@ -693,6 +693,65 @@ tbody tr .empty-message {
   box-shadow: 0 1.25rem 3rem rgb(0 0 0 / 25%);
 }
 
+/* Shared confirmation-modal visual language for privilege editing. */
+.privilege-modal-card {
+  width: min(90vw, 45rem);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1.25rem 3rem rgb(0 0 0 / 30%);
+  overflow: hidden;
+}
+
+.privilege-modal-card .privilege-modal-header {
+  padding: 2rem 2.25rem 1rem;
+  border-bottom: 0;
+}
+
+.privilege-modal-card .privilege-modal-header h3 {
+  color: #08752f;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.privilege-title-group {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+}
+
+.privilege-title-icon i{
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 1px solid #08752f;
+  border-radius: 50%;
+  color: #08752f;
+  background: #e9f7ef;
+}
+
+.privilege-modal-card .privilege-modal-body {
+  padding: 1rem 2.25rem 1.75rem;
+}
+
+.privilege-modal-card .privilege-description {
+  color: #5f5d68;
+}
+
+.privilege-modal-card .privilege-modal-footer {
+  padding: 1.25rem 2.25rem 1.75rem;
+}
+
+.privilege-modal-card .privilege-modal-footer .btn-secondary {
+  background: #61d3a5;
+  color: #173b2b;
+}
+
+.privilege-modal-card .privilege-modal-footer .btn-primary {
+  background: #08752f;
+  color: #fff;
+}
+
 .privilege-modal-header,
 .privilege-modal-footer {
   display: flex;
@@ -717,12 +776,14 @@ tbody tr .empty-message {
 
 .privilege-modal-body {
   padding: 0 1.5rem 1.15rem;
+  text-align: left;
 }
 
 .privilege-description {
   color: #68677d;
   line-height: 1.35;
   margin: 0.1rem 0 1.35rem;
+  width: 60rem;
 }
 
 .privilege-label {

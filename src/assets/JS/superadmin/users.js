@@ -245,7 +245,11 @@ export default {
       return !['incomplete', 'pending', 'inactive'].includes(this.getUserStatus(user)) && user.user_id !== this.currentUserId;
     },
     async toggleLockout(user) {
-      if (!await confirmCurrentPassword('Enter your password to block or unblock this account:')) return;
+      const isSuperadminHandoff = user.role === 'superadmin' && user.registration_status !== 'approved' && user.user_id !== this.currentUserId;
+      const confirmationMessage = isSuperadminHandoff
+        ? `You are transferring the active Superadmin status to ${user.username || 'this account'}. Your account will become blocked and you will be logged out immediately after confirmation. Continue?`
+        : 'Enter your password to block or unblock this account:';
+      if (!await confirmCurrentPassword(confirmationMessage)) return;
       const targetState = !user.is_locked_out;
       const { error } = await supabase.rpc('admin_update_user_status', {
         p_user_id: user.user_id,
