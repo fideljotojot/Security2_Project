@@ -683,6 +683,10 @@ tbody tr .empty-message {
   border-radius: 0.4rem;
 }
 
+.privilege-account-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.privilege-account-fields .privilege-select { margin: .75rem 0 1rem; }
+@media (max-width: 600px) { .privilege-account-fields { grid-template-columns: 1fr; gap: 0; } }
+
 .privilege-modal-card {
   width: min(100% - 2rem, 36rem);
   max-height: calc(100vh - 2rem);

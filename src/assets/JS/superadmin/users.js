@@ -25,6 +25,7 @@ export default {
       showPrivilegeModal: false,
       privilegeUser: null,
       privilegeRole: 'user',
+      privilegePosition: 'Student',
       selectedPrivileges: [],
       availablePrivileges: [
         { key: 'manage_registrations', label: 'Can Manage Registrations' },
@@ -286,6 +287,7 @@ export default {
       // The modal edits an account's capabilities. Keep an admin account in
       // the admin role while its individual privileges are being edited.
       this.privilegeRole = user.role === 'admin' ? 'admin' : 'user';
+      this.privilegePosition = user.position || (this.privilegeRole === 'user' ? 'Student' : 'Staff');
       this.selectedPrivileges = user.role === 'user'
         ? []
         : (Array.isArray(user.admin_permissions) ? user.admin_permissions : []);
@@ -298,6 +300,7 @@ export default {
       this.selectedPrivileges = [];
     },
     privilegeRoleChanged() {
+      this.privilegePosition = this.privilegeRole === 'user' ? 'Student' : 'Staff';
       if (this.privilegeRole === 'superadmin' || this.privilegeRole === 'admin') {
         this.selectedPrivileges = this.availablePrivileges.map(privilege => privilege.key);
       } else if (this.privilegeRole === 'user') {
@@ -311,7 +314,8 @@ export default {
       const { error } = await supabase.rpc('set_user_role', {
         p_user_id: this.privilegeUser.user_id,
         p_role: this.privilegeRole,
-        p_permissions: this.selectedPrivileges
+        p_permissions: this.selectedPrivileges,
+        p_position: this.privilegePosition
       });
       this.isUpdatingPrivilege = false;
       this.showPrivilegeModal = false;

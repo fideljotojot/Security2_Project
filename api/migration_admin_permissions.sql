@@ -19,10 +19,12 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS public.set_user_role(UUID, TEXT);
+DROP FUNCTION IF EXISTS public.set_user_role(UUID, TEXT, JSONB);
 CREATE OR REPLACE FUNCTION public.set_user_role(
   p_user_id UUID,
   p_role TEXT,
-  p_permissions JSONB DEFAULT '[]'::jsonb
+  p_permissions JSONB DEFAULT '[]'::jsonb,
+  p_position TEXT DEFAULT NULL
 ) RETURNS BOOLEAN
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
@@ -39,6 +41,7 @@ BEGIN
   SET role = p_role,
       admin_permissions = CASE WHEN p_role = 'superadmin' THEN to_jsonb(ARRAY['manage_registrations','manage_account_info','block_accounts','reset_passwords','delete_accounts']) ELSE COALESCE(p_permissions, '[]'::jsonb) END
   WHERE id = p_user_id;
+  UPDATE public.profiles SET position = NULLIF(p_position, '') WHERE user_id = p_user_id;
   RETURN FOUND;
 END;
 $$;
@@ -101,8 +104,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.set_user_role(UUID, TEXT, JSONB) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.set_user_role(UUID, TEXT, JSONB) TO authenticated;
+REVOKE ALL ON FUNCTION public.set_user_role(UUID, TEXT, JSONB, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.set_user_role(UUID, TEXT, JSONB, TEXT) TO authenticated;
 
 DROP FUNCTION IF EXISTS public.get_all_users();
 CREATE OR REPLACE FUNCTION public.get_all_users()
