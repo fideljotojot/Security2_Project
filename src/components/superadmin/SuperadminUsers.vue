@@ -20,14 +20,14 @@
         </div>
         <div class="dropdown">
           <select name="user-role" id="user-role" v-model="selectedRole">
-            <option value="all">All</option>
+            <option value="all">All Role</option>
             <option value="user">User</option>
             <option value="admin">Admin</option>
             <option value="superadmin">Superadmin</option>
           </select>
 
           <select name="user-status" id="user-status" v-model="selectedStatus">
-            <option value="all">All</option>
+            <option value="all">All Status</option>
             <option value="-">-</option>
             <option value="pending">Pending</option>
             <option value="active">Active</option>
@@ -43,7 +43,7 @@
           </select>
 
           <select name="id-sort" id="id-sort" v-model="sortOrder" aria-label="Sort ID number">
-            <option value="">Sort by Employee ID</option>
+            <option value="">Sort by ID</option>
             <option value="ascending">Ascending order</option>
             <option value="descending">Descending order</option>
           </select>
@@ -89,7 +89,7 @@
                 <i :class="user.is_locked_out ? 'fi fi-br-user-check' : 'fi fi-br-user-forbidden'"></i>
               </button>
               <button @click="deleteUser(user)" class="delete-btn"
-                :disabled="getUserStatus(user) === 'incomplete' || getUserStatus(user) === 'pending' || user.user_id === currentUserId || user.role === 'superadmin'"
+                :disabled="getUserStatus(user) === 'incomplete' || getUserStatus(user) === 'pending' || user.user_id === currentUserId"
                 title="Delete user" aria-label="Delete user">
                 <i class="fi fi-br-trash"></i>
               </button>
@@ -324,7 +324,7 @@
                 <span class="field-warning" v-if="getWarning('user_id')">{{ getWarning('user_id')
                 }}</span>
                 <input type="text" id="user_id" v-model="form.idNumber" required :readonly="isViewing" @input="checkID">
-                <label for="user_id">Employee No. <span>*</span></label>
+                <label for="user_id">ID No. <span>*</span></label>
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('username')">{{ getWarning('username')

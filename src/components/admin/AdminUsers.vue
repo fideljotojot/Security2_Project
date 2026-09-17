@@ -57,8 +57,8 @@
             <td style="text-transform: capitalize;">{{ userStatus(user) }}</td>
             <td class="actions-container"><button class="view-btn" @click="view(user)" title="View user details"
                 aria-label="View user"><i class="fi fi-br-eye"></i></button><button class="edit-btn" @click="edit(user)"
-                :disabled="userStatus(user) === 'pending' || !hasPermission(user, 'manage_account_info')"
-                title="Edit user"><i class="fi fi-br-edit"></i></button><button v-if="userStatus(user) !== 'blocked'"
+                :disabled="userStatus(user) === 'pending' || userStatus(user) === 'blocked' || !hasPermission(user, 'manage_account_info')"
+                :title="userStatus(user) === 'blocked' ? 'Cannot edit blocked users' : 'Edit user'"><i class="fi fi-br-edit"></i></button><button v-if="userStatus(user) !== 'blocked'"
                 class="block-action-btn"
                 :disabled="userStatus(user) === 'pending' || user.user_id === currentUserId || !hasPermission(user, 'block_accounts')"
                 @click="setStatus(user, 'blocked')" title="Block user"><i

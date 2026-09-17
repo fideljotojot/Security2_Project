@@ -3,14 +3,14 @@ import { confirmCurrentPassword } from '@/utils/confirm-password.js';
 
 export default {
   name: 'SuperadminRegistrations',
-  data: () => ({ registrations: [], deleteRequests: [], registrationSearch: '', deleteSearch: '', registrationIdSort: '', deleteIdSort: '', selectedRegistrationTime: 'all', selectedDeleteTime: 'all', registrationPage: 1, deletePage: 1, registrationPageSize: 5, deletePageSize: 5, isLoading: false, isUpdating: false, errorMessage: '' }),
+  data: () => ({ registrations: [], deleteRequests: [], registrationSearch: '', deleteSearch: '', deleteRole: 'all', registrationIdSort: '', deleteIdSort: '', selectedRegistrationTime: 'all', selectedDeleteTime: 'all', registrationPage: 1, deletePage: 1, registrationPageSize: 5, deletePageSize: 5, isLoading: false, isUpdating: false, errorMessage: '' }),
   computed: {
     filteredRegistrations() { return this.filterItems(this.registrations, this.registrationSearch, this.registrationIdSort, this.selectedRegistrationTime); },
-    filteredDeleteRequests() { return this.filterItems(this.deleteRequests, this.deleteSearch, this.deleteIdSort, this.selectedDeleteTime); },
+    filteredDeleteRequests() { return this.filterItems(this.deleteRequests, this.deleteSearch, this.deleteIdSort, this.selectedDeleteTime).filter(item => this.deleteRole === 'all' || item.role === this.deleteRole); },
     paginatedRegistrations() { return this.paginate(this.filteredRegistrations, this.registrationPage); },
     paginatedDeleteRequests() { return this.paginate(this.filteredDeleteRequests, this.deletePage); }
   },
-  watch: { registrationSearch() { this.registrationPage = 1; }, registrationIdSort() { this.registrationPage = 1; }, selectedRegistrationTime() { this.registrationPage = 1; }, deleteSearch() { this.deletePage = 1; }, deleteIdSort() { this.deletePage = 1; }, selectedDeleteTime() { this.deletePage = 1; } },
+  watch: { registrationSearch() { this.registrationPage = 1; }, registrationIdSort() { this.registrationPage = 1; }, selectedRegistrationTime() { this.registrationPage = 1; }, deleteSearch() { this.deletePage = 1; }, deleteRole() { this.deletePage = 1; }, deleteIdSort() { this.deletePage = 1; }, selectedDeleteTime() { this.deletePage = 1; } },
   mounted() { this.fetchRegistrations(); this.fetchDeleteRequests(); },
   methods: {
     async fetchRegistrations() {

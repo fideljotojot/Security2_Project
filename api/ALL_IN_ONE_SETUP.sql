@@ -170,8 +170,8 @@ BEGIN
   INSERT INTO public.users (id, id_number, username, email, role)
   VALUES (p_user_id, p_id_number, p_username, p_email, p_role);
 
-  INSERT INTO public.profiles (user_id, first_name, middle_initial, last_name, suffix, birthdate, age, sex)
-  VALUES (p_user_id, p_first_name, p_middle_initial, p_last_name, p_suffix, p_birthdate, p_age, p_sex);
+  INSERT INTO public.profiles (user_id, first_name, middle_initial, last_name, suffix, birthdate, age, sex, position)
+  VALUES (p_user_id, p_first_name, p_middle_initial, p_last_name, p_suffix, p_birthdate, p_age, p_sex, 'Student');
 
   INSERT INTO public.addresses (user_id, purok, barangay, city, province, country, zip)
   VALUES (p_user_id, p_purok, p_barangay, p_city, p_province, p_country, p_zip);

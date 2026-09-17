@@ -22,6 +22,10 @@ BEGIN
     RETURN FALSE;
   END IF;
 
+  IF EXISTS (SELECT 1 FROM public.users WHERE id = p_user_id AND role = 'superadmin') THEN
+    RAISE EXCEPTION 'Superadmin accounts cannot be deleted';
+  END IF;
+
   DELETE FROM auth.users WHERE id = p_user_id;
   RETURN TRUE;
 END;
