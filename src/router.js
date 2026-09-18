@@ -5,6 +5,7 @@ import Dashboard from './components/UserDashboard.vue';
 import ForgotPassword from './components/ForgotPassword.vue';
 import SignupForm from './components/SignupForm.vue';
 import LoginForm from './components/LoginForm.vue';
+import ProfilePage from './components/ProfilePage.vue';
 
 /* Superadmin */
 import SuperAdminDashboard from './components/superadmin/SuperadminDashboard.vue';
@@ -25,6 +26,7 @@ const routes = [
   { path: '/signup', name: 'signup', component: SignupForm },
   { path: '/complete-profile', name: 'complete-profile', component: SignupForm },
   { path: '/dashboard', name: 'dashboard', component: Dashboard },
+  { path: '/profile', name: 'profile', component: ProfilePage },
   { path: '/forgot', name: 'forgot', component: ForgotPassword },
   { path: '/superadmin', component: RouterView,
     children: [

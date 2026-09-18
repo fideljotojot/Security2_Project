@@ -7,10 +7,12 @@ export default {
   data() {
     return {
       page: 'home',
-      lockoutActive: false
+      lockoutActive: false,
+      currentUserRole: 'user'
     }
   },
-  mounted() {
+  async mounted() {
+    await this.syncCurrentUserRole();
     // Check for persisted lockout state
     this.checkPersistedLockout();
     // Set up event listeners for browser back button and reload
@@ -27,6 +29,9 @@ export default {
       this.setupLockoutProtection();
     },
     '$route'(to) {
+      if (to.name === 'profile' || to.name === 'dashboard') {
+        this.syncCurrentUserRole();
+      }
       // Re-setup protection when route changes
       if (to.name === 'login' && this.lockoutActive) {
         this.setupLockoutProtection();
@@ -34,6 +39,29 @@ export default {
     }
   },
   methods: {
+    async syncCurrentUserRole() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        this.currentUserRole = 'user';
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error || !data?.role) return;
+
+      this.currentUserRole = data.role;
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        localStorage.setItem('user', JSON.stringify({ ...storedUser, role: data.role }));
+      } catch {
+        // The server response remains the source of truth for navigation.
+      }
+    },
     async logout() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
@@ -46,6 +74,7 @@ export default {
       }
       await supabase.auth.signOut();
       localStorage.removeItem('user');
+      this.currentUserRole = 'user';
       setUserAuthenticated(false);
       this.$router.push('/login');
     },
@@ -211,16 +240,7 @@ export default {
       </div>
     </header>
 
-    <header v-else-if="$route.name === 'dashboard'">
-      <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
-      <div class="header-btn">
-        <router-link to="/login" @click.prevent="logout">
-          <p>Logout</p>
-        </router-link>
-      </div>
-    </header>
-
-    <header v-else-if="['superadmin', 'superadmin-users', 'superadmin-registrations', 'superadmin-activity-logs'].includes($route.name)">
+    <header v-else-if="($route.name === 'profile' && currentUserRole === 'superadmin') || ['superadmin', 'superadmin-users', 'superadmin-registrations', 'superadmin-activity-logs'].includes($route.name)">
       <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
       <div class="header-btn">
         <router-link to="/superadmin">
@@ -235,13 +255,14 @@ export default {
         <router-link to="/superadmin/activity-logs">
           <p>Logs</p>
         </router-link>
+        <router-link to="/profile"><p>Profile</p></router-link>
         <router-link to="/login" @click.prevent="logout">
           <p>Logout</p>
         </router-link>
       </div>
     </header>
 
-    <header v-else-if="['admin', 'admin-users', 'admin-registrations'].includes($route.name)">
+    <header v-else-if="($route.name === 'profile' && currentUserRole === 'admin') || ['admin', 'admin-users', 'admin-registrations'].includes($route.name)">
       <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
       <div class="header-btn">
         <router-link to="/admin">
@@ -253,9 +274,19 @@ export default {
         <router-link to="/admin/registrations">
           <p>Registrations</p>
         </router-link>
+        <router-link to="/profile"><p>Profile</p></router-link>
         <router-link to="/login" @click.prevent="logout">
           <p>Logout</p>
         </router-link>
+      </div>
+    </header>
+
+    <header v-else-if="$route.name === 'dashboard' || ($route.name === 'profile' && !['admin', 'superadmin'].includes(currentUserRole))">
+      <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
+      <div class="header-btn">
+        <router-link to="/dashboard"><p class="dark-btn">Dashboard</p></router-link>
+        <router-link to="/profile"><p>Profile</p></router-link>
+        <router-link to="/login" @click.prevent="logout"><p>Logout</p></router-link>
       </div>
     </header>
 
@@ -275,7 +306,7 @@ export default {
       </div>
 
       <div class="page-container"
-        v-else-if="['dashboard', 'admin', 'superadmin', 'admin-users', 'admin-registrations', 'superadmin-users', 'superadmin-registrations', 'superadmin-activity-logs'].includes($route.name)">
+        v-else-if="['dashboard', 'profile', 'admin', 'superadmin', 'admin-users', 'admin-registrations', 'superadmin-users', 'superadmin-registrations', 'superadmin-activity-logs'].includes($route.name)">
         <router-view></router-view>
       </div>
 
