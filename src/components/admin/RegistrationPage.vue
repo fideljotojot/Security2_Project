@@ -49,8 +49,8 @@
                 :disabled="isUpdating || !hasPermission('manage_registrations')" @click="updateStatus(registration, 'approved')">
                 <i class="fi fi-rc-check-circle" aria-hidden="true"></i>
               </button>
-              <button type="button" class="block-action-btn reject-btn" title="Block registration" aria-label="Block registration"
-                :disabled="isUpdating || !hasPermission('manage_registrations')" @click="updateStatus(registration, 'blocked')">
+              <button type="button" class="block-action-btn reject-btn" title="Reject and delete registration" aria-label="Reject and delete registration"
+                :disabled="isUpdating || !hasPermission('manage_registrations')" @click="updateStatus(registration, 'rejected')">
                 <i class="fi fi-br-cross-circle" aria-hidden="true"></i>
               </button>
             </td>

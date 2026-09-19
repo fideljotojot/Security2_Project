@@ -187,10 +187,22 @@ export default {
           return;
         }
 
-        if (userData.is_locked_out) {
+        if (userData.is_locked_out && userData.registration_status !== 'inactive') {
           await supabase.auth.signOut();
           this.warnings.general = [userData.registration_status === 'inactive' ? 'Your account is inactive because you are no longer with the company.' : "Your account is blocked. Please contact the administrator."];
           return;
+        }
+
+        if (userData.role === 'superadmin' && userData.registration_status === 'inactive') {
+          const { data: activatedStatus, error: activationError } = await supabase.rpc('activate_superadmin_on_login', {
+            p_user_id: data.user.id
+          });
+          if (activationError || activatedStatus !== 'approved') {
+            await supabase.auth.signOut();
+            this.warnings.general = ['Another active superadmin is currently signed in.'];
+            return;
+          }
+          userData.registration_status = 'approved';
         }
 
         if (userData.registration_status === 'incomplete') {

@@ -1,6 +1,7 @@
 -- Allow administrators to review ordinary user registrations.
 -- Apply after migration_registration_approval.sql.
 
+DROP FUNCTION IF EXISTS public.get_pending_registrations();
 CREATE OR REPLACE FUNCTION public.get_pending_registrations()
 RETURNS TABLE(user_id UUID, id_number VARCHAR, username VARCHAR, email VARCHAR, created_at TIMESTAMPTZ)
 LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -33,17 +34,19 @@ BEGIN
   IF viewer_role IS NULL OR viewer_role NOT IN ('admin', 'superadmin') THEN
     RAISE EXCEPTION 'Only administrators can update registrations';
   END IF;
-  IF p_status NOT IN ('approved', 'blocked') THEN
+  IF p_status NOT IN ('approved', 'rejected') THEN
     RAISE EXCEPTION 'Invalid registration status';
   END IF;
   IF viewer_role = 'admin' AND target_role = 'superadmin' THEN
     RAISE EXCEPTION 'Administrators cannot modify superadmin registrations';
   END IF;
 
-  UPDATE public.users
-  SET registration_status = p_status,
-      is_locked_out = (p_status = 'blocked')
-  WHERE id = p_user_id;
+  IF p_status = 'rejected' THEN
+    DELETE FROM auth.users WHERE id = p_user_id;
+  ELSE
+    UPDATE public.users SET registration_status = 'approved', is_locked_out = FALSE
+    WHERE id = p_user_id AND registration_status = 'pending';
+  END IF;
   RETURN FOUND;
 END;
 $$;

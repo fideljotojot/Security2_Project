@@ -16,12 +16,12 @@
             <p class="identity-role">{{ form.position || 'CSUCC staff member' }}</p>
             <dl class="identity-meta">
               <div>
-                <dt>Employee ID</dt>
+                <dt>ID Number</dt>
                 <dd>{{ form.id_number || '&mdash;' }}</dd>
               </div>
               <div>
                 <dt>Account role</dt>
-                <dd>{{ form.role || '&mdash;' }}</dd>
+                <dd class="identity-role">{{ form.role || '&mdash;' }}</dd>
               </div>
             </dl>
             <p class="identity-note">A complete profile helps your colleagues and administrators keep records accurate.
@@ -30,10 +30,10 @@
         </aside>
         <section class="form-card">
           <div class="form-card-header">
-            <div>
+            <div class="form-card-title">
               <p class="section-kicker">Profile details</p>
-              <h2>Update your information</h2>
-            </div><span class="required-note">* Required fields</span>
+              <p class="required-note"><span>*</span> Required fields</p>
+            </div>
           </div>
           <form @submit.prevent="save" class="profile-form">
             <div v-if="message" :class="['alert', { success: saved }]" role="status">{{ message }}</div>
@@ -42,9 +42,9 @@
               <div class="form-grid">
                 <div class="form-group"><label>First name <span>*</span></label><input v-model="form.first_name"
                     required></div>
+                <div class="form-group"><label>Middle initial</label><input v-model="form.middle_initial"></div>
                 <div class="form-group"><label>Last name <span>*</span></label><input v-model="form.last_name" required>
                 </div>
-                <div class="form-group"><label>Middle initial</label><input v-model="form.middle_initial"></div>
                 <div class="form-group"><label>Suffix</label><input v-model="form.suffix"></div>
                 <div class="form-group"><label>Birthdate</label><input v-model="form.birthdate" type="date"></div>
                 <div class="form-group"><label>Age</label><input v-model="form.age" type="number"></div>
@@ -56,17 +56,17 @@
               </div>
             </fieldset>
             <fieldset>
-              <legend>Employment details</legend>
+              <legend>Account details</legend>
               <div class="form-grid">
-                <div class="form-group"><label>ID Number<span>*</span></label><input v-model="form.id_number"
-                    required></div>
+                <div class="form-group"><label>ID Number<span>*</span></label><input v-model="form.id_number" required>
+                </div>
                 <div class="form-group"><label>Username <span>*</span></label><input v-model="form.username" required>
                 </div>
                 <div class="form-group"><label>Email <span>*</span></label><input v-model="form.email" type="email"
                     required></div>
                 <div class="form-group"><label>Role</label><input class="readonly-field" :value="form.role" readonly>
                 </div>
-                <div class="form-group full-width"><label>Position</label><input v-model="form.position"></div>
+                <div class="form-group"><label>Position</label><input v-model="form.position"></div>
               </div>
             </fieldset>
             <fieldset>

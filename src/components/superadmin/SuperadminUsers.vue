@@ -450,7 +450,7 @@
         </div>
         <div class="btn-container">
           <button type="button" class="btn btn-secondary" @click="cancelCreateConfirmation">Cancel</button>
-          <button type="button" class="btn btn-primary" :disabled="isSubmitting || !createPassword"
+          <button type="button" class="btn btn-primary" :disabled="isSubmitting || !createPassword || !canCreateAccount"
             @click="confirmCreateAccount">
             {{ isSubmitting ? 'Saving...' : 'Confirm and Save' }}
           </button>

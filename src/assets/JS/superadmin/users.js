@@ -488,6 +488,16 @@ export default {
     },
     async confirmCreateAccount() {
       if (this.isSubmitting || !this.createPassword) return;
+
+      // Revalidate the account at the confirmation boundary. The first form can
+      // become stale while async uniqueness checks are still running, so do not
+      // authenticate the superadmin or start the save until the account itself
+      // is still valid.
+      this.normalizePosition();
+      if (!this.canCreateAccount) {
+        this.errorMessage = 'Please fix the account details before confirming.';
+        return;
+      }
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user?.email) {
         this.errorMessage = 'Unable to identify the signed-in superadmin.';

@@ -10,6 +10,11 @@ ALTER TABLE public.users ADD CONSTRAINT users_registration_status_check
 ALTER TABLE public.profiles ALTER COLUMN first_name DROP NOT NULL;
 ALTER TABLE public.profiles ALTER COLUMN last_name DROP NOT NULL;
 
+-- Multiple superadmin records are allowed. Active/inactive selection is
+-- handled by the completion and login functions, not by a uniqueness rule.
+ALTER TABLE public.users DROP CONSTRAINT IF EXISTS one_active_superadmin;
+DROP INDEX IF EXISTS public.one_active_superadmin;
+
 CREATE OR REPLACE FUNCTION public.create_initial_account(
   p_user_id UUID,
   p_id_number TEXT,
@@ -26,10 +31,6 @@ BEGIN
   IF p_role NOT IN ('user', 'admin', 'superadmin') THEN
     RAISE EXCEPTION 'Invalid role';
   END IF;
-  IF p_role = 'superadmin' AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved') THEN
-    RAISE EXCEPTION 'Only one active superadmin is allowed';
-  END IF;
-
   INSERT INTO public.users (id, id_number, username, email, role, registration_status)
   VALUES (p_user_id, p_id_number, p_username, p_email, p_role, 'incomplete');
   UPDATE auth.users SET email_confirmed_at = COALESCE(email_confirmed_at, now()) WHERE id = p_user_id;
@@ -115,14 +116,17 @@ CREATE OR REPLACE FUNCTION public.complete_initial_account(
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE
   v_role TEXT;
+  v_initial_status TEXT;
 BEGIN
   IF auth.uid() <> p_user_id THEN RAISE EXCEPTION 'You can only complete your own account'; END IF;
   SELECT role INTO v_role FROM public.users WHERE id = p_user_id AND registration_status = 'incomplete';
   IF v_role IS NULL THEN RAISE EXCEPTION 'This account is not awaiting completion'; END IF;
-  IF v_role = 'superadmin' AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved') THEN
-    RAISE EXCEPTION 'Only one active superadmin is allowed';
-  END IF;
-
+  v_initial_status := CASE
+    WHEN v_role = 'superadmin'
+      AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved')
+    THEN 'inactive'
+    ELSE 'approved'
+  END;
   UPDATE auth.users
   SET email = p_email,
       email_confirmed_at = COALESCE(email_confirmed_at, now()),
@@ -130,7 +134,8 @@ BEGIN
   WHERE id = p_user_id;
 
   UPDATE public.users
-  SET id_number = p_id_number, username = p_username, email = p_email, registration_status = 'approved'
+  SET id_number = p_id_number, username = p_username, email = p_email, registration_status = v_initial_status,
+      is_locked_out = FALSE
   WHERE id = p_user_id;
   UPDATE public.profiles
   SET first_name = p_first_name, middle_initial = NULLIF(p_middle_initial, ''), last_name = p_last_name,

@@ -433,10 +433,15 @@ export default {
           return;
         }
 
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: recoveryEmail,
-          options: { shouldCreateUser: false }
+        const { data: otpResult, error: otpError } = await supabase.rpc('send_otp_code', {
+          p_id_number: this.idNumber,
+          p_email: recoveryEmail
         });
+
+        if (!otpError && otpResult && otpResult.ok === false) {
+          this.warnings.idNumber = [otpResult.error || 'Unable to send a verification code.'];
+          return;
+        }
 
         if (otpError) {
           // The request may have reached Supabase and sent the email even if
