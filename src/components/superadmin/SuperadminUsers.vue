@@ -73,6 +73,21 @@
             <td>{{ user.position || '-' }}</td>
             <td style="text-transform: capitalize;">{{ getUserStatus(user) }}</td>
             <td class="actions-container">
+              <div class="actions-menu"><button type="button" class="actions-menu-trigger"
+                  @click="toggleActionsMenu(user.user_id)" :aria-expanded="openActionsUserId === user.user_id"
+                  aria-haspopup="menu" aria-label="More actions"><span aria-hidden="true">•••</span></button>
+                <div v-if="openActionsUserId === user.user_id" class="actions-menu-dropdown" role="menu"><button
+                    type="button" role="menuitem" @click="runAction(() => viewUser(user))">View</button><button
+                    type="button" role="menuitem" @click="runAction(() => openEditModal(user))"
+                    :disabled="getUserStatus(user) === '-' || getUserStatus(user) === 'pending' || getUserStatus(user) === 'blocked'">Edit</button><button
+                    type="button" role="menuitem" @click="runAction(() => toggleLockout(user))"
+                    :disabled="getUserStatus(user) === 'incomplete' || getUserStatus(user) === 'pending' || user.user_id === currentUserId">{{
+                      user.is_locked_out ? 'Unblock' : 'Block' }}</button><button type="button" role="menuitem"
+                    @click="runAction(() => deleteUser(user))"
+                    :disabled="getUserStatus(user) === 'incomplete' || getUserStatus(user) === 'pending' || user.user_id === currentUserId">Delete</button><button
+                    type="button" role="menuitem" @click="runAction(() => openPrivilegeModal(user))"
+                    :disabled="!canManagePrivileges(user)">Manage privileges</button></div>
+              </div><!--
               <button @click="viewUser(user)" class="view-btn" :title="'View user details'" aria-label="View user">
                 <i class="fi fi-br-eye"></i>
               </button>
@@ -97,7 +112,7 @@
                 :title="canManagePrivileges(user) ? 'Manage privileges' : 'You cannot change your own privileges'"
                 aria-label="Manage admin privileges">
                 <i class="fi fi-br-shield-check"></i>
-              </button>
+              </button>-->
             </td>
           </tr>
           <tr v-if="filteredUsers.length === 0">
@@ -183,6 +198,10 @@
               <label for="position">Position: <span>*</span></label>
             </div>
             <div class="form-group">
+              <div v-if="form.password && !isEditing" class="password-strength">
+                <p class="strength-text">{{ passwordStrengthLabel }}</p>
+                <div class="strength-bar" :class="passwordStrengthClass"></div>
+              </div>
               <span class="field-warning" v-if="getWarning('password')">{{ getWarning('password') }}</span>
               <div class="password-input-wrapper">
                 <input :type="showPassword ? 'text' : 'password'" id="password" v-model="form.password" required
@@ -240,14 +259,14 @@
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('suffix')">{{ getWarning('suffix')
-                }}</span>
+                  }}</span>
                 <input type="text" id="suffix" placeholder="Jr, Sr, III, etc." v-model="form.suffix"
                   :readonly="isViewing" @input="validateSuffix">
                 <label for="suffix">Suffix: <span class="optional">(Optional)</span></label>
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('birthdate')">{{ getWarning('birthdate')
-                }}</span>
+                  }}</span>
                 <input type="date" id="birthdate" v-model="form.birthdate" required :readonly="isViewing"
                   @input="onBirthInput">
                 <label for="birthdate">Birthdate: <span>*</span></label>
@@ -272,7 +291,7 @@
             </div>
             <div class="btn-container">
               <button type="button" @click="closeAddModal" class="btn btn-secondary">{{ isViewing ? 'Close' : 'Cancel'
-                }}</button>
+              }}</button>
               <button type="button" @click="step = 'login_details'" class="btn"
                 :disabled="!canProceedPersonal">Next</button>
             </div>
@@ -290,7 +309,7 @@
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('barangay')">{{ getWarning('barangay')
-                }}</span>
+                  }}</span>
                 <input type="text" id="barangay" v-model="form.barangay" required :readonly="isViewing"
                   @input="validateBrgy">
                 <label for="barangay">Barangay: <span>*</span></label>
@@ -302,14 +321,14 @@
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('province')">{{ getWarning('province')
-                }}</span>
+                  }}</span>
                 <input type="text" id="province" v-model="form.province" required :readonly="isViewing"
                   @input="validateProvince">
                 <label for="province">Province: <span>*</span></label>
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('country')">{{ getWarning('country')
-                }}</span>
+                  }}</span>
                 <input type="text" id="country" v-model="form.country" required :readonly="isViewing"
                   @input="validateCountry">
                 <label for="country">Country: <span>*</span></label>
@@ -322,13 +341,13 @@
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('user_id')">{{ getWarning('user_id')
-                }}</span>
+                  }}</span>
                 <input type="text" id="user_id" v-model="form.idNumber" required :readonly="isViewing" @input="checkID">
                 <label for="user_id">ID No. <span>*</span></label>
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('username')">{{ getWarning('username')
-                }}</span>
+                  }}</span>
                 <input type="text" id="username" v-model="form.username" required :readonly="isViewing"
                   @input="checkUsername">
                 <label for="username">Username: <span>*</span></label>
@@ -356,7 +375,7 @@
               <!-- Password -->
               <div v-if="!isViewing" class="form-group">
                 <span class="field-warning" v-if="getWarning('password')">{{ getWarning('password')
-                }}</span>
+                  }}</span>
 
                 <div v-if="form.password" class="password-strength">
                   <p class="strength-text">{{ passwordStrengthLabel }}</p>
@@ -390,7 +409,7 @@
               <!-- Confirm Password -->
               <div v-if="!isViewing" class="form-group">
                 <span class="field-warning" v-if="getWarning('repassword')">{{ getWarning('repassword')
-                }}</span>
+                  }}</span>
                 <div class="password-input-wrapper">
                   <input :type="showRePassword ? 'text' : 'password'" id="repassword" v-model="form.repassword"
                     :required="!isEditing && !!form.password" :readonly="isViewing" @input="validateConfirmPassword">
@@ -437,7 +456,8 @@
           <h3 id="create-confirm-title">Confirm Account Creation</h3>
         </div>
         <p>Create the {{ form.role }} account for <strong>{{ form.username }}</strong>? The account will show status
-          <strong>-</strong> until the user completes their details on first login.</p>
+          <strong>-</strong> until the user completes their details on first login.
+        </p>
         <div v-if="errorMessage" class="alert-danger">{{ errorMessage }}</div>
         <div class="password-input-wrapper delete-password-wrapper">
           <input v-model="createPassword" :type="showCreatePassword ? 'text' : 'password'" class="delete-password-input"

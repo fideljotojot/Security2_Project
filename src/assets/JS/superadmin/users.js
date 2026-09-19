@@ -8,6 +8,7 @@ export default {
     return {
       users: [],
       currentUserId: null,
+      openActionsUserId: null,
       showAddModal: false,
       isViewing: false,
       isEditing: false,
@@ -214,11 +215,21 @@ export default {
     }
   },
   async mounted() {
+    document.addEventListener('click', this.closeActionsMenuOnOutside);
+    document.addEventListener('keydown', this.closeActionsMenuOnEscape);
     const { data: { user } } = await supabase.auth.getUser();
     this.currentUserId = user?.id || null;
     this.fetchUsers();
   },
+  beforeUnmount() {
+    document.removeEventListener('click', this.closeActionsMenuOnOutside);
+    document.removeEventListener('keydown', this.closeActionsMenuOnEscape);
+  },
   methods: {
+    toggleActionsMenu(userId) { this.openActionsUserId = this.openActionsUserId === userId ? null : userId; },
+    runAction(action) { this.openActionsUserId = null; return action(); },
+    closeActionsMenuOnOutside(event) { if (!event.target.closest('.actions-menu')) this.openActionsUserId = null; },
+    closeActionsMenuOnEscape(event) { if (event.key === 'Escape') this.openActionsUserId = null; },
     async fetchUsers() {
       const { data, error } = await supabase.rpc('get_all_users');
       if (error) {

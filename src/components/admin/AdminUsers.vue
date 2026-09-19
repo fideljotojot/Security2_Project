@@ -55,7 +55,7 @@
             <td style="text-transform: capitalize;">{{ user.role }}</td>
             <td>{{ user.position || '-' }}</td>
             <td style="text-transform: capitalize;">{{ userStatus(user) }}</td>
-            <td class="actions-container"><button class="view-btn" @click="view(user)" title="View user details"
+            <td class="actions-container"><div class="actions-menu"><button type="button" class="actions-menu-trigger" @click="toggleActionsMenu(user.user_id)" :aria-expanded="openActionsUserId === user.user_id" aria-haspopup="menu" aria-label="More actions"><span aria-hidden="true">•••</span></button><div v-if="openActionsUserId === user.user_id" class="actions-menu-dropdown" role="menu"><button type="button" role="menuitem" @click="runAction(() => view(user))">View</button><button type="button" role="menuitem" @click="runAction(() => edit(user))" :disabled="userStatus(user) === 'pending' || userStatus(user) === 'blocked' || !hasPermission(user, 'manage_account_info')">Edit</button><button type="button" role="menuitem" @click="runAction(() => setStatus(user, userStatus(user) === 'blocked' ? 'approved' : 'blocked'))" :disabled="userStatus(user) === 'pending' || user.user_id === currentUserId || !hasPermission(user, 'block_accounts')">{{ userStatus(user) === 'blocked' ? 'Unblock' : 'Block' }}</button><button type="button" role="menuitem" @click="runAction(() => requestDelete(user))" :disabled="userStatus(user) === 'pending' || user.user_id === currentUserId || !hasPermission(user, 'delete_accounts')">Delete</button></div></div><!--
                 aria-label="View user"><i class="fi fi-br-eye"></i></button><button class="edit-btn" @click="edit(user)"
                 :disabled="userStatus(user) === 'pending' || userStatus(user) === 'blocked' || !hasPermission(user, 'manage_account_info')"
                 :title="userStatus(user) === 'blocked' ? 'Cannot edit blocked users' : 'Edit user'"><i class="fi fi-br-edit"></i></button><button v-if="userStatus(user) !== 'blocked'"
@@ -68,7 +68,7 @@
                   class="fi fi-br-user-check"></i></button><button class="delete-btn" @click="requestDelete(user)"
                 :disabled="userStatus(user) === 'pending' || user.user_id === currentUserId || !hasPermission(user, 'delete_accounts')"
                 :title="hasPermission(user, 'delete_accounts') ? 'Request deletion' : 'Deletion privilege disabled'">
-                <i class="fi fi-br-trash"></i></button></td>
+                <i class="fi fi-br-trash"></i></button>--></td>
           </tr>
           <tr v-if="!filtered.length">
             <td colspan="7" class="empty-state">No users found.</td>
