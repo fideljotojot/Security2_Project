@@ -2,7 +2,7 @@
   <main class="container">
     <div class="user-table">
       <div class="header-section table-panel-header">
-        <h2>Users</h2>
+        <h2>Accounts</h2>
         <button @click="openAddModal">
           <i><i class="fi fi-br-add"></i></i>
           Add Account
@@ -28,7 +28,6 @@
 
           <select name="user-status" id="user-status" v-model="selectedStatus">
             <option value="all">All Status</option>
-            <option value="-">-</option>
             <option value="pending">Pending</option>
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
@@ -343,20 +342,20 @@
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('user_id')">{{ getWarning('user_id')
                   }}</span>
-                <input type="text" id="user_id" v-model="form.idNumber" required :readonly="isViewing" @input="checkID">
+                <input type="text" id="user_id" v-model="form.idNumber" required disabled readonly @input="checkID">
                 <label for="user_id">ID No. <span>*</span></label>
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('username')">{{ getWarning('username')
                   }}</span>
-                <input type="text" id="username" v-model="form.username" required :readonly="isViewing"
+                <input type="text" id="username" v-model="form.username" required disabled readonly
                   @input="checkUsername">
                 <label for="username">Username: <span>*</span></label>
               </div>
 
               <!-- Role selection (exclusive to Superadmin Users UI) -->
               <div class="form-group">
-                <select id="role" v-model="form.role" required :disabled="isViewing || isEditingSelf()" @change="normalizePosition">
+                <select id="role" v-model="form.role" required disabled @change="normalizePosition">
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
                   <option value="superadmin">Superadmin</option>
@@ -365,7 +364,7 @@
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('position')">{{ getWarning('position') }}</span>
-                <select id="position" v-model="form.position" :disabled="isViewing || isEditingSelf()" @change="validatePosition">
+                <select id="position" v-model="form.position" disabled @change="validatePosition">
                   <option value="Instructor">Instructor</option>
                   <option value="Staff">Staff</option>
                   <option v-if="form.role === 'user'" value="Student">Student</option>

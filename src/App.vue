@@ -248,7 +248,7 @@ export default {
           <p class="dark-btn">Dashboard</p>
         </router-link>
         <router-link to="/superadmin/users">
-          <p>Users</p>
+          <p>Accounts</p>
         </router-link>
         <router-link to="/superadmin/registrations">
           <p>Registrations</p>
@@ -270,7 +270,7 @@ export default {
           <p class="dark-btn">Dashboard</p>
         </router-link>
         <router-link to="/admin/users">
-          <p>Users</p>
+          <p>Accounts</p>
         </router-link>
         <router-link to="/admin/registrations">
           <p>Registrations</p>

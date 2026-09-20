@@ -2,7 +2,7 @@
   <main class="container">
     <div class="user-table">
       <div class="header-section table-panel-header">
-        <h2>Users</h2>
+        <h2>Accounts</h2>
       </div>
       <div class="filter-container">
         <div class="searchbar"><input v-model="search" type="search" placeholder="Search by ID, username, or email"
