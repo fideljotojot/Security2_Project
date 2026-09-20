@@ -316,6 +316,7 @@ CREATE OR REPLACE FUNCTION public.update_user_profile(
   p_sex TEXT, p_purok TEXT, p_barangay TEXT, p_city TEXT, p_province TEXT, p_country TEXT,
   p_zip TEXT, p_role TEXT, p_password TEXT DEFAULT NULL
 ) RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE target_role TEXT; target_status TEXT;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'superadmin') THEN
     RAISE EXCEPTION 'Only superadmins can edit users';
@@ -324,7 +325,10 @@ BEGIN
   UPDATE auth.users SET email = p_email, email_confirmed_at = COALESCE(email_confirmed_at, now()),
     encrypted_password = CASE WHEN p_password IS NULL OR p_password = '' THEN encrypted_password ELSE crypt(p_password, gen_salt('bf')) END
     WHERE id = p_user_id;
-  UPDATE public.users SET id_number = p_id_number, username = p_username, email = p_email, role = p_role WHERE id = p_user_id;
+  SELECT role, registration_status INTO target_role, target_status FROM public.users WHERE id = p_user_id FOR UPDATE;
+  UPDATE public.users SET id_number = p_id_number, username = p_username, email = p_email, role = p_role,
+    registration_status = CASE WHEN target_role = 'superadmin' AND p_role IN ('admin', 'user') AND target_status = 'inactive' THEN 'approved' ELSE registration_status END,
+    is_locked_out = CASE WHEN target_role = 'superadmin' AND p_role IN ('admin', 'user') AND target_status = 'inactive' THEN FALSE ELSE is_locked_out END WHERE id = p_user_id;
   UPDATE public.profiles SET first_name = p_first_name, middle_initial = NULLIF(p_middle_initial, ''), last_name = p_last_name,
     suffix = NULLIF(p_suffix, ''), birthdate = p_birthdate, age = p_age, sex = p_sex WHERE user_id = p_user_id;
   UPDATE public.addresses SET purok = p_purok, barangay = p_barangay, city = p_city, province = p_province,

@@ -78,10 +78,12 @@ BEGIN
   IF p_user_id = auth.uid() THEN RAISE EXCEPTION 'You cannot change your own privileges'; END IF;
   UPDATE public.users SET role=p_role,
     registration_status=CASE
+      WHEN target_role = 'superadmin' AND p_role IN ('admin','user') AND target_status = 'inactive' THEN 'approved'
       WHEN p_role='superadmin' AND target_role <> 'superadmin' AND target_status='approved'
         AND EXISTS (SELECT 1 FROM public.users WHERE role='superadmin' AND registration_status='approved')
       THEN 'inactive' ELSE registration_status END,
     is_locked_out=CASE
+      WHEN target_role = 'superadmin' AND p_role IN ('admin','user') AND target_status = 'inactive' THEN FALSE
       WHEN p_role='superadmin' AND target_role <> 'superadmin' AND target_status='approved'
         AND EXISTS (SELECT 1 FROM public.users WHERE role='superadmin' AND registration_status='approved')
       THEN FALSE ELSE is_locked_out END,

@@ -42,6 +42,8 @@ BEGIN
   UPDATE users
   SET role = p_role,
       registration_status = CASE
+        WHEN target_role = 'superadmin' AND p_role IN ('admin', 'user') AND target_status = 'inactive'
+        THEN 'approved'
         WHEN p_role = 'superadmin' AND target_role <> 'superadmin'
           AND target_status = 'approved'
           AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved')
@@ -49,6 +51,8 @@ BEGIN
         ELSE registration_status
       END,
       is_locked_out = CASE
+        WHEN target_role = 'superadmin' AND p_role IN ('admin', 'user') AND target_status = 'inactive'
+        THEN FALSE
         WHEN p_role = 'superadmin' AND target_role <> 'superadmin'
           AND target_status = 'approved'
           AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved')
