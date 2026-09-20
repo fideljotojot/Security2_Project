@@ -28,17 +28,33 @@ CREATE OR REPLACE FUNCTION public.set_user_role(
 ) RETURNS BOOLEAN
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
+DECLARE target_role TEXT; target_status TEXT;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public.users AS viewer WHERE viewer.id = auth.uid() AND viewer.role = 'superadmin') THEN
-    RAISE EXCEPTION 'Only superadmins can manage privileges';
+  IF NOT EXISTS (SELECT 1 FROM public.users AS viewer WHERE viewer.id = auth.uid() AND viewer.role = 'superadmin' AND viewer.registration_status = 'approved') THEN
+    RAISE EXCEPTION 'Only the active superadmin can manage privileges';
   END IF;
   IF p_role NOT IN ('user', 'admin', 'superadmin') THEN RAISE EXCEPTION 'Invalid role'; END IF;
   IF p_user_id = auth.uid() THEN RAISE EXCEPTION 'You cannot change your own privileges'; END IF;
+  SELECT role, registration_status INTO target_role, target_status FROM public.users WHERE id = p_user_id FOR UPDATE;
   IF NOT EXISTS (SELECT 1 FROM public.users AS target WHERE target.id = p_user_id AND target.role IN ('user', 'admin', 'superadmin')) THEN
     RAISE EXCEPTION 'Only user, admin, and superadmin accounts can have their privileges changed';
   END IF;
   UPDATE users
   SET role = p_role,
+      registration_status = CASE
+        WHEN p_role = 'superadmin' AND target_role <> 'superadmin'
+          AND target_status = 'approved'
+          AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved')
+        THEN 'inactive'
+        ELSE registration_status
+      END,
+      is_locked_out = CASE
+        WHEN p_role = 'superadmin' AND target_role <> 'superadmin'
+          AND target_status = 'approved'
+          AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved')
+        THEN FALSE
+        ELSE is_locked_out
+      END,
       admin_permissions = CASE WHEN p_role = 'superadmin' THEN to_jsonb(ARRAY['manage_registrations','manage_account_info','block_accounts','reset_passwords','delete_accounts']) ELSE COALESCE(p_permissions, '[]'::jsonb) END
   WHERE id = p_user_id;
   UPDATE public.profiles SET position = NULLIF(p_position, '') WHERE user_id = p_user_id;
@@ -57,10 +73,9 @@ BEGIN
   IF viewer_role IS NULL OR viewer_role NOT IN ('admin','superadmin') THEN RAISE EXCEPTION 'Only administrators can update registrations'; END IF;
   IF p_status NOT IN ('approved','blocked','inactive') THEN RAISE EXCEPTION 'Invalid registration status'; END IF;
   IF target_role = 'superadmin' THEN
-    IF viewer_role <> 'superadmin' OR target_status = 'approved' OR p_user_id = auth.uid() THEN RAISE EXCEPTION 'Only the active superadmin can replace another superadmin'; END IF;
+    IF viewer_role <> 'superadmin' OR NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND registration_status = 'approved') OR target_status = 'approved' OR p_user_id = auth.uid() THEN RAISE EXCEPTION 'Only the active superadmin can replace another superadmin'; END IF;
     IF p_status = 'approved' THEN
-      UPDATE public.users SET registration_status='blocked', is_locked_out=TRUE WHERE id=auth.uid() AND role='superadmin' AND registration_status='approved';
-      UPDATE public.users SET registration_status='approved', is_locked_out=FALSE WHERE id=p_user_id;
+      UPDATE public.users SET registration_status='inactive', is_locked_out=FALSE WHERE id=p_user_id;
     ELSE UPDATE public.users SET registration_status=p_status, is_locked_out=TRUE WHERE id=p_user_id;
     END IF;
   ELSE

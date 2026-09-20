@@ -65,6 +65,7 @@ export default {
     async logout() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
+        await supabase.rpc('deactivate_superadmin_on_logout');
         await supabase.rpc('create_audit_log', {
           p_action: 'Logged out',
           p_entity_type: 'authentication',

@@ -113,3 +113,19 @@ $$;
 
 REVOKE ALL ON FUNCTION public.activate_superadmin_on_login(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.activate_superadmin_on_login(UUID) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.deactivate_superadmin_on_logout()
+RETURNS BOOLEAN
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  UPDATE public.users
+  SET registration_status = 'inactive', is_locked_out = FALSE
+  WHERE id = auth.uid()
+    AND role = 'superadmin'
+    AND registration_status = 'approved';
+  RETURN FOUND;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.deactivate_superadmin_on_logout() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.deactivate_superadmin_on_logout() TO authenticated;

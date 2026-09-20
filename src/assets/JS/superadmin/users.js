@@ -253,8 +253,9 @@ export default {
       return 'active';
     },
     canManagePrivileges(user) {
-      // Active user/admin accounts can have individual privileges managed.
-      return !['incomplete', 'pending', 'inactive'].includes(this.getUserStatus(user)) && user.user_id !== this.currentUserId;
+      // The active superadmin may also manage inactive superadmin accounts.
+      const status = this.getUserStatus(user);
+      return !['incomplete', 'pending'].includes(status) && user.user_id !== this.currentUserId;
     },
     async toggleLockout(user) {
       if (this.getUserStatus(user) === 'incomplete') return;
@@ -298,7 +299,7 @@ export default {
       this.privilegeUser = user;
       // The modal edits an account's capabilities. Keep an admin account in
       // the admin role while its individual privileges are being edited.
-      this.privilegeRole = user.role === 'admin' ? 'admin' : 'user';
+      this.privilegeRole = user.role === 'superadmin' ? 'superadmin' : user.role === 'admin' ? 'admin' : 'user';
       this.privilegePosition = user.position || (this.privilegeRole === 'user' ? 'Student' : 'Staff');
       this.selectedPrivileges = user.role === 'user'
         ? []

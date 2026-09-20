@@ -55,9 +55,7 @@ BEGIN
       RAISE EXCEPTION 'Only the active superadmin can replace another superadmin';
     END IF;
     IF p_status = 'approved' THEN
-      UPDATE public.users SET registration_status = 'blocked', is_locked_out = TRUE
-        WHERE id = auth.uid() AND role = 'superadmin' AND registration_status = 'approved';
-      UPDATE public.users SET registration_status = 'approved', is_locked_out = FALSE WHERE id = p_user_id;
+      UPDATE public.users SET registration_status = 'inactive', is_locked_out = FALSE WHERE id = p_user_id;
     ELSE
       UPDATE public.users SET registration_status = p_status, is_locked_out = (p_status <> 'approved') WHERE id = p_user_id;
     END IF;
@@ -74,15 +72,19 @@ DECLARE viewer_role TEXT; target_role TEXT; target_status TEXT;
 BEGIN
   SELECT role INTO viewer_role FROM public.users WHERE id = auth.uid();
   SELECT role, registration_status INTO target_role, target_status FROM public.users WHERE id = p_user_id FOR UPDATE;
-  IF viewer_role <> 'superadmin' THEN RAISE EXCEPTION 'Only superadmins can manage privileges'; END IF;
+  IF viewer_role <> 'superadmin' OR NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND registration_status = 'approved') THEN RAISE EXCEPTION 'Only the active superadmin can manage privileges'; END IF;
   IF target_status = 'incomplete' THEN RAISE EXCEPTION 'Incomplete accounts cannot be managed'; END IF;
   IF p_role NOT IN ('user','admin','superadmin') THEN RAISE EXCEPTION 'Invalid role'; END IF;
   IF p_user_id = auth.uid() THEN RAISE EXCEPTION 'You cannot change your own privileges'; END IF;
-  IF p_role = 'superadmin' AND target_role <> 'superadmin' AND target_status = 'approved'
-     AND EXISTS (SELECT 1 FROM public.users WHERE role='superadmin' AND registration_status='approved') THEN
-    RAISE EXCEPTION 'Only one active superadmin is allowed';
-  END IF;
   UPDATE public.users SET role=p_role,
+    registration_status=CASE
+      WHEN p_role='superadmin' AND target_role <> 'superadmin' AND target_status='approved'
+        AND EXISTS (SELECT 1 FROM public.users WHERE role='superadmin' AND registration_status='approved')
+      THEN 'inactive' ELSE registration_status END,
+    is_locked_out=CASE
+      WHEN p_role='superadmin' AND target_role <> 'superadmin' AND target_status='approved'
+        AND EXISTS (SELECT 1 FROM public.users WHERE role='superadmin' AND registration_status='approved')
+      THEN FALSE ELSE is_locked_out END,
     admin_permissions=CASE WHEN p_role='superadmin' THEN to_jsonb(ARRAY['manage_registrations','manage_account_info','block_accounts','reset_passwords','delete_accounts']) ELSE COALESCE(p_permissions,'[]'::jsonb) END
     WHERE id=p_user_id;
   RETURN FOUND;
