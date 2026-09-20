@@ -65,7 +65,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in paginatedUsers" :key="user.user_id">
+          <tr v-for="(user, index) in paginatedUsers" :key="user.user_id"
+            :class="{ 'actions-menu-opens-up': index >= paginatedUsers.length - 2 }">
             <td>{{ user.id_number }}</td>
             <td>{{ user.username }}</td>
             <td>{{ getUserStatus(user) === 'incomplete' ? '-' : user.email }}</td>

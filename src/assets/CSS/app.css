@@ -611,6 +611,11 @@ tbody tr .empty-message {
   text-align: left;
 }
 
+.actions-menu-opens-up .actions-menu-dropdown {
+  top: auto;
+  bottom: calc(100% + .35rem);
+}
+
 .actions-menu-dropdown button {
   display: block;
   width: 100%;

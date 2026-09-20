@@ -48,7 +48,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in paginatedUsers" :key="user.user_id">
+          <tr v-for="(user, index) in paginatedUsers" :key="user.user_id"
+            :class="{ 'actions-menu-opens-up': index >= paginatedUsers.length - 2 }">
             <td>{{ user.id_number }}</td>
             <td>{{ user.username }}</td>
             <td>{{ userStatus(user) === 'incomplete' ? '-' : user.email }}</td>
@@ -158,18 +159,17 @@
           <div class="form-group"><label for="admin-edit-zip">Zip Code: <span>*</span></label><input id="admin-edit-zip"
               v-model="editForm.zip" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-id">ID No. <span>*</span></label><input
-              id="admin-edit-id" v-model="editForm.id_number" :readonly="viewing"></div>
+              id="admin-edit-id" v-model="editForm.id_number" readonly></div>
           <div class="form-group"><label for="admin-edit-username">Username: <span>*</span></label><input
-              id="admin-edit-username" v-model="editForm.username" :readonly="viewing"></div>
+              id="admin-edit-username" v-model="editForm.username" readonly></div>
           <div class="form-group"><label for="admin-edit-role">Role: <span>*</span></label><select id="admin-edit-role"
-              v-model="editForm.role" :disabled="viewing || isEditingSelf()" @change="normalizePosition">
+                v-model="editForm.role" disabled>
               <option value="user">User</option>
               <option value="admin">Admin</option>
               <option v-if="editing.role === 'superadmin'" value="superadmin">Superadmin</option>
             </select></div>
           <div class="form-group"><label for="admin-edit-position">Position:
-              <span>*</span></label><select id="admin-edit-position" v-model="editForm.position" :disabled="viewing || isEditingSelf()"
-              @change="validatePosition">
+              <span>*</span></label><select id="admin-edit-position" v-model="editForm.position" disabled>
               <option value="Instructor">Instructor</option>
               <option value="Staff">Staff</option>
               <option v-if="editForm.role === 'user'" value="Student">Student</option>
