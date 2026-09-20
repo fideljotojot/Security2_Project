@@ -51,7 +51,7 @@
           <tr v-for="user in paginatedUsers" :key="user.user_id">
             <td>{{ user.id_number }}</td>
             <td>{{ user.username }}</td>
-            <td>{{ user.email }}</td>
+            <td>{{ userStatus(user) === 'incomplete' ? '-' : user.email }}</td>
             <td><span class="value-badge" :class="`role-${String(user.role || 'unknown').toLowerCase()}`">{{ user.role
                 }}</span></td>
             <td><span class="value-badge" :class="`position-${String(user.position || 'unknown').toLowerCase()}`">{{
