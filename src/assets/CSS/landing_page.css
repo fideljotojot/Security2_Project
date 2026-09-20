@@ -276,6 +276,24 @@
   font-weight: 600
 }
 
+.result-name {
+  display: flex;
+  flex-direction: column;
+  gap: .18rem;
+  min-width: 0
+}
+
+.result-name strong {
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.result-name small {
+  color: #b8cbca;
+  font-size: .68rem;
+  font-weight: 400
+}
+
 .active-status {
   display: inline-flex;
   align-items: center;
@@ -461,5 +479,13 @@
 
   .dashboard-intro h1 {
     font-size: 3rem
+  }
+
+  .instructor-result {
+    align-items: flex-start
+  }
+
+  .active-status {
+    margin-left: auto
   }
 }
