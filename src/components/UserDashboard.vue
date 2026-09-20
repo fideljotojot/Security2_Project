@@ -14,22 +14,25 @@
       <div class="search-panel-copy">
         <p class="panel-index">DIRECTORY SEARCH / 01</p>
         <h2 id="search-title">Who are you<br /><span>looking for?</span></h2>
-        <p>Search by instructor name, department, or course to quickly find the faculty member you need.</p>
+        <p>Find an active instructor by first name, last name, or full name.</p>
       </div>
-      <form class="directory-search" @submit.prevent><label for="instructor-search">Search instructors</label>
+      <div class="search-column">
+      <form class="directory-search" @submit.prevent="searchInstructors"><label for="instructor-search">Search instructors</label>
         <div class="search-input-wrap"><span class="search-icon" aria-hidden="true"></span><input id="instructor-search"
-            type="search" placeholder="Try an instructor name or course" /><button type="submit">Search <span
+            v-model="search" type="search" placeholder="Try an instructor name" autocomplete="off" /><button type="submit" :disabled="loading">{{ loading ? 'Searching' : 'Search' }} <span
               aria-hidden="true">-&gt;</span></button></div>
-        <div class="filter-row"><label><span>Department</span><select>
-              <option>All departments</option>
-              <option>College of Education</option>
-              <option>College of Information Technology</option>
-            </select></label><label><span>Course</span><select>
-              <option>All courses</option>
-              <option>General Education</option>
-              <option>Major subjects</option>
-            </select></label></div>
+        <p v-if="searchError" class="directory-message error-message">{{ searchError }}</p>
       </form>
+      <div v-if="searched" class="instructor-results" aria-live="polite">
+        <div class="results-heading"><span>SEARCH RESULTS</span><strong>{{ instructors.length }} {{ instructors.length === 1 ? 'match' : 'matches' }}</strong></div>
+        <p v-if="!instructors.length && !searchError" class="directory-message">No active instructors found. Try another name.</p>
+        <div v-for="(instructor, index) in instructors" :key="instructor.user_id" class="instructor-result">
+          <span class="result-index">0{{ index + 1 }}</span>
+          <span>{{ [instructor.first_name, instructor.last_name].filter(Boolean).join(' ') }}</span>
+          <span class="active-status"><span class="status-dot" aria-hidden="true"></span>Active</span>
+        </div>
+      </div>
+      </div>
       <div class="index-motif" aria-hidden="true">
         <span>A</span><span>B</span><span>C</span><span>D</span><span>...</span></div>
     </section>
@@ -54,5 +57,27 @@
     </section>
   </main>
 </template>
-<script>export default { name: 'UserDashboard' }</script>
+<script>
+import { supabase } from '@/utils/supabase.js';
+
+export default {
+  name: 'UserDashboard',
+  data: () => ({ search: '', instructors: [], searched: false, searchError: '', loading: false }),
+  methods: {
+    async searchInstructors() {
+      this.searchError = '';
+      this.searched = true;
+      this.loading = true;
+      const { data, error } = await supabase.rpc('search_active_instructors', { p_search: this.search.trim() });
+      this.loading = false;
+      if (error) {
+        this.instructors = [];
+        this.searchError = 'Unable to load instructors.';
+      } else {
+        this.instructors = data || [];
+      }
+    }
+  }
+}
+</script>
 <style src="../assets/CSS/landing_page.css" scoped></style>
