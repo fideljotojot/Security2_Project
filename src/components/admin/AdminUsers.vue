@@ -162,13 +162,13 @@
           <div class="form-group"><label for="admin-edit-username">Username: <span>*</span></label><input
               id="admin-edit-username" v-model="editForm.username" :readonly="viewing"></div>
           <div class="form-group"><label for="admin-edit-role">Role: <span>*</span></label><select id="admin-edit-role"
-              v-model="editForm.role" :disabled="viewing" @change="normalizePosition">
+              v-model="editForm.role" :disabled="viewing || isEditingSelf()" @change="normalizePosition">
               <option value="user">User</option>
               <option value="admin">Admin</option>
               <option v-if="editing.role === 'superadmin'" value="superadmin">Superadmin</option>
             </select></div>
           <div class="form-group"><label for="admin-edit-position">Position:
-              <span>*</span></label><select id="admin-edit-position" v-model="editForm.position" :disabled="viewing"
+              <span>*</span></label><select id="admin-edit-position" v-model="editForm.position" :disabled="viewing || isEditingSelf()"
               @change="validatePosition">
               <option value="Instructor">Instructor</option>
               <option value="Staff">Staff</option>

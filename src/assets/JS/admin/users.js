@@ -7,6 +7,7 @@ export default {
   async mounted() { const { data: { user } } = await supabase.auth.getUser(); this.currentUserId = user?.id || null; if (user) { const { data: account } = await supabase.from('users').select('admin_permissions').eq('id', user.id).single(); this.viewerPermissions = Array.isArray(account?.admin_permissions) && account.admin_permissions.length ? account.admin_permissions : ['manage_account_info', 'block_accounts', 'reset_passwords', 'delete_accounts']; } this.load(); },
   beforeUnmount() { document.removeEventListener('click', this.closeActionsMenuOnOutside); document.removeEventListener('keydown', this.closeActionsMenuOnEscape); },
   methods: {
+    isEditingSelf() { return Boolean(this.editing && this.editing.user_id === this.currentUserId); },
     toggleActionsMenu(userId) { this.openActionsUserId = this.openActionsUserId === userId ? null : userId; },
     runAction(action) { this.openActionsUserId = null; return action(); },
     closeActionsMenuOnOutside(event) { if (!event.target.closest('.actions-menu')) this.openActionsUserId = null; },
@@ -20,6 +21,7 @@ export default {
     nextEditStep() { this.editStep = 'account'; },
     previousEditStep() { this.editStep = 'personal'; },
     normalizePosition() {
+      if (this.isEditingSelf()) return;
       if (!arguments.length) return;
       this.editForm.position = this.editForm.role === 'user' ? 'Student' : 'Staff';
     },

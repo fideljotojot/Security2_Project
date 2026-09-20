@@ -293,7 +293,7 @@
               <button type="button" @click="closeAddModal" class="btn btn-secondary">{{ isViewing ? 'Close' : 'Cancel'
               }}</button>
               <button type="button" @click="step = 'login_details'" class="btn"
-                :disabled="!canProceedPersonal">Next</button>
+                :disabled="!isViewing && !canProceedPersonal">Next</button>
             </div>
           </div>
 
@@ -355,7 +355,7 @@
 
               <!-- Role selection (exclusive to Superadmin Users UI) -->
               <div class="form-group">
-                <select id="role" v-model="form.role" required :disabled="isViewing" @change="normalizePosition">
+                <select id="role" v-model="form.role" required :disabled="isViewing || isEditingSelf()" @change="normalizePosition">
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
                   <option value="superadmin">Superadmin</option>
@@ -364,7 +364,7 @@
               </div>
               <div class="form-group">
                 <span class="field-warning" v-if="getWarning('position')">{{ getWarning('position') }}</span>
-                <select id="position" v-model="form.position" :disabled="isViewing" @change="validatePosition">
+                <select id="position" v-model="form.position" :disabled="isViewing || isEditingSelf()" @change="validatePosition">
                   <option value="Instructor">Instructor</option>
                   <option value="Staff">Staff</option>
                   <option v-if="form.role === 'user'" value="Student">Student</option>

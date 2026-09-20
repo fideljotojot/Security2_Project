@@ -226,6 +226,7 @@ export default {
     document.removeEventListener('keydown', this.closeActionsMenuOnEscape);
   },
   methods: {
+    isEditingSelf() { return this.isEditing && this.editingUserId === this.currentUserId; },
     toggleActionsMenu(userId) { this.openActionsUserId = this.openActionsUserId === userId ? null : userId; },
     runAction(action) { this.openActionsUserId = null; return action(); },
     closeActionsMenuOnOutside(event) { if (!event.target.closest('.actions-menu')) this.openActionsUserId = null; },
