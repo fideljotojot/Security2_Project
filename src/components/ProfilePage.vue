@@ -33,23 +33,35 @@
             <div class="form-card-title">
               <p class="section-kicker">Profile details</p>
               <p class="required-note"><span>*</span> Required fields</p>
-            </div>
+            </div><button v-if="!isEditing" type="button" class="edit-profile-button" @click="startEditing">Edit
+              profile</button>
           </div>
-          <form @submit.prevent="save" class="profile-form">
+          <form @submit.prevent="requestSave" class="profile-form">
             <div v-if="message" :class="['alert', { success: saved }]" role="status">{{ message }}</div>
             <fieldset>
               <legend>Personal information</legend>
               <div class="form-grid">
                 <div class="form-group"><label>First name <span>*</span></label><input v-model="form.first_name"
-                    required></div>
-                <div class="form-group"><label>Middle initial</label><input v-model="form.middle_initial"></div>
-                <div class="form-group"><label>Last name <span>*</span></label><input v-model="form.last_name" required>
+                    :readonly="!isEditing" @input="validateName('first_name')" required><small
+                    v-if="warnings.first_name" class="field-warning">{{ warnings.first_name }}</small></div>
+                <div class="form-group"><label>Middle initial</label><input v-model="form.middle_initial"
+                    :readonly="!isEditing" @input="validateMiddleInitial"><small v-if="warnings.middle_initial"
+                    class="field-warning">{{ warnings.middle_initial }}</small></div>
+                <div class="form-group"><label>Last name <span>*</span></label><input v-model="form.last_name"
+                    :readonly="!isEditing" @input="validateName('last_name')" required><small v-if="warnings.last_name"
+                    class="field-warning">{{ warnings.last_name }}</small></div>
+                <div class="form-group"><label>Suffix</label>
+                  <input v-model="form.suffix" name="profile_suffix_value" :readonly="!isEditing"
+                    @input="validateSuffix">
+                  <small v-if="warnings.suffix" class="field-warning">{{ warnings.suffix
+                    }}</small>
                 </div>
-                <div class="form-group"><label>Suffix</label><input v-model="form.suffix"></div>
-                <div class="form-group"><label>Birthdate</label><input v-model="form.birthdate" type="date"></div>
-                <div class="form-group"><label>Age</label><input v-model="form.age" type="number"></div>
-                <div class="form-group"><label>Sex</label><select v-model="form.sex">
-                    <option value="">Select</option>
+                <div class="form-group"><label>Birthdate</label><input v-model="form.birthdate" type="date"
+                    :readonly="!isEditing" @input="validateBirthdate"><small v-if="warnings.birthdate"
+                    class="field-warning">{{ warnings.birthdate }}</small></div>
+                <div class="form-group"><label>Age</label><input v-model="form.age" type="number" readonly><small
+                    v-if="warnings.age" class="field-warning">{{ warnings.age }}</small></div>
+                <div class="form-group"><label>Sex</label><select v-model="form.sex" :disabled="!isEditing">
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                   </select></div>
@@ -58,27 +70,66 @@
             <fieldset>
               <legend>Account details</legend>
               <div class="form-grid">
-                <div class="form-group"><label>ID Number<span>*</span></label><input v-model="form.id_number" required>
-                </div>
-                <div class="form-group"><label>Username <span>*</span></label><input v-model="form.username" required>
-                </div>
+                <div class="form-group"><label>ID Number<span>*</span></label><input class="profile-readonly-field"
+                    v-model="form.id_number" readonly required><small
+                    v-if="warnings.id_number || uniqueErrors.id_number" class="field-warning">{{ warnings.id_number ||
+                      uniqueErrors.id_number }}</small></div>
+                <div class="form-group"><label>Username <span>*</span></label><input class="profile-readonly-field"
+                    v-model="form.username" readonly required><small v-if="warnings.username || uniqueErrors.username"
+                    class="field-warning">{{
+                      warnings.username || uniqueErrors.username }}</small></div>
                 <div class="form-group"><label>Email <span>*</span></label><input v-model="form.email" type="email"
-                    required></div>
-                <div class="form-group"><label>Role</label><input class="readonly-field" :value="form.role" readonly>
+                    :readonly="!isEditing" @input="validateEmail(); checkUnique('email', 'email')" required><small
+                    v-if="warnings.email || uniqueErrors.email" class="field-warning">{{ warnings.email ||
+                      uniqueErrors.email }}</small></div>
+                <div class="form-group"><label>Role <span>*</span></label>
+                  <input class="profile-readonly-field" :value="form.role" readonly required>
                 </div>
-                <div class="form-group"><label>Position</label><input v-model="form.position"></div>
+                <div class="form-group"><label>Position <span>*</span></label>
+                  <input class="profile-readonly-field" v-model="form.position" readonly required>
+                </div>
               </div>
             </fieldset>
-            <fieldset>
+            <fieldset v-if="isEditing">
               <legend>Security</legend>
               <div class="form-grid">
-                <div class="form-group full-width"><label>New password <small>Optional &middot; minimum 8
-                      characters</small></label><input v-model="form.password" type="password" minlength="8"></div>
+                <div class="form-group"><label>New password <small>Optional &middot; minimum 8
+                      characters</small></label>
+                  <div class="password-input-wrapper"><input v-model="form.password"
+                      :type="showNewPassword ? 'text' : 'password'" minlength="8" autocomplete="new-password"
+                      @input="validatePassword"><button type="button" class="toggle-password eye-icon"
+                      :aria-label="showNewPassword ? 'Hide password' : 'Show password'"
+                      @click="showNewPassword = !showNewPassword"><i
+                        :class="showNewPassword ? 'fi fi-br-eye-crossed' : 'fi fi-br-eye'"
+                        aria-hidden="true"></i></button>
+                  </div>
+
+                  <div v-if="form.password" class="password-strength">
+                    <p class="strength-text">{{ passwordStrengthLabel }}</p>
+                    <div class="strength-bar" :class="passwordStrengthClass"></div>
+                  </div>
+                  <small v-if="warnings.password" class="field-warning">{{
+                          warnings.password
+                    }}</small>
+                </div>
+                <div class="form-group"><label>Confirm password</label>
+                  <div class="password-input-wrapper"><input v-model="form.confirm_password"
+                      :type="showConfirmPassword ? 'text' : 'password'" autocomplete="new-password"
+                      @input="validateConfirmPassword"><button type="button" class="toggle-password eye-icon"
+                      :aria-label="showConfirmPassword ? 'Hide password' : 'Show password'"
+                      @click="showConfirmPassword = !showConfirmPassword"><i
+                        :class="showConfirmPassword ? 'fi fi-br-eye-crossed' : 'fi fi-br-eye'"
+                        aria-hidden="true"></i></button></div><small v-if="warnings.confirm_password"
+                    class="field-warning">{{ warnings.confirm_password }}</small>
+                </div>
               </div>
             </fieldset>
-            <div class="form-actions">
-              <p class="save-hint">Changes are saved securely to your account.</p><button class="save-button"
-                :disabled="saving">{{ saving ? 'Saving...' : 'Save changes' }} <span>&rarr;</span></button>
+            <div v-if="isEditing" class="form-actions">
+              <p class="save-hint">Password confirmation is required before saving.</p>
+              <div class="profile-action-buttons"><button type="button" class="cancel-button"
+                  @click="cancelEditing">Cancel</button><button type="submit" class="save-button"
+                  :disabled="!canSaveProfile">{{ saving ? 'Saving...' : 'Save changes' }} <span>&rarr;</span></button>
+              </div>
             </div>
           </form>
         </section>
@@ -86,8 +137,5 @@
     </div>
   </main>
 </template>
-<script>
-import { supabase } from '@/utils/supabase.js';
-export default { data: () => ({ form: {}, saving: false, saved: false, message: '' }), async mounted() { const { data, error } = await supabase.rpc('get_my_profile'); if (error) this.message = error.message; else this.form = { ...data, password: '' } }, methods: { async save() { this.saving = true; this.saved = false; const { password, ...profile } = this.form; const { error } = await supabase.rpc('update_my_profile', { ...Object.fromEntries(Object.entries(profile).map(([key, value]) => [`p_${key}`, value || null])), p_password: password || null }); this.saving = false; if (error) this.message = error.message; else { this.saved = true; this.message = 'Profile updated successfully.' } } } };
-</script>
+<script src="../assets/JS/profile.js"></script>
 <style src="../assets/CSS/profile.css" scoped></style>

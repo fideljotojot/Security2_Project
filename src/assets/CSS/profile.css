@@ -198,6 +198,25 @@
   border-bottom: 1px solid var(--border);
 }
 
+.edit-profile-button,
+.cancel-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--green);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--green);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.edit-profile-button:hover,
+.cancel-button:hover {
+  background: var(--mint);
+}
+
 .form-card-header h2 {
   margin: 0;
   font-size: 21px;
@@ -253,6 +272,36 @@ legend {
   font-weight: 400;
 }
 
+.field-warning {
+  display: block;
+  margin-top: 4px;
+  color: #b33f32 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+.password-strength {
+  width: 90%;
+  margin: 4px 0 7px;
+}
+
+.strength-text {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.strength-bar {
+  width: 100%;
+  height: 5px;
+  border-radius: 4px;
+}
+
+.strength-bar.weak { width: 33%; background: #e74c3c; }
+.strength-bar.medium { width: 66%; background: #f1c40f; }
+.strength-bar.strong { width: 100%; background: #2ecc71; }
+
 .form-group input,
 .form-group select {
   box-sizing: border-box;
@@ -273,11 +322,54 @@ legend {
   box-shadow: 0 0 0 3px #0b6b3a1a;
 }
 
+.form-group input[readonly],
+.form-group select:disabled {
+  background: #f7faf8;
+  border-color: #dce8df;
+  color: #52645b;
+  cursor: default;
+}
+
+.form-group input[readonly]:focus,
+.form-group select:disabled:focus {
+  box-shadow: none;
+}
+
 .readonly-field {
   background: var(--mint) !important;
   border-color: #c8e4d1 !important;
   color: var(--green) !important;
   font-weight: 700;
+}
+
+.profile-readonly-field {
+  background: #f7faf8 !important;
+  border-color: #dce8df !important;
+  color: #52645b !important;
+  cursor: default;
+}
+
+.profile-page .password-input-wrapper {
+  position: relative;
+}
+
+.profile-page .password-input-wrapper input {
+  padding-right: 42px;
+}
+
+.profile-page .password-input-wrapper .toggle-password {
+  position: absolute;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: auto;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
 }
 
 .full-width {
@@ -309,6 +401,12 @@ legend {
   border-top: 1px solid #edf2ee;
 }
 
+.profile-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .save-button {
   display: inline-flex;
   align-items: center;
@@ -325,6 +423,13 @@ legend {
 
 .save-button:disabled {
   opacity: .65;
+  cursor: not-allowed;
+  background: #9aa7a0;
+}
+
+.cancel-button {
+  border-color: #cbdad0;
+  color: var(--muted);
 }
 
 .save-button span {
@@ -379,6 +484,14 @@ legend {
   .form-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .profile-action-buttons {
+    width: 100%;
+  }
+
+  .profile-action-buttons button {
+    flex: 1;
   }
 
   .save-button {
