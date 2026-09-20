@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS public.users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS admin_permissions JSONB NOT NULL DEFAULT
+  '["manage_registrations","manage_account_info","block_accounts","reset_passwords","delete_accounts"]'::jsonb;
+
 -- Apply this separately when upgrading an existing database:
 -- ALTER TABLE public.users ADD COLUMN IF NOT EXISTS registration_status VARCHAR(20) NOT NULL DEFAULT 'pending';
 -- ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_locked_out BOOLEAN NOT NULL DEFAULT FALSE;
@@ -315,20 +318,23 @@ CREATE OR REPLACE FUNCTION public.update_user_profile(
   p_middle_initial TEXT, p_last_name TEXT, p_suffix TEXT, p_birthdate DATE, p_age INT,
   p_sex TEXT, p_purok TEXT, p_barangay TEXT, p_city TEXT, p_province TEXT, p_country TEXT,
   p_zip TEXT, p_role TEXT, p_password TEXT DEFAULT NULL
-) RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
+) RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE target_role TEXT; target_status TEXT;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'superadmin') THEN
-    RAISE EXCEPTION 'Only superadmins can edit users';
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'superadmin' AND registration_status = 'approved') THEN
+    RAISE EXCEPTION 'Only the active superadmin can edit users';
   END IF;
+  IF p_user_id = auth.uid() THEN RAISE EXCEPTION 'You cannot change your own privileges'; END IF;
   IF p_role NOT IN ('user', 'admin', 'superadmin') THEN RAISE EXCEPTION 'Invalid role'; END IF;
   UPDATE auth.users SET email = p_email, email_confirmed_at = COALESCE(email_confirmed_at, now()),
     encrypted_password = CASE WHEN p_password IS NULL OR p_password = '' THEN encrypted_password ELSE crypt(p_password, gen_salt('bf')) END
     WHERE id = p_user_id;
   SELECT role, registration_status INTO target_role, target_status FROM public.users WHERE id = p_user_id FOR UPDATE;
+  IF target_role IS NULL THEN RAISE EXCEPTION 'Only user, admin, and superadmin accounts can be edited'; END IF;
   UPDATE public.users SET id_number = p_id_number, username = p_username, email = p_email, role = p_role,
-    registration_status = CASE WHEN target_role = 'superadmin' AND p_role IN ('admin', 'user') AND target_status = 'inactive' THEN 'approved' ELSE registration_status END,
-    is_locked_out = CASE WHEN target_role = 'superadmin' AND p_role IN ('admin', 'user') AND target_status = 'inactive' THEN FALSE ELSE is_locked_out END WHERE id = p_user_id;
+    registration_status = CASE WHEN target_role = 'superadmin' AND p_role IN ('admin', 'user') AND target_status = 'inactive' THEN 'approved' WHEN p_role = 'superadmin' AND target_role <> 'superadmin' AND target_status = 'approved' AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved') THEN 'inactive' ELSE registration_status END,
+    is_locked_out = CASE WHEN target_role = 'superadmin' AND p_role IN ('admin', 'user') AND target_status = 'inactive' THEN FALSE WHEN p_role = 'superadmin' AND target_role <> 'superadmin' AND target_status = 'approved' AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved') THEN FALSE ELSE is_locked_out END,
+    admin_permissions = CASE WHEN p_role = 'superadmin' THEN to_jsonb(ARRAY['manage_registrations','manage_account_info','block_accounts','reset_passwords','delete_accounts']) WHEN p_role = 'user' THEN '[]'::jsonb ELSE admin_permissions END WHERE id = p_user_id;
   UPDATE public.profiles SET first_name = p_first_name, middle_initial = NULLIF(p_middle_initial, ''), last_name = p_last_name,
     suffix = NULLIF(p_suffix, ''), birthdate = p_birthdate, age = p_age, sex = p_sex WHERE user_id = p_user_id;
   UPDATE public.addresses SET purok = p_purok, barangay = p_barangay, city = p_city, province = p_province,
