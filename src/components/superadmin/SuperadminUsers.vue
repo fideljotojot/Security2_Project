@@ -79,7 +79,7 @@
                 <div v-if="openActionsUserId === user.user_id" class="actions-menu-dropdown" role="menu"><button
                     type="button" role="menuitem" @click="runAction(() => viewUser(user))">View</button><button
                     type="button" role="menuitem" @click="runAction(() => openEditModal(user))"
-                    :disabled="getUserStatus(user) === '-' || getUserStatus(user) === 'pending' || getUserStatus(user) === 'blocked'">Edit</button><button
+                    :disabled="['incomplete', 'pending', 'blocked'].includes(getUserStatus(user))">Edit</button><button
                     type="button" role="menuitem" @click="runAction(() => toggleLockout(user))"
                     :disabled="getUserStatus(user) === 'incomplete' || getUserStatus(user) === 'pending' || user.user_id === currentUserId">{{
                       user.is_locked_out ? 'Unblock' : 'Block' }}</button><button type="button" role="menuitem"

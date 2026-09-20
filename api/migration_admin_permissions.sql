@@ -53,6 +53,7 @@ BEGIN
   SELECT u.role, u.admin_permissions INTO viewer_role, admin_permissions
   FROM public.users u WHERE u.id = auth.uid();
   SELECT u.role, u.registration_status INTO target_role, target_status FROM public.users u WHERE u.id = p_user_id FOR UPDATE;
+  IF target_status = 'incomplete' THEN RAISE EXCEPTION 'Incomplete accounts cannot be managed'; END IF;
   IF viewer_role IS NULL OR viewer_role NOT IN ('admin','superadmin') THEN RAISE EXCEPTION 'Only administrators can update registrations'; END IF;
   IF p_status NOT IN ('approved','blocked','inactive') THEN RAISE EXCEPTION 'Invalid registration status'; END IF;
   IF target_role = 'superadmin' THEN

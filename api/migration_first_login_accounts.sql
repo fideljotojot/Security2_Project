@@ -48,6 +48,7 @@ BEGIN
   SELECT role INTO viewer_role FROM public.users WHERE id = auth.uid();
   SELECT role, registration_status INTO target_role, target_status FROM public.users WHERE id = p_user_id FOR UPDATE;
   IF viewer_role IS NULL OR viewer_role NOT IN ('admin','superadmin') THEN RAISE EXCEPTION 'Only administrators can update status'; END IF;
+  IF target_status = 'incomplete' THEN RAISE EXCEPTION 'Incomplete accounts cannot be managed'; END IF;
   IF p_status NOT IN ('approved','blocked','inactive') THEN RAISE EXCEPTION 'Invalid status'; END IF;
   IF target_role = 'superadmin' THEN
     IF viewer_role <> 'superadmin' OR target_status = 'approved' OR p_user_id = auth.uid() THEN
@@ -74,6 +75,7 @@ BEGIN
   SELECT role INTO viewer_role FROM public.users WHERE id = auth.uid();
   SELECT role, registration_status INTO target_role, target_status FROM public.users WHERE id = p_user_id FOR UPDATE;
   IF viewer_role <> 'superadmin' THEN RAISE EXCEPTION 'Only superadmins can manage privileges'; END IF;
+  IF target_status = 'incomplete' THEN RAISE EXCEPTION 'Incomplete accounts cannot be managed'; END IF;
   IF p_role NOT IN ('user','admin','superadmin') THEN RAISE EXCEPTION 'Invalid role'; END IF;
   IF p_user_id = auth.uid() THEN RAISE EXCEPTION 'You cannot change your own privileges'; END IF;
   IF p_role = 'superadmin' AND target_role <> 'superadmin' AND target_status = 'approved'

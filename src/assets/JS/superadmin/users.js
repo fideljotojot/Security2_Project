@@ -52,7 +52,7 @@ export default {
       selectedPosition: 'all',
       sortOrder: '',
       currentPage: 1,
-      pageSize: 9,
+      pageSize: 10,
       form: {
         idNumber: '',
         firstName: '',
@@ -257,6 +257,7 @@ export default {
       return !['incomplete', 'pending', 'inactive'].includes(this.getUserStatus(user)) && user.user_id !== this.currentUserId;
     },
     async toggleLockout(user) {
+      if (this.getUserStatus(user) === 'incomplete') return;
       const isSuperadminHandoff = user.role === 'superadmin' && user.registration_status !== 'approved' && user.user_id !== this.currentUserId;
       const confirmationMessage = isSuperadminHandoff
         ? `You are transferring the active Superadmin status to ${user.username || 'this account'}. Your account will become blocked and you will be logged out immediately after confirmation. Continue?`
@@ -413,6 +414,7 @@ export default {
       };
     },
     async openEditModal(user) {
+      if (this.getUserStatus(user) === 'incomplete') return;
       this.showAddModal = true;
       this.isViewing = false;
       this.isEditing = true;

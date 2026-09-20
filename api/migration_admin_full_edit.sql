@@ -18,6 +18,7 @@ CREATE OR REPLACE FUNCTION public.update_full_user_by_admin(p_user_id UUID,p_id_
 RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.users WHERE id=auth.uid() AND role IN ('admin','superadmin')) THEN RAISE EXCEPTION 'Only administrators can edit users'; END IF;
+  IF (SELECT registration_status FROM public.users WHERE id=p_user_id) = 'incomplete' THEN RAISE EXCEPTION 'Incomplete accounts cannot be edited'; END IF;
   IF (SELECT role FROM public.users WHERE id=p_user_id)='superadmin'
      AND (SELECT role FROM public.users WHERE id=auth.uid())='admin' THEN
     RAISE EXCEPTION 'Administrators cannot edit superadmins';
