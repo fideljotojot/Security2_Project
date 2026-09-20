@@ -8,9 +8,14 @@
 .activity-action-column,
 .activity-performer-column,
 .activity-role-column,
+.activity-ip-column,
 .activity-date-column {
   flex: 1 1 0;
   min-width: 0;
+}
+
+.activity-ip-column {
+  white-space: nowrap;
 }
 
 .value-badge {

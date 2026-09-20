@@ -33,6 +33,7 @@
             <th class="activity-entity-column">Entity</th>
             <th class="activity-performer-column">Performed By</th>
             <th class="activity-role-column">Role</th>
+            <th class="activity-ip-column">IP Address</th>
             <th class="activity-date-column">Date & Time</th>
           </tr>
         </thead>
@@ -43,10 +44,11 @@
             </td>
             <td class="activity-performer-column">{{ log.actor_username || 'System' }}</td>
             <td class="activity-role-column">{{ log.actor_role || 'System' }}</td>
+            <td class="activity-ip-column">{{ log.ip_address || '—' }}</td>
             <td class="activity-date-column">{{ formatDate(log.created_at) }}</td>
           </tr>
           <tr v-if="!filteredLogs.length">
-            <td colspan="5" class="empty-state">No matching activity logs.</td>
+            <td colspan="6" class="empty-state">No matching activity logs.</td>
           </tr>
         </tbody>
       </table>
