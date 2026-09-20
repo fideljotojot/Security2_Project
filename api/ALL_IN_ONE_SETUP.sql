@@ -433,10 +433,11 @@ RETURNS TABLE(
   role VARCHAR,
   registration_status VARCHAR,
   is_locked_out BOOLEAN,
-  created_at TIMESTAMPTZ
+  created_at TIMESTAMPTZ,
+  "position" VARCHAR
 ) LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'superadmin') THEN
+  IF NOT EXISTS (SELECT 1 FROM public.users AS viewer WHERE viewer.id = auth.uid() AND viewer.role = 'superadmin') THEN
     RAISE EXCEPTION 'Only superadmins can view all users';
   END IF;
 
@@ -449,21 +450,24 @@ BEGIN
     public.users.role,
     public.users.registration_status,
     public.users.is_locked_out,
-    public.users.created_at
+    public.users.created_at,
+    public.profiles.position
   FROM public.users
+  LEFT JOIN public.profiles ON public.profiles.user_id = public.users.id
   ORDER BY public.users.created_at DESC;
 END;
 $$;
 
 -- M. get_admin_users: Admin user list view
+DROP FUNCTION IF EXISTS public.get_admin_users();
 CREATE OR REPLACE FUNCTION public.get_admin_users() 
-RETURNS TABLE(user_id UUID,id_number VARCHAR,username VARCHAR,email VARCHAR,role VARCHAR,registration_status VARCHAR,is_locked_out BOOLEAN,created_at TIMESTAMPTZ) 
+RETURNS TABLE(user_id UUID,id_number VARCHAR,username VARCHAR,email VARCHAR,role VARCHAR,registration_status VARCHAR,is_locked_out BOOLEAN,created_at TIMESTAMPTZ,"position" VARCHAR) 
 LANGUAGE plpgsql SECURITY DEFINER AS $$ 
 BEGIN 
   IF NOT EXISTS(SELECT 1 FROM public.users AS viewer WHERE viewer.id=auth.uid() AND viewer.role IN('admin','superadmin')) THEN 
     RAISE EXCEPTION 'Only administrators can view users'; 
   END IF; 
-  RETURN QUERY SELECT u.id,u.id_number,u.username,u.email,u.role,u.registration_status,u.is_locked_out,u.created_at FROM public.users AS u WHERE ((SELECT role FROM public.users WHERE id=auth.uid())='superadmin' OR u.role<>'superadmin') ORDER BY u.created_at DESC;
+  RETURN QUERY SELECT u.id,u.id_number,u.username,u.email,u.role,u.registration_status,u.is_locked_out,u.created_at,p.position FROM public.users AS u LEFT JOIN public.profiles AS p ON p.user_id=u.id WHERE ((SELECT viewer.role FROM public.users AS viewer WHERE viewer.id=auth.uid())='superadmin' OR u.role<>'superadmin') ORDER BY u.created_at DESC;
 END $$;
 
 -- N. admin_update_user_status: Update user status (admin/superadmin)

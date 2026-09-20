@@ -13,6 +13,71 @@
   min-width: 0;
 }
 
+.value-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.5rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.role-user,
+.position-student {
+  color: #145da0;
+  background: #e5f2ff;
+  border-color: none;
+}
+
+.role-admin {
+  color: #6841a5;
+  background: #f0e9ff;
+  border-color: none;
+}
+
+.role-superadmin,
+.status-blocked {
+  color: #a53030;
+  background: #ffebeb;
+  border-color: none;
+}
+
+.position-instructor,
+.status-active {
+  color: #176b3a;
+  background: #e5f7ec;
+  border-color: none;
+}
+
+.position-staff,
+.status-pending {
+  color: #8a5a00;
+  background: #fff4d9;
+  border-color: none;
+}
+
+.status-inactive,
+.status--,
+.status-unknown,
+.position-unknown,
+.role-unknown {
+  color: #5f6872;
+  background: #eef1f4;
+  border-color: none;
+}
+
+.status-incomplete {
+  color: #9a4d00;
+  background: #fff0df;
+  border-color: none;
+}
+
 tbody .activity-entity-column,
 tbody .activity-role-column {
   text-transform: capitalize;

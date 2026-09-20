@@ -52,7 +52,7 @@ export default {
       selectedPosition: 'all',
       sortOrder: '',
       currentPage: 1,
-      pageSize: 10,
+      pageSize: 9,
       form: {
         idNumber: '',
         firstName: '',

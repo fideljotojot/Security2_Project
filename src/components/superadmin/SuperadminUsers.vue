@@ -69,9 +69,9 @@
             <td>{{ user.id_number }}</td>
             <td>{{ user.username }}</td>
             <td>{{ user.email }}</td>
-            <td style="text-transform: capitalize;">{{ user.role }}</td>
-            <td>{{ user.position || '-' }}</td>
-            <td style="text-transform: capitalize;">{{ getUserStatus(user) }}</td>
+            <td><span class="value-badge" :class="`role-${String(user.role || 'unknown').toLowerCase()}`">{{ user.role }}</span></td>
+            <td><span class="value-badge" :class="`position-${String(user.position || 'unknown').toLowerCase()}`">{{ user.position || '-' }}</span></td>
+            <td><span class="value-badge" :class="`status-${String(getUserStatus(user) || 'unknown').toLowerCase()}`">{{ getUserStatus(user) }}</span></td>
             <td class="actions-container">
               <div class="actions-menu"><button type="button" class="actions-menu-trigger"
                   @click="toggleActionsMenu(user.user_id)" :aria-expanded="openActionsUserId === user.user_id"

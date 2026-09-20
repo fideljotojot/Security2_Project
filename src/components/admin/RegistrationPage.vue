@@ -8,15 +8,15 @@
       </div>
       <div class="filter-container">
         <div class="searchbar">
-          <input v-model="search" type="search" placeholder="Search by Employee ID, username, or email" aria-label="Search pending registrations">
+          <input v-model="search" type="search" placeholder="Search by ID, username, or email" aria-label="Search pending registrations">
           <button v-if="search" type="button" class="search-clear" @click="search = ''" aria-label="Clear search">
             <i class="fi fi-br-cross-small"></i>
           </button>
           <i v-else class="fi fi-br-search" aria-hidden="true"></i>
         </div>
         <div class="dropdown">
-          <select v-model="idSort" aria-label="Sort by Employee ID">
-            <option value="">Sort by Employee ID</option>
+          <select v-model="idSort" aria-label="Sort by ID">
+            <option value="">Sort by ID</option>
             <option value="ascending">Ascending order</option>
             <option value="descending">Descending order</option>
           </select>
@@ -31,7 +31,7 @@
       <table>
         <thead>
           <tr>
-            <th>Employee ID</th>
+            <th>ID Number</th>
             <th>Username</th>
             <th>Email</th>
             <th>Registered</th>
