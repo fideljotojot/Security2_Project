@@ -15,6 +15,8 @@ export default {
       username: '',
       questionsLoaded: false,
       step: 1,
+      showIdNumber: false,
+      showOtp: false,
       showAnswer1: false,
       showAnswer2: false,
       showAnswer3: false,
@@ -373,6 +375,8 @@ export default {
           this.warnings.idNumber = [];
           this.tempAnswers = { answer1: '', answer2: '', answer3: '' };
           this.otp = '';
+          this.showIdNumber = false;
+          this.showOtp = false;
           this.recoveryEmail = '';
           this.otpSent = false;
           this.otpVerified = false;
@@ -526,6 +530,8 @@ export default {
       this.step = 1;
       this.tempAnswers = { answer1: '', answer2: '', answer3: '' };
       this.otp = '';
+      this.showIdNumber = false;
+      this.showOtp = false;
       this.recoveryEmail = '';
       this.otpSent = false;
       this.otpVerified = false;
