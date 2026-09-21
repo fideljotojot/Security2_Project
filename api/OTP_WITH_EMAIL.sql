@@ -1,4 +1,8 @@
 -- ================================================================================
+-- Legacy custom OTP setup. Password recovery now uses Supabase Auth OTP,
+-- which delivers through the SMTP provider configured in Supabase.
+-- Keep this file only for existing database compatibility; do not call these
+-- custom OTP functions from the password-recovery frontend.
 -- Update: Remove OTP code from frontend response (security)
 -- ================================================================================
 -- This version doesn't return the OTP code to the client
@@ -18,6 +22,7 @@ AS $$
   FROM public.users u
   JOIN auth.users au ON au.id = u.id
   WHERE u.id_number = p_id_number
+    AND u.registration_status IN ('approved', 'inactive')
   LIMIT 1;
 $$;
 
@@ -33,10 +38,15 @@ DECLARE
   v_user_id UUID;
   v_otp_id BIGINT;
 BEGIN
-  SELECT id INTO v_user_id FROM public.users WHERE id_number = p_id_number;
+  SELECT u.id INTO v_user_id
+  FROM public.users u
+  JOIN auth.users au ON au.id = u.id
+  WHERE u.id_number = p_id_number
+    AND u.registration_status IN ('approved', 'inactive')
+    AND lower(trim(COALESCE(p_email, ''))) = lower(trim(COALESCE(au.email, '')));
 
   IF v_user_id IS NULL THEN
-    RETURN jsonb_build_object('ok', false, 'error', 'User not found');
+    RETURN jsonb_build_object('ok', false, 'error', 'OTP is unavailable for this account');
   END IF;
 
   SELECT id INTO v_otp_id

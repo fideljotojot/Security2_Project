@@ -1,5 +1,6 @@
 -- ================================================================================
--- OTP Management: Create table to store and verify OTP codes
+-- Legacy custom OTP management. Password recovery now uses Supabase Auth OTP
+-- and Supabase-configured SMTP instead of these custom email functions.
 -- ================================================================================
 -- Run this in Supabase SQL Editor to enable custom OTP handling
 
@@ -28,10 +29,15 @@ DECLARE
   v_otp_id BIGINT;
 BEGIN
   -- Validate user exists
-  SELECT id INTO v_user_id FROM public.users WHERE id_number = p_id_number;
+  SELECT u.id INTO v_user_id
+  FROM public.users u
+  JOIN auth.users au ON au.id = u.id
+  WHERE u.id_number = p_id_number
+    AND u.registration_status IN ('approved', 'inactive')
+    AND lower(trim(COALESCE(p_email, ''))) = lower(trim(COALESCE(au.email, '')));
   
   IF v_user_id IS NULL THEN
-    RETURN jsonb_build_object('ok', false, 'error', 'User not found');
+    RETURN jsonb_build_object('ok', false, 'error', 'OTP is unavailable for this account');
   END IF;
 
   -- Generate random 6-digit code

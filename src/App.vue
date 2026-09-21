@@ -8,11 +8,18 @@ export default {
     return {
       page: 'home',
       lockoutActive: false,
-      currentUserRole: 'user'
+      currentUserRole: 'user',
+      idleWarningVisible: false,
+      idleSecondsRemaining: 30,
+      idleTimer: null,
+      lastActivityAt: 0,
+      lastActivityHandledAt: 0,
+      idleActivityEvents: ['mousemove', 'keydown', 'touchstart', 'touchmove', 'click', 'pointerdown', 'scroll']
     }
   },
   async mounted() {
     await this.syncCurrentUserRole();
+    this.syncSuperadminIdleLogout();
     // Check for persisted lockout state
     this.checkPersistedLockout();
     // Set up event listeners for browser back button and reload
@@ -28,14 +35,13 @@ export default {
       }
       this.setupLockoutProtection();
     },
-    '$route'(to) {
-      if (to.name === 'profile' || to.name === 'dashboard') {
-        this.syncCurrentUserRole();
-      }
+    async '$route'(to) {
+      await this.syncCurrentUserRole();
       // Re-setup protection when route changes
       if (to.name === 'login' && this.lockoutActive) {
         this.setupLockoutProtection();
       }
+      this.syncSuperadminIdleLogout();
     }
   },
   methods: {
@@ -43,6 +49,7 @@ export default {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user?.id) {
         this.currentUserRole = 'user';
+        this.syncSuperadminIdleLogout();
         return;
       }
 
@@ -55,6 +62,7 @@ export default {
       if (error || !data?.role) return;
 
       this.currentUserRole = data.role;
+      this.syncSuperadminIdleLogout();
       try {
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
         localStorage.setItem('user', JSON.stringify({ ...storedUser, role: data.role }));
@@ -63,6 +71,7 @@ export default {
       }
     },
     async logout() {
+      this.stopSuperadminIdleLogout();
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
         await supabase.rpc('deactivate_superadmin_on_logout');
@@ -78,6 +87,52 @@ export default {
       this.currentUserRole = 'user';
       setUserAuthenticated(false);
       this.$router.push('/login');
+    },
+    isSuperadminRoute() {
+      return ['superadmin', 'superadmin-users', 'superadmin-registrations', 'superadmin-activity-logs'].includes(this.$route.name);
+    },
+    syncSuperadminIdleLogout() {
+      if (this.currentUserRole === 'superadmin' && this.isSuperadminRoute()) {
+        this.startSuperadminIdleLogout();
+      } else {
+        this.stopSuperadminIdleLogout();
+      }
+    },
+    startSuperadminIdleLogout() {
+      if (this.idleTimer) return;
+      this.lastActivityAt = Date.now();
+      this.lastActivityHandledAt = 0;
+      this.idleWarningVisible = false;
+      this.idleActivityEvents.forEach((eventName) => window.addEventListener(eventName, this.handleSuperadminActivity, { passive: true }));
+      this.idleTimer = window.setInterval(this.checkSuperadminIdleTimeout, 1000);
+    },
+    stopSuperadminIdleLogout() {
+      if (this.idleTimer) {
+        window.clearInterval(this.idleTimer);
+        this.idleTimer = null;
+      }
+      this.idleActivityEvents.forEach((eventName) => window.removeEventListener(eventName, this.handleSuperadminActivity));
+      this.idleWarningVisible = false;
+      this.idleSecondsRemaining = 30;
+    },
+    handleSuperadminActivity() {
+      const now = Date.now();
+      if (now - this.lastActivityHandledAt < 500) return;
+      this.lastActivityHandledAt = now;
+      this.lastActivityAt = now;
+      this.idleWarningVisible = false;
+      this.idleSecondsRemaining = 30;
+    },
+    checkSuperadminIdleTimeout() {
+      const idleSeconds = Math.floor((Date.now() - this.lastActivityAt) / 1000);
+      if (idleSeconds >= 180) {
+        this.logout();
+        return;
+      }
+      if (idleSeconds >= 150) {
+        this.idleWarningVisible = true;
+        this.idleSecondsRemaining = Math.max(1, 180 - idleSeconds);
+      }
     },
     checkPersistedLockout() {
       // Check if lockout was active before page reload
@@ -185,6 +240,7 @@ export default {
     }
   },
   beforeUnmount() {
+    this.stopSuperadminIdleLogout();
     // Clean up event listeners
     window.removeEventListener('popstate', this.preventBack);
     window.removeEventListener('keydown', this.preventKeyboardShortcuts, true);
@@ -198,6 +254,13 @@ export default {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
   <div id="app">
+    <div v-if="idleWarningVisible" class="idle-warning" role="alertdialog" aria-live="assertive">
+      <div class="idle-warning-card">
+        <h2>Are you still there?</h2>
+        <p>You will be logged out due to inactivity in <strong>{{ idleSecondsRemaining }}</strong> seconds.</p>
+        <button type="button" @click="handleSuperadminActivity">Continue session</button>
+      </div>
+    </div>
     <!-- HEADER -->
 
     <header v-if="$route.name === 'login' || $route.name === 'forgot'" class="portal">
@@ -325,3 +388,43 @@ export default {
 </template>
 
 <style src="./assets/CSS/app.css"></style>
+<style>
+.idle-warning {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.idle-warning-card {
+  width: min(100%, 26rem);
+  padding: 2rem;
+  border-radius: 1rem;
+  background: #fff;
+  color: #172033;
+  text-align: center;
+  box-shadow: 0 1rem 3rem rgba(15, 23, 42, 0.25);
+}
+
+.idle-warning-card h2 {
+  margin: 0 0 0.75rem;
+}
+
+.idle-warning-card p {
+  margin: 0 0 1.5rem;
+}
+
+.idle-warning-card button {
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.7rem 1.1rem;
+  background: #1d4ed8;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+</style>

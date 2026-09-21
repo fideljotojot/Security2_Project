@@ -25,6 +25,9 @@ BEGIN
   IF v_status NOT IN ('approved', 'inactive') THEN
     RETURN jsonb_build_object('ok', false, 'error', 'OTP is unavailable for this account');
   END IF;
+  IF v_registered_email IS NULL OR trim(v_registered_email) = '' THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'No recovery email is registered for this account');
+  END IF;
   IF lower(trim(COALESCE(p_email, ''))) <> lower(trim(COALESCE(v_registered_email, ''))) THEN
     RETURN jsonb_build_object('ok', false, 'error', 'Email does not match this account');
   END IF;
@@ -75,6 +78,26 @@ $$;
 
 REVOKE ALL ON FUNCTION public.get_recovery_email_by_id(TEXT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_recovery_email_by_id(TEXT) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_recovery_account_status(p_id_number TEXT)
+RETURNS JSONB
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT CASE
+    WHEN u.id IS NULL THEN jsonb_build_object('ok', false, 'error', 'This ID number does not exist.')
+    WHEN u.registration_status = 'blocked' THEN jsonb_build_object('ok', false, 'error', 'Password recovery is unavailable because this account is blocked.')
+    WHEN u.registration_status = 'pending' THEN jsonb_build_object('ok', false, 'error', 'Password recovery is unavailable while this account is pending approval.')
+    WHEN u.registration_status = 'incomplete' THEN jsonb_build_object('ok', false, 'error', 'Password recovery is unavailable because this account profile is incomplete.')
+    WHEN u.registration_status IN ('approved', 'inactive') THEN jsonb_build_object('ok', true)
+    ELSE jsonb_build_object('ok', false, 'error', 'Password recovery is unavailable for this account.')
+  END
+  FROM (SELECT id, registration_status FROM public.users WHERE id_number = p_id_number LIMIT 1) u;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_recovery_account_status(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_recovery_account_status(TEXT) TO anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.verify_and_reset_password(
   p_id_number TEXT, p_ans1 TEXT, p_ans2 TEXT, p_ans3 TEXT, p_new_password TEXT

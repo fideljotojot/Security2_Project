@@ -53,6 +53,17 @@ export default {
       if (value.length <= 2) return value ? `${value[0]}*` : '';
       return `${value[0]}${'*'.repeat(value.length - 2)}${value[value.length - 1]}`;
     },
+    maskedRecoveryEmail() {
+      const email = String(this.recoveryEmail || '').trim();
+      const at = email.indexOf('@');
+      if (at <= 0 || at === email.length - 1) return email;
+
+      const local = email.slice(0, at);
+      const domain = email.slice(at + 1);
+      const visibleLocal = local.length <= 2 ? local[0] : local.slice(0, 2);
+      const maskedLocal = `${visibleLocal}${'*'.repeat(Math.max(1, local.length - visibleLocal.length))}`;
+      return `${maskedLocal}@${domain}`;
+    },
     isIdValid() {
       return (
         this.idNumber.trim() !== '' &&
@@ -303,6 +314,21 @@ export default {
 
         const newPassword = validationResult.newPassword;
 
+        const {
+          data: { session },
+          error: sessionError
+        } = await supabase.auth.getSession();
+
+        if (sessionError || !session?.user?.id) {
+          child.error = 'Your verification session expired. Please request a new OTP.';
+          return;
+        }
+
+        if (String(session.user.email || '').trim().toLowerCase() !== this.recoveryEmail.trim().toLowerCase()) {
+          child.error = 'The verified account does not match this ID number.';
+          return;
+        }
+
         const { error: resetError } = await supabase.auth.updateUser({
           password: newPassword
         });
@@ -317,6 +343,9 @@ export default {
         child.success = "Successfully Changed Password";
         child.newPassword = "";
         child.confirmPassword = "";
+
+        // End the recovery session so the next login explicitly uses the new password.
+        await supabase.auth.signOut();
 
         // Reset form after success
         setTimeout(() => {
@@ -424,6 +453,17 @@ export default {
         this.form.question3 = '';
         this.questionsLoaded = true;
         this.message = '';
+        const { data: recoveryStatus, error: statusError } = await supabase.rpc('get_recovery_account_status', {
+          p_id_number: this.idNumber
+        });
+
+        if (statusError || !recoveryStatus?.ok) {
+          this.warnings.idNumber = [
+            recoveryStatus?.error || statusError?.message || 'Password recovery is unavailable for this account.'
+          ];
+          return;
+        }
+
         const { data: recoveryEmail, error: emailError } = await supabase.rpc('get_recovery_email_by_id', {
           p_id_number: this.idNumber
         });
@@ -433,27 +473,18 @@ export default {
           return;
         }
 
-        const { data: otpResult, error: otpError } = await supabase.rpc('send_otp_code', {
-          p_id_number: this.idNumber,
-          p_email: recoveryEmail
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: recoveryEmail,
+          options: {
+            shouldCreateUser: false
+          }
         });
 
-        if (!otpError && otpResult && otpResult.ok === false) {
-          this.warnings.idNumber = [otpResult.error || 'Unable to send a verification code.'];
-          return;
-        }
-
         if (otpError) {
-          // The request may have reached Supabase and sent the email even if
-          // the browser loses the response (ERR_CONNECTION_CLOSED).
-          const requestFailed = /fetch|connection closed|network/i.test(otpError.message || '');
-          if (!requestFailed) {
-            const rateLimitMatch = (otpError.message || '').match(/only request this after (\d+) seconds?/i);
-            if (rateLimitMatch) this.startRateLimitCountdown(rateLimitMatch[1]);
-            this.warnings.idNumber = [otpError.message || 'Unable to send a verification code.'];
-            return;
-          }
-          this.warnings.server = ['The OTP may have been sent. Enter it below if you received it.'];
+          const rateLimitMatch = (otpError.message || '').match(/(?:after|in) (\d+) seconds?/i);
+          if (rateLimitMatch) this.startRateLimitCountdown(rateLimitMatch[1]);
+          this.warnings.idNumber = [otpError.message || 'Unable to send a verification code.'];
+          return;
         }
 
         this.recoveryEmail = recoveryEmail;

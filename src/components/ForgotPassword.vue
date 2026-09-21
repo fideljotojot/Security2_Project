@@ -168,7 +168,9 @@
         </div>
         <hr>
         <div class="registration-box">
-            <p class="otp-message">An 8-digit PIN was sent to your registered email address.</p>
+            <p class="otp-message">
+              An 8-digit PIN was sent to <strong>{{ maskedRecoveryEmail }}</strong>.
+            </p>
           <div class="form-group">
             <span class="field-warning" v-if="getWarning('otp')">{{ getWarning('otp') }}</span>
             <input
