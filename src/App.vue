@@ -314,7 +314,7 @@ export default {
           <p>Accounts</p>
         </router-link>
         <router-link to="/superadmin/registrations">
-          <p>Registrations</p>
+          <p>Approval Requests</p>
         </router-link>
         <router-link to="/superadmin/activity-logs">
           <p>Logs</p>
@@ -336,7 +336,7 @@ export default {
           <p>Accounts</p>
         </router-link>
         <router-link to="/admin/registrations">
-          <p>Registrations</p>
+          <p>Approval Requests</p>
         </router-link>
         <router-link to="/profile"><p>Profile</p></router-link>
         <router-link to="/login" @click.prevent="logout">

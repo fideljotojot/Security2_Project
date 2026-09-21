@@ -43,6 +43,10 @@ export default {
         {choice:'What was the name of your first pet?', value: 'What was the name of your first pet?'},
         {choice: 'What is your favorite movie or TV show?', value: 'What is your favorite movie or TV show?'},
         {choice: 'What is your favorite book?', value: 'What is your favorite book?'},
+        {choice: 'What is the name of the city where you were born?', value: 'What is the name of the city where you were born?'},
+        {choice: 'What was your childhood nickname?', value: 'What was your childhood nickname?'},
+        {choice: 'What is your favorite food?', value: 'What is your favorite food?'},
+        {choice: 'What is your favorite game?', value: 'What is your favorite game?'},
       ],
       savedQuestions: [],
     };
@@ -52,6 +56,21 @@ export default {
       const value = String(this.username || '');
       if (value.length <= 2) return value ? `${value[0]}*` : '';
       return `${value[0]}${'*'.repeat(value.length - 2)}${value[value.length - 1]}`;
+    },
+    maskedIdNumber() {
+      const value = String(this.userId || '');
+      if (!value) return '';
+
+      const separatorIndex = value.indexOf('-');
+      if (separatorIndex === -1) {
+        return value.length <= 2
+          ? `${value[0]}*`
+          : `${value[0]}${'*'.repeat(value.length - 2)}${value[value.length - 1]}`;
+      }
+
+      const prefix = value.slice(0, separatorIndex);
+      const suffix = value.slice(separatorIndex + 1);
+      return `${prefix[0]}${'*'.repeat(Math.max(0, prefix.length - 1))}-${'*'.repeat(Math.max(0, suffix.length - 1))}${suffix.slice(-1)}`;
     },
     maskedRecoveryEmail() {
       const email = String(this.recoveryEmail || '').trim();

@@ -47,6 +47,10 @@ export default {
         {choice:'What was the name of your first pet?', value: 'What was the name of your first pet?'},
         {choice: 'What is your favorite movie or TV show?', value: 'What is your favorite movie or TV show?'},
         {choice: 'What is your favorite book?', value: 'What is your favorite book?'},
+        {choice: 'What is the name of the city where you were born?', value: 'What is the name of the city where you were born?'},
+        {choice: 'What was your childhood nickname?', value: 'What was your childhood nickname?'},
+        {choice: 'What is your favorite food?', value: 'What is your favorite food?'},
+        {choice: 'What is your favorite game?', value: 'What is your favorite game?'},
       ],
     }
   },
