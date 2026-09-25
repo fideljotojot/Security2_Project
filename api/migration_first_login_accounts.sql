@@ -127,12 +127,9 @@ BEGIN
   IF auth.uid() <> p_user_id THEN RAISE EXCEPTION 'You can only complete your own account'; END IF;
   SELECT role INTO v_role FROM public.users WHERE id = p_user_id AND registration_status = 'incomplete';
   IF v_role IS NULL THEN RAISE EXCEPTION 'This account is not awaiting completion'; END IF;
-  v_initial_status := CASE
-    WHEN v_role = 'superadmin'
-      AND EXISTS (SELECT 1 FROM public.users WHERE role = 'superadmin' AND registration_status = 'approved')
-    THEN 'inactive'
-    ELSE 'approved'
-  END;
+  -- A newly completed superadmin is always the inactive backup. The
+  -- superadmin-capacity migration normalizes the previous backup if needed.
+  v_initial_status := CASE WHEN v_role = 'superadmin' THEN 'inactive' ELSE 'approved' END;
   UPDATE auth.users
   SET email = p_email,
       email_confirmed_at = COALESCE(email_confirmed_at, now()),

@@ -19,6 +19,10 @@ export default {
       createPassword: '',
       showCreatePassword: false,
       showDeleteModal: false,
+      showBackupReplacementModal: false,
+      backupReplacementTarget: null,
+      selectedBackupToBlock: '',
+      isReplacingBackup: false,
       deletePassword: '',
       showDeletePassword: false,
       pendingDeleteUser: null,
@@ -282,12 +286,22 @@ export default {
     },
     async toggleLockout(user) {
       if (this.getUserStatus(user) === 'incomplete') return;
+      const targetState = this.getUserStatus(user) !== 'blocked';
+      const inactiveSuperadmins = this.users.filter((account) => account.role === 'superadmin'
+        && account.user_id !== this.currentUserId && this.getUserStatus(account) === 'inactive');
+      const currentUser = this.users.find((account) => account.user_id === this.currentUserId);
+      if (!targetState && currentUser?.role === 'superadmin' && this.getUserStatus(currentUser) === 'active'
+        && user.role === 'superadmin' && inactiveSuperadmins.length) {
+        this.backupReplacementTarget = user;
+        this.selectedBackupToBlock = '';
+        this.showBackupReplacementModal = true;
+        return;
+      }
       const isSuperadminHandoff = user.role === 'superadmin' && user.registration_status !== 'approved' && user.user_id !== this.currentUserId;
       const confirmationMessage = isSuperadminHandoff
         ? `You are transferring the active Superadmin status to ${user.username || 'this account'}. Your account will become blocked and you will be logged out immediately after confirmation. Continue?`
         : 'Enter your password to block or unblock this account:';
       if (!await confirmCurrentPassword(confirmationMessage)) return;
-      const targetState = this.getUserStatus(user) !== 'blocked';
       const { error } = await supabase.rpc('admin_update_user_status', {
         p_user_id: user.user_id,
         p_status: targetState ? 'blocked' : 'approved'
@@ -311,6 +325,32 @@ export default {
         }
         await this.fetchUsers();
       }
+    },
+    closeBackupReplacementModal() {
+      if (this.isReplacingBackup) return;
+      this.showBackupReplacementModal = false;
+      this.backupReplacementTarget = null;
+      this.selectedBackupToBlock = '';
+    },
+    async confirmBackupReplacement() {
+      if (!this.selectedBackupToBlock || !this.backupReplacementTarget || this.isReplacingBackup) return;
+      const blockId = this.selectedBackupToBlock;
+      const unblockId = this.backupReplacementTarget.user_id;
+      if (!await confirmCurrentPassword('Enter your password to replace the inactive Superadmin backup:')) return;
+      this.isReplacingBackup = true;
+      const { error } = await supabase.rpc('replace_inactive_superadmin_backup', {
+        p_block_user_id: blockId,
+        p_unblock_user_id: unblockId
+      });
+      this.isReplacingBackup = false;
+      if (error) {
+        this.notificationTitle = 'Backup Replacement Failed';
+        this.notificationMessage = error.message || 'Unable to replace the inactive superadmin backup.';
+        this.showNotificationModal = true;
+        return;
+      }
+      this.closeBackupReplacementModal();
+      await this.fetchUsers();
     },
     async deleteUser(user) {
       this.pendingDeleteUser = user;

@@ -448,6 +448,33 @@
       </div>
     </div>
 
+    <!-- Inactive-backup replacement modal -->
+    <div v-if="showBackupReplacementModal" class="modal-overlay" @click.self="closeBackupReplacementModal">
+      <div class="notification-card" role="dialog" aria-modal="true" aria-labelledby="backup-replacement-title">
+        <div class="notification-header">
+          <div class="notification-icon delete-modal-icon" aria-hidden="true"><i class="fi fi-br-shield-exclamation"></i></div>
+          <h3 id="backup-replacement-title">Replace Inactive Superadmin</h3>
+        </div>
+        <p><strong>{{ backupReplacementTarget?.username }}</strong> can be unblocked, but an inactive backup already exists.</p>
+        <p>Select the inactive superadmin to block before unblocking this account:</p>
+        <select v-model="selectedBackupToBlock" class="privilege-select" :disabled="isReplacingBackup">
+          <option value="" disabled>Select inactive superadmin</option>
+          <option v-for="account in users.filter(u => u.role === 'superadmin' && getUserStatus(u) === 'inactive' && u.user_id !== currentUserId)"
+            :key="account.user_id" :value="account.user_id">
+            {{ account.username }} ({{ account.id_number }})
+          </option>
+        </select>
+        <p class="alert-warning">The selected inactive account will be blocked. The selected blocked account will become inactive.</p>
+        <div class="btn-container">
+          <button type="button" class="btn btn-secondary" @click="closeBackupReplacementModal">Cancel</button>
+          <button type="button" class="btn btn-primary" :disabled="!selectedBackupToBlock || isReplacingBackup"
+            @click="confirmBackupReplacement">
+            {{ isReplacingBackup ? 'Updating...' : 'Confirm Replacement' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Create-account confirmation modal -->
     <div v-if="showCreateConfirmation" class="modal-overlay" @click.self="cancelCreateConfirmation">
       <div class="notification-card" role="dialog" aria-modal="true" aria-labelledby="create-confirm-title">
