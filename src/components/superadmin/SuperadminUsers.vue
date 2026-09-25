@@ -82,7 +82,7 @@
                     :disabled="['incomplete', 'pending', 'blocked'].includes(getUserStatus(user))">Edit</button><button
                     type="button" role="menuitem" @click="runAction(() => toggleLockout(user))"
                     :disabled="getUserStatus(user) === 'incomplete' || getUserStatus(user) === 'pending' || user.user_id === currentUserId">{{
-                      user.is_locked_out ? 'Unblock' : 'Block' }}</button><button type="button" role="menuitem"
+                      getUserStatus(user) === 'blocked' ? 'Unblock' : 'Block' }}</button><button type="button" role="menuitem"
                     @click="runAction(() => deleteUser(user))"
                     :disabled="getUserStatus(user) === 'incomplete' || getUserStatus(user) === 'pending' || user.user_id === currentUserId">Delete</button><button
                     type="button" role="menuitem" @click="runAction(() => openPrivilegeModal(user))"

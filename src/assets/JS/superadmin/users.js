@@ -75,7 +75,8 @@ export default {
         role: 'user',
         position: ''
       },
-      warnings: {}
+      warnings: {},
+      usersRealtimeChannel: null
     };
   },
   computed: {
@@ -219,11 +220,16 @@ export default {
     document.addEventListener('keydown', this.closeActionsMenuOnEscape);
     const { data: { user } } = await supabase.auth.getUser();
     this.currentUserId = user?.id || null;
-    this.fetchUsers();
+    await this.fetchUsers();
+    this.subscribeToUserChanges();
   },
   beforeUnmount() {
     document.removeEventListener('click', this.closeActionsMenuOnOutside);
     document.removeEventListener('keydown', this.closeActionsMenuOnEscape);
+    if (this.usersRealtimeChannel) {
+      supabase.removeChannel(this.usersRealtimeChannel);
+      this.usersRealtimeChannel = null;
+    }
   },
   methods: {
     isEditingSelf() { return this.isEditing && this.editingUserId === this.currentUserId; },
@@ -240,6 +246,22 @@ export default {
         this.errorMessage = '';
         this.users = data;
       }
+    },
+    subscribeToUserChanges() {
+      if (this.usersRealtimeChannel) return;
+
+      this.usersRealtimeChannel = supabase
+        .channel('superadmin-users-status')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'users' },
+          () => this.fetchUsers()
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error(`Unable to subscribe to user updates: ${status}`);
+          }
+        });
     },
     getUserStatus(user) {
       // Determine user status based on registration_status and is_locked_out
@@ -265,7 +287,7 @@ export default {
         ? `You are transferring the active Superadmin status to ${user.username || 'this account'}. Your account will become blocked and you will be logged out immediately after confirmation. Continue?`
         : 'Enter your password to block or unblock this account:';
       if (!await confirmCurrentPassword(confirmationMessage)) return;
-      const targetState = !user.is_locked_out;
+      const targetState = this.getUserStatus(user) !== 'blocked';
       const { error } = await supabase.rpc('admin_update_user_status', {
         p_user_id: user.user_id,
         p_status: targetState ? 'blocked' : 'approved'

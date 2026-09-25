@@ -1,6 +1,6 @@
 import { supabase } from '@/utils/supabase.js';
 export default {
-  name: 'ActivityLogs', data: () => ({ logs: [], currentPage: 1, pageSize: 12, searchQuery: '', selectedActor: 'all', selectedAction: 'all', selectedRole: 'all', selectedTime: 'all', errorMessage: '' }),
+  name: 'ActivityLogs', data: () => ({ logs: [], currentPage: 1, pageSize: 9, searchQuery: '', selectedActor: 'all', selectedAction: 'all', selectedRole: 'all', selectedTime: 'all', errorMessage: '' }),
   computed: {
     actors() { return [...new Set(this.logs.map(log => log.actor_username).filter(Boolean))].sort(); },
     actions() { return [...new Set(this.logs.map(log => log.action).filter(Boolean))].sort(); },
