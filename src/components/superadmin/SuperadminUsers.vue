@@ -367,7 +367,7 @@
                 <select id="position" v-model="form.position" disabled @change="validatePosition">
                   <option value="Instructor">Instructor</option>
                   <option value="Staff">Staff</option>
-                  <option v-if="form.role === 'user'" value="Student">Student</option>
+                <option v-if="privilegeRole === 'user'" value="Student">Student</option>
                 </select>
                 <label for="position">Position: <span>*</span></label>
               </div>
@@ -445,6 +445,18 @@
           </div>
 
         </form>
+      </div>
+    </div>
+
+    <!-- Blocked-account restoration modal -->
+    <div v-if="showUnblockModal" class="modal-overlay" @click.self="closeUnblockModal">
+      <div class="notification-card restore-account-card" role="dialog" aria-modal="true" aria-labelledby="unblock-title">
+        <div class="restore-account-heading"><div class="notification-icon" aria-hidden="true"><i class="fi fi-br-user-check"></i></div><div><h3 id="unblock-title">Restore account</h3><p class="restore-account-subtitle">Update access details before reactivating this account.</p></div></div>
+        <div class="restore-account-identity"><span class="restore-account-eyebrow">Account</span><strong>{{ unblockTarget?.username }}</strong><span>Blocked account</span></div>
+        <div class="restore-account-fields"><div class="restore-field"><label for="unblock-role">Role</label><select id="unblock-role" v-model="unblockRole" @change="unblockRoleChanged"><option value="user">User</option><option value="admin">Admin</option><option value="superadmin">Superadmin</option></select></div><div class="restore-field"><label for="unblock-position">Position</label><select id="unblock-position" v-model="unblockPosition"><option v-if="unblockRole === 'user'" value="Student">Student</option><option value="Instructor">Instructor</option><option value="Staff">Staff</option></select></div></div>
+        <div v-if="unblockRole === 'superadmin' && users.some(u => u.role === 'superadmin' && getUserStatus(u) === 'active')" class="restore-field restore-superadmin-field"><label for="unblock-superadmin-block">Inactive superadmin to block</label><select id="unblock-superadmin-block" v-model="selectedUnblockSuperadminToBlock"><option value="" disabled>Select an inactive superadmin</option><option v-for="account in users.filter(u => u.role === 'superadmin' && getUserStatus(u) === 'inactive' && u.user_id !== unblockTarget?.user_id)" :key="account.user_id" :value="account.user_id">{{ account.username }} ({{ account.id_number }})</option></select><small>This keeps only one active superadmin.</small></div>
+        <div class="restore-account-status"><i class="fi fi-br-check-circle" aria-hidden="true"></i><span>Resulting status</span><strong>{{ unblockRole === 'superadmin' && users.some(u => u.role === 'superadmin' && getUserStatus(u) === 'active') ? 'Inactive backup' : 'Approved' }}</strong></div>
+        <div class="restore-account-actions"><button class="btn btn-secondary" @click="closeUnblockModal">Cancel</button><button class="btn btn-primary" :disabled="isUnblocking || (unblockRole === 'superadmin' && users.some(u => u.role === 'superadmin' && getUserStatus(u) === 'active') && !selectedUnblockSuperadminToBlock)" @click="confirmUnblock">{{ isUnblocking ? 'Saving...' : 'Restore account' }}</button></div>
       </div>
     </div>
 
@@ -530,7 +542,7 @@
               </select></div>
             <div><label class="privilege-label" for="privilege-position">Position</label><select id="privilege-position"
                 v-model="privilegePosition" class="privilege-select">
-                <option v-if="privilegeRole === 'user'" value="Student">Student</option>
+                <option value="Student">Student</option>
                 <option value="Instructor">Instructor</option>
                 <option value="Staff">Staff</option>
               </select></div>

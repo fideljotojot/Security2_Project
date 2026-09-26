@@ -172,7 +172,7 @@
               <span>*</span></label><select id="admin-edit-position" v-model="editForm.position" disabled>
               <option value="Instructor">Instructor</option>
               <option value="Staff">Staff</option>
-              <option v-if="editForm.role === 'user'" value="Student">Student</option>
+              <option value="Student">Student</option>
             </select></div>
           <div v-if="!viewing" class="form-group"><label for="admin-edit-password">Password: <span>(Leave blank to keep
                 current)</span></label><input id="admin-edit-password" type="password" v-model="editForm.password"
@@ -189,6 +189,15 @@
             @click="nextEditStep">Next</button><button v-else v-show="!viewing" class="btn btn-primary"
             @click="beginSaveEdit">Save</button><button v-if="viewing && editStep === 'account'" type="button"
             class="btn btn-primary" @click="editing = null">Close</button></div>
+      </div>
+    </div>
+    <div v-if="showUnblockModal" class="modal-overlay" @click.self="closeUnblockModal">
+      <div class="notification-card restore-account-card" role="dialog" aria-modal="true" aria-labelledby="admin-restore-title">
+        <div class="restore-account-heading"><div class="notification-icon" aria-hidden="true"><i class="fi fi-br-user-check"></i></div><div><h3 id="admin-restore-title">Restore account</h3><p class="restore-account-subtitle">Update access details before reactivating this account.</p></div></div>
+        <div class="restore-account-identity"><span class="restore-account-eyebrow">Account</span><strong>{{ unblockTarget?.username }}</strong><span>Blocked account</span></div>
+        <div class="restore-account-fields"><div class="restore-field"><label for="unblock-role">Role</label><select id="unblock-role" v-model="unblockRole" @change="unblockRoleChanged"><option value="user">User</option><option value="admin">Admin</option><option v-if="viewerRole === 'superadmin'" value="superadmin">Superadmin</option></select></div><div class="restore-field"><label for="unblock-position">Position</label><select id="unblock-position" v-model="unblockPosition"><option v-if="unblockRole === 'user'" value="Student">Student</option><option value="Instructor">Instructor</option><option value="Staff">Staff</option></select></div></div>
+        <div class="restore-account-status"><i class="fi fi-br-check-circle" aria-hidden="true"></i><span>New status</span><strong>Approved</strong></div>
+        <div class="restore-account-actions"><button class="btn btn-secondary" @click="closeUnblockModal">Cancel</button><button class="btn btn-primary" :disabled="isUnblocking" @click="confirmUnblock">{{ isUnblocking ? 'Saving...' : 'Restore account' }}</button></div>
       </div>
     </div>
     <div v-if="deleteTarget" class="modal-overlay">

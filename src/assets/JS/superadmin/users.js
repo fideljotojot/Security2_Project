@@ -23,6 +23,12 @@ export default {
       backupReplacementTarget: null,
       selectedBackupToBlock: '',
       isReplacingBackup: false,
+      showUnblockModal: false,
+      unblockTarget: null,
+      unblockRole: 'user',
+      unblockPosition: 'Student',
+      selectedUnblockSuperadminToBlock: '',
+      isUnblocking: false,
       deletePassword: '',
       showDeletePassword: false,
       pendingDeleteUser: null,
@@ -287,14 +293,9 @@ export default {
     async toggleLockout(user) {
       if (this.getUserStatus(user) === 'incomplete') return;
       const targetState = this.getUserStatus(user) !== 'blocked';
-      const inactiveSuperadmins = this.users.filter((account) => account.role === 'superadmin'
-        && account.user_id !== this.currentUserId && this.getUserStatus(account) === 'inactive');
-      const currentUser = this.users.find((account) => account.user_id === this.currentUserId);
-      if (!targetState && currentUser?.role === 'superadmin' && this.getUserStatus(currentUser) === 'active'
-        && user.role === 'superadmin' && inactiveSuperadmins.length) {
-        this.backupReplacementTarget = user;
-        this.selectedBackupToBlock = '';
-        this.showBackupReplacementModal = true;
+      if (!targetState) {
+        if (!await confirmCurrentPassword('Enter your password to unblock this account:')) return;
+        this.openUnblockModal(user);
         return;
       }
       const isSuperadminHandoff = user.role === 'superadmin' && user.registration_status !== 'approved' && user.user_id !== this.currentUserId;
@@ -325,6 +326,48 @@ export default {
         }
         await this.fetchUsers();
       }
+    },
+    openUnblockModal(user) {
+      this.unblockTarget = user;
+      this.unblockRole = user.role;
+      this.unblockPosition = user.role === 'user' ? 'Student' : (user.position === 'Instructor' ? 'Instructor' : 'Staff');
+      this.selectedUnblockSuperadminToBlock = '';
+      this.showUnblockModal = true;
+    },
+    closeUnblockModal() {
+      if (this.isUnblocking) return;
+      this.showUnblockModal = false;
+      this.unblockTarget = null;
+      this.selectedUnblockSuperadminToBlock = '';
+    },
+    unblockRoleChanged() {
+      if (this.unblockRole === 'user') {
+        if (!['Student', 'Instructor', 'Staff'].includes(this.unblockPosition)) this.unblockPosition = 'Student';
+      } else if (!['Instructor', 'Staff'].includes(this.unblockPosition)) {
+        this.unblockPosition = 'Staff';
+      }
+    },
+    async confirmUnblock() {
+      if (!this.unblockTarget || this.isUnblocking) return;
+      const needsReplacement = this.unblockRole === 'superadmin'
+        && this.users.some(u => u.role === 'superadmin' && this.getUserStatus(u) === 'active');
+      if (needsReplacement && !this.selectedUnblockSuperadminToBlock) return;
+      this.isUnblocking = true;
+      const { error } = await supabase.rpc('restore_blocked_account', {
+        p_user_id: this.unblockTarget.user_id,
+        p_role: this.unblockRole,
+        p_position: this.unblockPosition,
+        p_block_inactive_superadmin_id: needsReplacement ? this.selectedUnblockSuperadminToBlock : null
+      });
+      this.isUnblocking = false;
+      if (error) {
+        this.notificationTitle = 'Account Restoration Failed';
+        this.notificationMessage = error.message || 'Unable to restore the account.';
+        this.showNotificationModal = true;
+        return;
+      }
+      this.closeUnblockModal();
+      await this.fetchUsers();
     },
     closeBackupReplacementModal() {
       if (this.isReplacingBackup) return;
@@ -376,7 +419,7 @@ export default {
       this.selectedPrivileges = [];
     },
     privilegeRoleChanged() {
-      this.privilegePosition = this.privilegeRole === 'user' ? 'Student' : 'Staff';
+      if (!['Student', 'Instructor', 'Staff'].includes(this.privilegePosition)) this.privilegePosition = 'Student';
       if (this.privilegeRole === 'superadmin' || this.privilegeRole === 'admin') {
         this.selectedPrivileges = this.availablePrivileges.map(privilege => privilege.key);
       } else if (this.privilegeRole === 'user') {
@@ -555,7 +598,7 @@ export default {
     },
     normalizePosition() {
       if (!arguments.length) return;
-      this.form.position = this.form.role === 'user' ? 'Student' : 'Staff';
+      if (!['Student', 'Instructor', 'Staff'].includes(this.form.position)) this.form.position = 'Student';
     },
     cancelCreateConfirmation() {
       if (this.isSubmitting) return;
