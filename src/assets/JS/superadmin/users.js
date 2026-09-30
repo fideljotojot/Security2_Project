@@ -156,6 +156,23 @@ export default {
         !this.hasFieldWarnings(['user_id', 'username', 'password', 'position'])
       );
     },
+    activeSuperadminExists() {
+      return this.users.some(u => u.role === 'superadmin' && this.getUserStatus(u) === 'active');
+    },
+    eligibleInactiveSuperadmins() {
+      const targetId = this.unblockTarget?.user_id;
+      return this.users.filter(u =>
+        u.role === 'superadmin' &&
+        this.getUserStatus(u) === 'inactive' &&
+        u.user_id !== targetId
+      );
+    },
+    needsInactiveSuperadminReplacement() {
+      return this.unblockRole === 'superadmin' && this.activeSuperadminExists;
+    },
+    showInactiveSuperadminSelector() {
+      return this.needsInactiveSuperadminReplacement && this.eligibleInactiveSuperadmins.length > 0;
+    },
     passwordStrengthClass() {
       if (this.passwordStrengthScore <= 1) return 'weak';
       if (this.passwordStrengthScore === 2) return 'medium';
@@ -346,18 +363,21 @@ export default {
       } else if (!['Instructor', 'Staff'].includes(this.unblockPosition)) {
         this.unblockPosition = 'Staff';
       }
+      if (!this.showInactiveSuperadminSelector) this.selectedUnblockSuperadminToBlock = '';
     },
     async confirmUnblock() {
       if (!this.unblockTarget || this.isUnblocking) return;
-      const needsReplacement = this.unblockRole === 'superadmin'
-        && this.users.some(u => u.role === 'superadmin' && this.getUserStatus(u) === 'active');
-      if (needsReplacement && !this.selectedUnblockSuperadminToBlock) return;
+      const needsReplacement = this.needsInactiveSuperadminReplacement;
+      const hasReplacementOptions = this.eligibleInactiveSuperadmins.length > 0;
+      if (needsReplacement && hasReplacementOptions && !this.selectedUnblockSuperadminToBlock) return;
       this.isUnblocking = true;
       const { error } = await supabase.rpc('restore_blocked_account', {
         p_user_id: this.unblockTarget.user_id,
         p_role: this.unblockRole,
         p_position: this.unblockPosition,
-        p_block_inactive_superadmin_id: needsReplacement ? this.selectedUnblockSuperadminToBlock : null
+        p_block_inactive_superadmin_id: needsReplacement && hasReplacementOptions
+          ? this.selectedUnblockSuperadminToBlock
+          : null
       });
       this.isUnblocking = false;
       if (error) {
@@ -597,8 +617,13 @@ export default {
       this.errorMessage = '';
     },
     normalizePosition() {
-      if (!arguments.length) return;
-      if (!['Student', 'Instructor', 'Staff'].includes(this.form.position)) this.form.position = 'Student';
+      if (this.form.role === 'user') {
+        if (!['Student', 'Instructor', 'Staff'].includes(this.form.position)) {
+          this.form.position = 'Student';
+        }
+      } else if (!['Instructor', 'Staff'].includes(this.form.position)) {
+        this.form.position = 'Staff';
+      }
     },
     cancelCreateConfirmation() {
       if (this.isSubmitting) return;

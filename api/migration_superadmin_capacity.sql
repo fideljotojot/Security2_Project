@@ -242,20 +242,23 @@ BEGIN
   ) INTO v_has_active_superadmin;
 
   IF p_role = 'superadmin' AND v_has_active_superadmin THEN
-    IF p_block_inactive_superadmin_id IS NULL
-       OR p_block_inactive_superadmin_id = p_user_id THEN
-      RAISE EXCEPTION 'An inactive superadmin must be selected before restoring this account';
+    -- A null replacement is valid when no inactive backup exists. The target
+    -- account will be restored as the inactive backup below.
+    IF p_block_inactive_superadmin_id IS NOT NULL THEN
+      IF p_block_inactive_superadmin_id = p_user_id THEN
+        RAISE EXCEPTION 'An inactive superadmin must be selected before restoring this account';
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM public.users
+        WHERE id = p_block_inactive_superadmin_id
+          AND role = 'superadmin' AND registration_status = 'inactive'
+      ) THEN
+        RAISE EXCEPTION 'The selected account must be an inactive superadmin';
+      END IF;
+      UPDATE public.users
+      SET registration_status = 'blocked', is_locked_out = TRUE
+      WHERE id = p_block_inactive_superadmin_id;
     END IF;
-    IF NOT EXISTS (
-      SELECT 1 FROM public.users
-      WHERE id = p_block_inactive_superadmin_id
-        AND role = 'superadmin' AND registration_status = 'inactive'
-    ) THEN
-      RAISE EXCEPTION 'The selected account must be an inactive superadmin';
-    END IF;
-    UPDATE public.users
-    SET registration_status = 'blocked', is_locked_out = TRUE
-    WHERE id = p_block_inactive_superadmin_id;
   ELSIF p_block_inactive_superadmin_id IS NOT NULL THEN
     RAISE EXCEPTION 'An inactive superadmin may only be blocked for a superadmin restoration';
   END IF;

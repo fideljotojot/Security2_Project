@@ -111,8 +111,25 @@ router.beforeEach(async (to, from, next) => {
       return;
     }
 
-    // 4. If user is locked out, sign out and redirect to login
-    if (userData.is_locked_out || userData.registration_status === 'inactive' || (userData.registration_status !== 'approved' && !(to.name === 'complete-profile' && userData.registration_status === 'incomplete'))) {
+    // 4. Redirect unavailable accounts to login with a status-specific message.
+    if (userData.registration_status === 'inactive') {
+      const { data: activeSuperadmin } = await supabase
+        .from('users')
+        .select('id')
+        .eq('role', 'superadmin')
+        .eq('registration_status', 'approved')
+        .neq('id', session.user.id)
+        .limit(1);
+
+      await supabase.auth.signOut();
+      localStorage.removeItem("user");
+      isUserAuthenticated = false;
+      next(activeSuperadmin?.length
+        ? { name: 'login', query: { inactive: 'true' } }
+        : { name: 'login' });
+      return;
+    }
+    if (userData.is_locked_out || (userData.registration_status !== 'approved' && !(to.name === 'complete-profile' && userData.registration_status === 'incomplete'))) {
       await supabase.auth.signOut();
       localStorage.removeItem("user");
       isUserAuthenticated = false;

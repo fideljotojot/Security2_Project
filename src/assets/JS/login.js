@@ -49,7 +49,9 @@ export default {
   mounted() {
     // Restore lockout state if page was reloaded during lockout
     this.restoreLockoutState();
-    if (this.$route.query.blocked === 'true') {
+    if (this.$route.query.inactive === 'true') {
+      this.warnings.general = ['Your account is inactive. Sign in when an active Superadmin slot is available.'];
+    } else if (this.$route.query.blocked === 'true') {
       this.warnings.general = ["Your account is blocked. Please contact the administrator."];
     }
   },
