@@ -1,5 +1,26 @@
 # Security 2 Database Setup Instructions
 
+## Visitor IP addresses in audit logs
+
+For an existing database with audit logging installed, run
+`migration_audit_request_ip.sql` in the Supabase SQL Editor. New installations
+using `ALL_IN_ONE_SETUP.sql` or `migration_audit_logs.sql` already include it.
+The migration replaces functions without changing historical logs or access rules.
+
+Run `test_audit_request_ip.sql` afterward to check address parsing. It rolls back
+its request-context changes and does not modify application rows.
+
+For end-to-end verification, use a test account to log in and out, update a user,
+and create/review a deletion request. Check the resulting activity logs as a
+superadmin and confirm a non-superadmin still cannot fetch audit logs. Compare
+new addresses with the test visitor's public network address; IPv6 and shared
+network/VPN addresses are valid. Existing `::1` entries remain unchanged.
+
+The IP comes from the first `x-forwarded-for` value in Supabase's request context
+and is informational, not verified security evidence. Missing or malformed
+addresses are stored as NULL and displayed as `—`. SQL Editor operations and
+internal service operations may have no visitor request context.
+
 ## Critical Prerequisites
 
 ### 1. Enable pgcrypto Extension in Supabase
