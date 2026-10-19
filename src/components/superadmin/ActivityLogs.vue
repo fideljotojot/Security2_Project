@@ -29,8 +29,8 @@
             </select>
           </div>
           <div class="logs-date-filters">
-            <label>From date<input v-model="draft.from" type="date" @change="applyFilters"></label>
-            <label>To date<input v-model="draft.to" type="date" @change="applyFilters"></label>
+            <label for="logs-from-date"><span>From date</span><input id="logs-from-date" v-model="draft.from" type="date" @change="applyFilters"></label>
+            <label for="logs-to-date"><span>To date</span><input id="logs-to-date" v-model="draft.to" type="date" @change="applyFilters"></label>
           </div>
         </div>
       </form>

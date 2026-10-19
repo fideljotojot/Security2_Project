@@ -206,26 +206,41 @@ tbody .activity-role-column {
   gap: .75rem;
 }
 .activity-logs-page .logs-date-filters label {
+  position: relative;
   display: flex;
   flex: 1 1 8rem;
   flex-direction: column;
-  gap: .35rem;
   min-width: 0;
   color: #243238;
   text-align: left;
   font-size: .8rem;
+}
+.activity-logs-page .logs-date-filters label > span {
+  position: absolute;
+  top: 5px;
+  left: 12px;
+  right: 2.5rem;
+  z-index: 1;
+  color: #52635a;
+  font-size: .65rem;
+  font-weight: 500;
+  line-height: 10px;
+  pointer-events: none;
 }
 .activity-logs-page .logs-date-filters input {
   min-width: 0;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  padding: .5em .5em .5em 1em;
+  height: 38px;
+  padding: 15px 10px 0px;
   border: none;
   border-radius: 1em;
   background: #fff;
   color: #243238;
   font: inherit;
+  line-height: 15px;
+  font-size: .75rem;
 }
 .activity-logs-page .logs-date-filters input:focus-visible { outline: 2px solid #036d30; outline-offset: 2px; }
 .logs-table-scroll { overflow: auto; max-height: 60vh; width: 100%; }
