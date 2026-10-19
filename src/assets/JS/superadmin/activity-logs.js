@@ -7,7 +7,7 @@ export default {
   name: 'ActivityLogs',
   data: () => ({
     logs: [], category: 'all', categories: LOG_CATEGORIES, draft: emptyFilters(), applied: emptyFilters(),
-    currentPage: 1, pageSize: 10, total: 0, options: { actions: [], roles: [] },
+    currentPage: 1, pageSize: 7, total: 0, options: { actions: [], roles: [] },
     loading: false, errorMessage: '', validationMessage: '', requestId: 0, searchTimer: null,
   }),
   computed: {
@@ -83,7 +83,6 @@ export default {
       this.loadLogs();
     },
     changeCategory() { this.options = { actions: [], roles: [] }; this.clearFilters(); },
-    changePageSize() { this.applyFilters(); },
     goToPage(page) {
       if (this.loading || page < 1 || page > this.pageCount || page === this.currentPage) return;
       this.currentPage = page;

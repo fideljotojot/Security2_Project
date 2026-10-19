@@ -36,32 +36,32 @@
       </form>
       <p v-if="validationMessage" class="alert-danger" role="alert">{{ validationMessage }}</p>
       <p v-if="errorMessage" class="alert-danger" role="alert">{{ errorMessage }}</p>
-      <div class="logs-table-scroll" :aria-busy="loading" tabindex="0" :aria-label="categoryLabel">
-        <table class="categorized-logs-table">
+      <div class="logs-table-container" :aria-busy="loading" :aria-label="categoryLabel">
+        <table class="categorized-logs-table" :class="{ 'logs-table-all': category === 'all', 'logs-table-security': category === 'security' }" role="table">
           <thead><tr>
-              <th>User ID</th><th>Performed By</th><th>Role</th><th v-if="category === 'all'">Category</th><th>Module</th><th>Action</th><th>Browser / OS</th>
-              <template v-if="category === 'security'"><th>Time In</th><th>Time Out</th></template>
-              <th v-else>Date &amp; Time</th><th>IP Address</th><th>Details</th>
+              <th class="log-col-id">User ID</th><th class="log-col-performer">Performed By</th><th class="log-col-role">Role</th><th v-if="category === 'all'" class="log-col-category">Category</th><th class="log-col-module">Module</th><th class="log-col-action">Action</th><th class="log-col-browser">Browser / OS</th>
+              <template v-if="category === 'security'"><th class="log-col-date">Time In</th><th class="log-col-date">Time Out</th></template>
+              <th v-else class="log-col-date">Date &amp; Time</th><th class="log-col-ip">IP Address</th><th class="log-col-description">Details</th>
             </tr></thead>
           <tbody>
             <tr v-if="loading"><td :colspan="category === 'security' || category === 'all' ? 10 : 9" class="empty-state" role="status">Loading {{ categoryLabel.toLowerCase() }}…</td></tr>
             <tr v-else-if="errorMessage"><td :colspan="category === 'security' || category === 'all' ? 10 : 9" class="empty-state">Unable to display logs. Use Refresh to try again.</td></tr>
             <template v-else>
-              <tr v-for="log in logs" :key="log.log_id">
-                <td>{{ log.actor_id_number || '—' }}</td><td>{{ actorName(log) }}</td>
-                <td><span class="log-badge log-badge-neutral">{{ log.actor_role || 'System' }}</span></td>
-                <td v-if="category === 'all'">{{ categoryName(log.category) }}</td>
-                <td>{{ log.module || '—' }}</td>
-                <td><span class="log-badge" :class="actionClass(log.action)">{{ log.action }}</span></td>
-                <td>{{ browserAndOS(log.user_agent) }}</td>
+              <tr v-for="log in logs" :key="log.log_id" role="row">
+                <td class="log-col-id" data-label="User ID" role="cell">{{ log.actor_id_number || '—' }}</td><td class="log-col-performer" data-label="Performed By" role="cell">{{ actorName(log) }}</td>
+                <td class="log-col-role" data-label="Role" role="cell"><span class="log-badge log-badge-neutral">{{ log.actor_role || 'System' }}</span></td>
+                <td v-if="category === 'all'" class="log-col-category" data-label="Category" role="cell">{{ categoryName(log.category) }}</td>
+                <td class="log-col-module" data-label="Module" role="cell">{{ log.module || '—' }}</td>
+                <td class="log-col-action" data-label="Action" role="cell"><span class="log-badge" :class="actionClass(log.action)">{{ log.action }}</span></td>
+                <td class="log-col-browser" data-label="Browser / OS" role="cell">{{ browserAndOS(log.user_agent) }}</td>
                 <template v-if="category === 'security'">
-                  <td>{{ formatDate(log.time_in) }}</td>
-                  <td><template v-if="log.time_out">{{ formatDate(log.time_out) }}</template>
+                  <td class="log-col-date" data-label="Time In" role="cell">{{ formatDate(log.time_in) }}</td>
+                  <td class="log-col-date" data-label="Time Out" role="cell"><template v-if="log.time_out">{{ formatDate(log.time_out) }}</template>
                     <span v-else-if="log.session_status" class="log-badge" :class="log.session_status === 'Active' ? 'log-badge-success' : 'log-badge-neutral'">{{ log.session_status }}</span>
                     <template v-else>—</template></td>
                 </template>
-                <td v-else>{{ formatDate(log.created_at) }}</td>
-                <td><code>{{ log.ip_address || '—' }}</code></td><td class="log-description">{{ logDescription(log) }}</td>
+                <td v-else class="log-col-date" data-label="Date &amp; Time" role="cell">{{ formatDate(log.created_at) }}</td>
+                <td class="log-col-ip" data-label="IP Address" role="cell"><code>{{ log.ip_address || '—' }}</code></td><td class="log-description log-col-description" data-label="Details" role="cell">{{ logDescription(log) }}</td>
               </tr>
               <tr v-if="!logs.length"><td :colspan="category === 'security' || category === 'all' ? 10 : 9" class="empty-state">
                   No {{ category === 'all' ? 'logs' : categoryLabel.toLowerCase() }} match your current filters.
@@ -72,9 +72,7 @@
       </div>
       <div class="table-panel-footer logs-footer">
         <span role="status">Showing {{ pageStart }}–{{ pageEnd }} of {{ total }} entries</span>
-        <label class="logs-page-size">Show<select v-model.number="pageSize" @change="changePageSize">
-            <option :value="10">10</option><option :value="25">25</option><option :value="50">50</option>
-          </select>per page</label>
+        <span class="logs-page-size">7 per page</span>
         <nav class="pagination" aria-label="Log pages">
           <button type="button" :disabled="loading || currentPage === 1" @click="goToPage(currentPage - 1)">‹ Prev</button>
           <template v-for="(page, index) in visiblePages" :key="page">

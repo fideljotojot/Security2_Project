@@ -1,5 +1,9 @@
 # Security 2 Database Setup Instructions
 
+The Logs page displays seven entries per page. For an existing database, apply
+`migration_logs_seven_per_page.sql` after `migration_all_activity_logs.sql` to
+enable seven-row requests before deploying this frontend change.
+
 ## Categorized logs and session history
 
 For an existing database, run these in the Supabase SQL Editor in order:

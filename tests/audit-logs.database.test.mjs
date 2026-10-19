@@ -206,6 +206,14 @@ test('categorized audit migration and session security', async t => {
     await db.exec(upgrade); await db.exec(upgrade);
     const after = (await db.query('SELECT proacl::TEXT AS acl, proowner FROM pg_proc WHERE oid=$1::regprocedure', [signature])).rows[0];
     assert.deepEqual(after, before);
+    const fiveRowUpgrade = await readFile(new URL('../api/migration_logs_five_per_page.sql', import.meta.url), 'utf8');
+    await db.exec(fiveRowUpgrade);
+    const fiveRows = await page({ category: 'all', size: 5 });
+    assert.equal(fiveRows.rows.length, 5);
+    await db.exec(await readFile(new URL('../api/migration_logs_seven_per_page.sql', import.meta.url), 'utf8'));
+    assert.equal((await page({ category: 'all', size: 7 })).rows.length, 7);
+    const defaults = (await db.query('SELECT public.get_activity_log_page() AS data')).rows[0].data;
+    assert.equal(defaults.rows.length, 7);
     const totals = await Promise.all(['activity', 'security', 'system'].map(category => page({ category })));
     assert.equal((await page({ category: 'all' })).total, totals.reduce((total, data) => total + data.total, 0));
     await asUser(user); await assert.rejects(page({ category: 'all' }), /Only superadmins/);

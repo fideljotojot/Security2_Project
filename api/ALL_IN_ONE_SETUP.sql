@@ -950,14 +950,14 @@ END; $$;
 CREATE OR REPLACE FUNCTION public.get_activity_log_page(
   p_category TEXT DEFAULT 'activity', p_search TEXT DEFAULT '', p_actor UUID DEFAULT NULL,
   p_action TEXT DEFAULT NULL, p_role TEXT DEFAULT NULL, p_from TIMESTAMPTZ DEFAULT NULL,
-  p_to TIMESTAMPTZ DEFAULT NULL, p_page INTEGER DEFAULT 1, p_page_size INTEGER DEFAULT 10)
+  p_to TIMESTAMPTZ DEFAULT NULL, p_page INTEGER DEFAULT 1, p_page_size INTEGER DEFAULT 7)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $$
 DECLARE result JSONB;
 BEGIN
   IF NOT EXISTS(SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'superadmin') THEN
     RAISE EXCEPTION 'Only superadmins can view audit logs' USING ERRCODE = '42501'; END IF;
   IF p_category IS NULL OR p_category NOT IN ('all', 'activity', 'security', 'system')
-    OR p_page IS NULL OR p_page < 1 OR p_page_size IS NULL OR p_page_size NOT IN (10, 25, 50)
+    OR p_page IS NULL OR p_page < 1 OR p_page_size IS NULL OR p_page_size NOT IN (5, 7, 10, 25, 50)
     OR (p_from IS NOT NULL AND p_to IS NOT NULL AND p_from >= p_to) THEN
     RAISE EXCEPTION 'Invalid log filters' USING ERRCODE = '22023'; END IF;
   WITH category_rows AS MATERIALIZED (

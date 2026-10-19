@@ -122,7 +122,8 @@ test('server pagination, immediate filter application and category reset without
   assert.equal(state.category, 'all');
   assert.equal(calls[0].args.p_category, 'all');
   assert.equal(state.categories[0].value, 'all');
-  assert.equal(state.pageCount, 16);
+  assert.equal(state.pageCount, 22);
+  assert.equal(calls[0].args.p_page_size, 7);
   state.draft.search = 'alex2';
   await state.loadLogs();
   assert.equal(calls.at(-1).args.p_search, '');
@@ -229,7 +230,7 @@ test('actual Vue template renders categorized headers, session status, errors an
     pageStart: state.pageStart, pageEnd: state.pageEnd, visiblePages: state.visiblePages,
   }) }));
   let html = await render();
-  assert(html.includes('<th>Category</th>'));
+  assert(html.includes('<th class="log-col-category">Category</th>'));
   assert(html.includes('No logs match your current filters.'));
   state.category = 'activity';
   html = await render();
@@ -254,16 +255,20 @@ test('actual Vue template renders categorized headers, session status, errors an
   state.logs = [{ log_id: 1, actor_full_name: 'Alex Cruz', actor_role: 'user', action: 'Login',
     session_status: 'Unknown', user_agent: null, details: {}, created_at: '2026-10-19T00:00:00Z' }];
   html = await render();
-  assert(html.includes('<th>Time In</th><th>Time Out</th>'));
+  assert(html.includes('<th class="log-col-date">Time In</th><th class="log-col-date">Time Out</th>'));
   assert(html.includes('Unknown')); assert(html.includes('Alex Cruz'));
   state.category = 'all'; state.total = 3;
   state.logs = ['activity', 'security', 'system'].map((category, index) => ({
     log_id: index + 1, category, action: 'Example action', details: {}, created_at: '2026-10-19T00:00:00Z',
   }));
   html = await render();
-  assert(html.includes('<th>Category</th>')); assert(html.includes('Date &amp; Time'));
-  assert(!html.includes('<th>Time In</th>')); assert(!html.includes('<th>Time Out</th>'));
-  for (const label of ['Activity Logs', 'Login &amp; Security Logs', 'System Logs']) assert(html.includes(`<td>${label}</td>`));
+  assert(html.includes('<th class="log-col-category">Category</th>')); assert(html.includes('Date &amp; Time'));
+  assert(!html.includes('<th class="log-col-date">Time In</th>')); assert(!html.includes('<th class="log-col-date">Time Out</th>'));
+  for (const label of ['Activity Logs', 'Login &amp; Security Logs', 'System Logs']) assert(html.includes(`<td class="log-col-category" data-label="Category" role="cell">${label}</td>`));
+  assert(html.includes('logs-table-container')); assert(!html.includes('logs-table-scroll'));
+  for (const label of ['User ID', 'Performed By', 'Role', 'Category', 'Module', 'Action', 'Browser / OS', 'Date &amp; Time', 'IP Address', 'Details']) {
+    assert(html.includes(`data-label="${label}"`));
+  }
   state.logs = []; state.total = 0; html = await render();
   assert(html.includes('colspan="10"')); assert(html.includes('No logs match your current filters.'));
   state.category = 'security';
