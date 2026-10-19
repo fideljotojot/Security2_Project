@@ -1,5 +1,23 @@
 # Security 2 Database Setup Instructions
 
+## Full names in activity logs
+
+For an existing database, run `migration_audit_actor_full_name.sql` in the
+Supabase SQL Editor before deploying the updated activity log page. It preserves
+the RPC's execution grants and superadmin check, and adds `actor_full_name` and
+`actor_id` to its results. New installations already include this in the audit
+migration and all-in-one setup.
+
+Names use the current profile's first name, middle initial, last name, and suffix,
+omitting blank parts. The page falls back to username, then `System`. If an older
+database has multiple profiles for one user, the profile with the lowest ID is
+used. Performer filters use actor IDs; duplicate names include usernames in the
+dropdown. Audit rows and visitor-IP capture are preserved.
+
+After applying, check complete and partial names, accounts without profiles,
+system entries, duplicate-name filters, and both full-name and username searches.
+Confirm a non-superadmin still cannot call `get_audit_logs`.
+
 ## Visitor IP addresses in audit logs
 
 For an existing database with audit logging installed, run

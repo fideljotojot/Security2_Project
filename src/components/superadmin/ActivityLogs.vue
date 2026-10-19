@@ -11,7 +11,7 @@
               class="fi fi-br-cross-small"></i></button><i v-else class="fi fi-br-search" aria-hidden="true"></i></div>
         <div class="dropdown"><select v-model="selectedActor" aria-label="Filter by performed by">
             <option value="all">All performers</option>
-            <option v-for="actor in actors" :key="actor" :value="actor">{{ actor }}</option>
+            <option v-for="actor in actors" :key="actor.id" :value="actor.id">{{ actor.label }}</option>
           </select><select v-model="selectedAction" aria-label="Filter by action">
             <option value="all">All actions</option>
             <option v-for="action in actions" :key="action" :value="action">{{ action }}</option>
@@ -42,7 +42,7 @@
             <td class="activity-action-column">{{ log.action }}</td>
             <td class="activity-entity-column">{{ log.entity_type }}<template v-if="log.entity_id"> #{{ log.entity_id }}</template>
             </td>
-            <td class="activity-performer-column">{{ log.actor_username || 'System' }}</td>
+            <td class="activity-performer-column">{{ actorName(log) }}</td>
             <td class="activity-role-column">{{ log.actor_role || 'System' }}</td>
             <td class="activity-ip-column">{{ log.ip_address || '—' }}</td>
             <td class="activity-date-column">{{ formatDate(log.created_at) }}</td>
