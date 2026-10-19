@@ -1,5 +1,6 @@
 import { setUserAuthenticated } from '../../router.js';
 import { supabase } from '../../utils/supabase.js';
+import { startTrackingSession, resetTrackingLifecycle } from '../../utils/activity-session.js';
 
 export default {
   data(){
@@ -216,6 +217,8 @@ export default {
             role: userData.role
           };
           localStorage.setItem('user', JSON.stringify(loggedInUser));
+          resetTrackingLifecycle();
+          await startTrackingSession(data.user.id, { login: true });
           setUserAuthenticated(true);
           this.$router.push('/complete-profile');
           return;
@@ -254,10 +257,8 @@ export default {
           role
         };
         localStorage.setItem("user", JSON.stringify(loggedInUser));
-        await supabase.rpc('create_audit_log', {
-          p_action: 'Logged in', p_entity_type: 'authentication', p_entity_id: data.user.id,
-          p_details: { role }
-        });
+        resetTrackingLifecycle();
+        await startTrackingSession(data.user.id, { login: true });
         setUserAuthenticated(true);
         this.$router.push(destination);
         this.consecutiveError = 0;

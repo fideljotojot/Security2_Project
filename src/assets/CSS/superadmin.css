@@ -187,6 +187,84 @@ tbody .activity-role-column {
   color: #fff !important;
 }
 
+/* Categorized logs retain the dashboard's green palette and table styling. */
+.activity-logs-page { min-width: 0; height: auto; min-height: 100%; justify-content: flex-start; }
+.activity-logs-page .user-table { min-width: 0; max-width: 100%; max-height: none; overflow: hidden; }
+.activity-logs-page .logs-filter-form { margin: 0; }
+.activity-logs-page .table-panel-header { flex-wrap: wrap; gap: .75rem; }
+.activity-logs-page .logs-header-actions { display: flex; gap: .65rem; align-items: center; margin-left: auto; }
+.activity-logs-page .logs-primary-filters { gap: 1rem; align-items: flex-end; }
+.activity-logs-page .logs-primary-filters .searchbar { flex: 1 1 14rem; min-width: min(100%, 14rem); }
+.activity-logs-page .logs-primary-filters .dropdown { flex: 2 1 30rem; gap: .75rem; flex-wrap: wrap; min-width: 0; }
+.activity-logs-page .logs-primary-filters .dropdown select { flex: 1 1 8rem; min-width: 0; width: auto; }
+.activity-logs-page .logs-date-filters {
+  display: flex;
+  flex: 1 1 20rem;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .75rem;
+}
+.activity-logs-page .logs-date-filters label {
+  display: flex;
+  flex: 1 1 8rem;
+  flex-direction: column;
+  gap: .35rem;
+  min-width: 0;
+  color: #243238;
+  text-align: left;
+  font-size: .8rem;
+}
+.activity-logs-page .logs-date-filters input {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: .5em .5em .5em 1em;
+  border: none;
+  border-radius: 1em;
+  background: #fff;
+  color: #243238;
+  font: inherit;
+}
+.activity-logs-page .logs-date-filters input:focus-visible { outline: 2px solid #036d30; outline-offset: 2px; }
+.logs-table-scroll { overflow: auto; max-height: 60vh; width: 100%; }
+.activity-logs-page .categorized-logs-table { display: table; min-width: 1200px; width: 100%; height: auto; table-layout: auto; }
+.categorized-logs-table thead { display: table-header-group; }
+.categorized-logs-table tbody { display: table-row-group; }
+.categorized-logs-table thead tr, .categorized-logs-table tbody tr { display: table-row; padding: 0; }
+.activity-logs-page .categorized-logs-table th,
+.activity-logs-page .categorized-logs-table td {
+  width: auto;
+  display: table-cell;
+  padding: .9rem .85rem;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.activity-logs-page .categorized-logs-table th { white-space: nowrap; }
+.activity-logs-page .categorized-logs-table .empty-state { padding: 4rem 1rem; text-align: center; }
+.activity-logs-page .categorized-logs-table .log-description { min-width: 14rem; max-width: 26rem; }
+.categorized-logs-table code { font-size: .8rem; }
+.log-badge { display: inline-block; padding: .25rem .6rem; border-radius: 1rem; font-size: .76rem; font-weight: 600; }
+.log-badge-neutral { background: #e8efeb; color: #355a45; }
+.log-badge-success { background: #daf3e4; color: #17633a; }
+.log-badge-danger { background: #fae2e2; color: #962a2a; }
+.log-event-date { display: block; margin-top: .5rem; color: #68776f; font-size: .75rem; }
+.logs-footer { flex-wrap: wrap; gap: 1rem; }
+.logs-page-size { display: flex; align-items: center; gap: .6rem; white-space: nowrap; }
+.logs-page-size select { width: 4.5rem; }
+.activity-logs-page button:disabled { opacity: .5; cursor: default; }
+@media (max-width: 640px) {
+  .activity-logs-page .logs-primary-filters { padding: .8rem 1rem; gap: .8rem; }
+  .activity-logs-page .logs-primary-filters .searchbar,
+  .activity-logs-page .logs-primary-filters .dropdown { flex-basis: 100%; min-width: 0; }
+  .activity-logs-page .logs-date-filters { flex-basis: 100%; }
+  .activity-logs-page .logs-date-filters label { flex: 1 1 8rem; }
+  .activity-logs-page .logs-date-filters input { width: 100%; }
+  .logs-footer { justify-content: center; }
+}
+
 .notification-card .request-error-button:hover {
   background-color: #a61f1f !important;
 }

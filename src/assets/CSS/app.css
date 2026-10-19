@@ -532,7 +532,8 @@ tbody tr .empty-message {
   font-size: 1.3rem;
 }
 
-.header-section button {
+.header-section button,
+.activity-logs-page .logs-clear-button {
   background: #5bd3a6;
   color: #243238;
   border: none;
@@ -551,13 +552,15 @@ tbody tr .empty-message {
   transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.header-section button:hover {
+.header-section button:hover,
+.activity-logs-page .logs-clear-button:hover {
   background: #48c697;
   transform: translateY(-1px);
   box-shadow: 1px 3px 3px rgba(0, 0, 0, 0.35);
 }
 
-.header-section button:active {
+.header-section button:active,
+.activity-logs-page .logs-clear-button:active {
   transform: translateY(0);
   box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }

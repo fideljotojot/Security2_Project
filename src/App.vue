@@ -2,6 +2,8 @@
 import { setLockoutState } from './router.js';
 import { setUserAuthenticated } from './router.js';
 import { supabase } from './utils/supabase.js';
+import { startTrackingSession, heartbeatTrackingSession, endTrackingSession, resetTrackingLifecycle } from './utils/activity-session.js';
+import { SESSION_STORAGE_KEY } from './utils/audit-transport.js';
 
 export default {
   data() {
@@ -12,12 +14,26 @@ export default {
       idleWarningVisible: false,
       idleSecondsRemaining: 30,
       idleTimer: null,
+      presenceTimer: null,
+      authSubscription: null,
+      loggingOut: false,
       lastActivityAt: 0,
       lastActivityHandledAt: 0,
       idleActivityEvents: ['mousemove', 'keydown', 'touchstart', 'touchmove', 'click', 'pointerdown', 'scroll']
     }
   },
   async mounted() {
+    this.authSubscription = supabase.auth.onAuthStateChange(event => {
+      if (event === 'SIGNED_OUT') {
+        this.stopPresenceTracking();
+        this.stopSuperadminIdleLogout();
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        localStorage.removeItem('user');
+        setUserAuthenticated(false);
+        this.currentUserRole = 'user';
+        if (!['home', 'login', 'signup', 'forgot'].includes(this.$route.name)) this.$router.push('/login');
+      }
+    }).data.subscription;
     await this.syncCurrentUserRole();
     this.syncSuperadminIdleLogout();
     // Check for persisted lockout state
@@ -48,6 +64,7 @@ export default {
     async syncCurrentUserRole() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user?.id) {
+        this.stopPresenceTracking();
         this.currentUserRole = 'user';
         this.syncSuperadminIdleLogout();
         return;
@@ -62,6 +79,14 @@ export default {
       if (error || !data?.role) return;
 
       this.currentUserRole = data.role;
+      if (!['home', 'login', 'signup', 'forgot'].includes(this.$route.name) && !this.loggingOut) {
+        resetTrackingLifecycle();
+        await startTrackingSession(session.user.id);
+        if (!this.presenceTimer) {
+          this.presenceTimer = window.setInterval(() => heartbeatTrackingSession(session.user.id), 60000);
+        }
+        await heartbeatTrackingSession(session.user.id);
+      }
       this.syncSuperadminIdleLogout();
       try {
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -70,23 +95,31 @@ export default {
         // The server response remains the source of truth for navigation.
       }
     },
-    async logout() {
+    stopPresenceTracking() {
+      if (this.presenceTimer) window.clearInterval(this.presenceTimer);
+      this.presenceTimer = null;
+    },
+    async logout(reason = 'logout') {
+      if (this.loggingOut) return;
+      this.loggingOut = true;
+      this.stopPresenceTracking();
       this.stopSuperadminIdleLogout();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        await supabase.rpc('deactivate_superadmin_on_logout');
-        await supabase.rpc('create_audit_log', {
-          p_action: 'Logged out',
-          p_entity_type: 'authentication',
-          p_entity_id: session.user.id,
-          p_details: {}
-        });
+      try {
+        await endTrackingSession(reason === 'timeout' ? 'timeout' : 'logout');
+        await supabase.rpc('deactivate_superadmin_on_logout').abortSignal(AbortSignal.timeout(4000));
+      } catch {
+        // A recording or account-status failure must not prevent sign-out.
       }
-      await supabase.auth.signOut();
-      localStorage.removeItem('user');
-      this.currentUserRole = 'user';
-      setUserAuthenticated(false);
-      this.$router.push('/login');
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } finally {
+        localStorage.removeItem('user');
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        this.currentUserRole = 'user';
+        setUserAuthenticated(false);
+        this.loggingOut = false;
+        this.$router.push('/login');
+      }
     },
     isSuperadminRoute() {
       return ['superadmin', 'superadmin-users', 'superadmin-registrations', 'superadmin-activity-logs'].includes(this.$route.name);
@@ -126,7 +159,7 @@ export default {
     checkSuperadminIdleTimeout() {
       const idleSeconds = Math.floor((Date.now() - this.lastActivityAt) / 1000);
       if (idleSeconds >= 180) {
-        this.logout();
+        this.logout('timeout');
         return;
       }
       if (idleSeconds >= 150) {
@@ -240,6 +273,8 @@ export default {
     }
   },
   beforeUnmount() {
+    this.stopPresenceTracking();
+    this.authSubscription?.unsubscribe();
     this.stopSuperadminIdleLogout();
     // Clean up event listeners
     window.removeEventListener('popstate', this.preventBack);

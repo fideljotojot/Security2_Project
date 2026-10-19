@@ -21,4 +21,8 @@ export default defineConfig([
 
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],
+  {
+    files: ['tests/**/*.mjs'],
+    languageOptions: { globals: globals.node },
+  },
 ])
