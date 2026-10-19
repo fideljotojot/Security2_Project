@@ -2,7 +2,6 @@
   <main class="profile-page">
     <div class="profile-shell">
       <header class="page-intro">
-        <p class="eyebrow">Account settings</p>
         <h1>My profile</h1>
         <p class="intro-copy">Keep your personal and employment details current across the CSUCC portal.</p>
       </header>
@@ -33,8 +32,10 @@
             <div class="form-card-title">
               <p class="section-kicker">Profile details</p>
               <p class="required-note"><span>*</span> Required fields</p>
-            </div><button v-if="!isEditing" type="button" class="edit-profile-button" @click="startEditing">Edit
-              profile</button>
+            </div>
+            <button v-if="!isEditing" type="button" class="edit-profile-button" @click="startEditing">
+              Edit profile
+            </button>
           </div>
           <form @submit.prevent="requestSave" class="profile-form">
             <div v-if="message" :class="['alert', { success: saved }]" role="status">{{ message }}</div>
