@@ -39,7 +39,8 @@ const routes = [
     children: [
       { path: '', name: 'admin', component: AdminDashboard },
       { path: 'users', name: 'admin-users', component: AdminUsers },
-      { path: 'registrations', name: 'admin-registrations', component: AdminRegistrations }
+      { path: 'registrations', name: 'admin-registrations', component: AdminRegistrations },
+      { path: 'activity-logs', name: 'admin-activity-logs', component: ActivityLogs }
     ]
   }
 ];

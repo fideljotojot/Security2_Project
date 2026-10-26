@@ -263,4 +263,39 @@ test('categorized audit migration and session security', async t => {
       assert.equal(separate.total, 12); assert(separate.rows.every(row => row.category === category));
     }
   });
+
+  await t.test('admins see only admin/user actors across rows, counts and options', async () => {
+    const migration = await readFile(new URL('../api/migration_admin_activity_logs.sql', import.meta.url), 'utf8');
+    await db.exec(migration); await db.exec(migration);
+    await db.query("UPDATE public.users SET role='admin' WHERE id=$1", [other]);
+    await db.exec(`INSERT INTO public.audit_logs(actor_id,action,entity_type,category)
+      VALUES ('${admin}', 'Superadmin secret', 'test', 'activity'),
+        ('${other}', 'Admin visible', 'test', 'activity'),
+        (NULL, 'Unattributed secret', 'test', 'activity')`);
+    await asUser(admin);
+    const full = await page({ category: 'all', size: 50 });
+    assert(full.actions.includes('Superadmin secret'));
+    assert(full.actions.includes('Unattributed secret'));
+    await asUser(other);
+    await db.exec('SET ROLE authenticated');
+    try {
+      const limited = await page({ category: 'all', size: 50 });
+      assert(limited.total > 0); assert(limited.total < full.total);
+      assert(limited.rows.every(row => ['admin', 'user'].includes(row.actor_role)));
+      assert.deepEqual(limited.roles.sort(), ['admin', 'user']);
+      assert(!limited.actors.some(actor => actor.id === admin));
+      assert(!limited.actions.includes('Superadmin secret'));
+      assert(!limited.actions.includes('Unattributed secret'));
+      assert(limited.actions.includes('Admin visible'));
+      for (const filters of [{ actor: admin }, { role: 'superadmin' }, { search: 'Superadmin secret' }, { action: 'Unattributed secret' }]) {
+        assert.equal((await page({ category: 'all', ...filters })).total, 0);
+      }
+      for (const category of ['activity', 'security', 'system']) {
+        const result = await page({ category, size: 50 });
+        assert(result.rows.every(row => ['admin', 'user'].includes(row.actor_role)));
+      }
+      await asUser(user); await assert.rejects(page({}), /Only admins and superadmins/);
+      await asUser(null); await assert.rejects(page({}), /Only admins and superadmins/);
+    } finally { await db.exec('RESET ROLE'); }
+  });
 });

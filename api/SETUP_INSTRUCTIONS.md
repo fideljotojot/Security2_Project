@@ -1,5 +1,12 @@
 # Security 2 Database Setup Instructions
 
+For admin log access, run `migration_admin_activity_logs.sql` after
+`migration_unify_login_actions.sql` before deploying the frontend. Admins can
+open Logs from their navigation and see events performed by accounts whose
+current role is admin or user. Superadmin events and events without an existing
+actor account are excluded, including from totals and filter options.
+Superadmins retain full access. Role changes affect visibility of past events.
+
 Run `migration_unify_login_actions.sql` after the eight-per-page migration to
 display both historical `Logged in` and newer `Login` events as `Login`, with a
 single action-filter option. Stored audit history is preserved.
