@@ -1,5 +1,11 @@
 # Security 2 Database Setup Instructions
 
+Apply `migration_hide_removed_deletion_requests.sql` after
+`migration_deletion_target_role.sql` for existing and fresh installations.
+The Logs page excludes Removed deletion request events from every category,
+including totals and filter options, for both admins and superadmins.
+Stored audit history and other deletion/request events remain intact.
+
 Apply `migration_deletion_target_role.sql` after `migration_deletion_reasons.sql`
 for role-specific removal descriptions in log Details. It captures the deleted
 account role before deletion and preserves it through cascading request removal.

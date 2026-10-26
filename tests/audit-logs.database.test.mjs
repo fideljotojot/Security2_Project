@@ -361,4 +361,55 @@ test('categorized audit migration and session security', async t => {
     assert.equal((await db.query('SELECT count(*)::INT n FROM auth.users WHERE id=$1',[target])).rows[0].n,1);
     await asUser(null); await assert.rejects(create('Anonymous'), /permission/);
   });
+
+  await t.test('request cleanup events are hidden before filtering, options and pagination', async () => {
+    const signature = 'public.get_activity_log_page(text,text,uuid,text,text,timestamp with time zone,timestamp with time zone,integer,integer)';
+    const permissions = async () => (await db.query('SELECT proacl::TEXT acl,proowner FROM pg_proc WHERE oid=$1::regprocedure',[signature])).rows[0];
+    const beforePermissions = await permissions();
+    const historyBefore = (await db.query('SELECT * FROM public.audit_logs ORDER BY id')).rows;
+    const migration = await readFile(new URL('../api/migration_hide_removed_deletion_requests.sql', import.meta.url), 'utf8');
+    await db.exec(migration); await db.exec(migration);
+    assert.deepEqual(await permissions(),beforePermissions);
+    assert.deepEqual((await db.query('SELECT * FROM public.audit_logs ORDER BY id')).rows,historyBefore);
+    assert(historyBefore.some(row => row.action==='Removed deletion request'));
+    const hiddenActor = randomUUID();
+    await db.query('INSERT INTO auth.users(id) VALUES($1)',[hiddenActor]);
+    await db.query("INSERT INTO public.users(id,role) VALUES($1,'user')",[hiddenActor]);
+    for (const category of ['activity','security','system']) {
+      await db.query("INSERT INTO public.audit_logs(actor_id,action,entity_type,category,details) VALUES($1,'Removed deletion request','deletion request',$2,'{\"reason\":\"hidden-cleanup-marker\"}')",[hiddenActor,category]);
+    }
+    for (const viewer of [admin,other]) {
+      await asUser(viewer);
+      await db.exec('SET ROLE authenticated');
+      try {
+        for (const category of ['all','activity','security','system']) {
+          const data = await page({ category, size:8 });
+          assert(data.rows.every(row => row.action!=='Removed deletion request'));
+          assert(!data.actions.includes('Removed deletion request'));
+          assert(!data.actors.some(actor => actor.id===hiddenActor));
+          assert.equal((await page({category,action:'Removed deletion request'})).total,0);
+          assert.equal((await page({category,search:'hidden-cleanup-marker'})).total,0);
+        }
+        const deleted = await page({category:'all',action:'Deleted user'});
+        if (viewer===admin) {
+          assert(deleted.rows.some(row => row.details.reason==='Superadmin reason'));
+          const approved = await page({category:'all',action:'Approved deletion request'});
+          assert(approved.rows.some(row => row.details.reason==='Requested by admin'));
+        } else {
+          assert.equal(deleted.total,0);
+          assert((await page({category:'all',action:'Created deletion request'})).rows.some(row => row.details.reason==='Requested by admin'));
+        }
+      } finally { await db.exec('RESET ROLE'); }
+      for (const category of ['all','activity','security','system']) {
+        const expected = (await db.query(`SELECT count(*)::INT n FROM public.audit_logs l LEFT JOIN public.users u ON u.id=l.actor_id
+          WHERE l.action <> 'Removed deletion request' AND ($1='all' OR l.category=$1)
+          AND ($2 OR u.role IN ('admin','user'))`,[category,viewer===admin])).rows[0].n;
+        const data = await page({category,size:8});
+        assert.equal(data.total,expected); assert.equal(data.rows.length,Math.min(8,expected));
+      }
+    }
+    await asUser(user); await assert.rejects(page({category:'all'}),/Only admins and superadmins/);
+    await asUser(null); await assert.rejects(page({category:'all'}),/Only admins and superadmins/);
+    assert.equal((await db.query("SELECT count(*)::INT n FROM public.audit_logs WHERE details->>'reason'='hidden-cleanup-marker'")).rows[0].n,3);
+  });
 });
