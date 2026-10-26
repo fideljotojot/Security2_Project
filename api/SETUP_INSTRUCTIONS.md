@@ -1,5 +1,10 @@
 # Security 2 Database Setup Instructions
 
+Apply `migration_admin_block_users_only.sql` after current account-management
+migrations. Admins may block only user accounts; database enforcement applies
+to status and lockout updates through all existing RPCs. Superadmin controls
+and existing unblock permissions remain unchanged.
+
 Apply `migration_superadmin_slot_limit.sql` after `migration_superadmin_capacity.sql`
 and the current account-management migrations, for existing and fresh installations.
 Active (approved), inactive and incomplete superadmins each occupy one of two slots;

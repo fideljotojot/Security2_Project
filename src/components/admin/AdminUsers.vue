@@ -69,7 +69,7 @@
                     :disabled="['pending', 'incomplete', 'blocked'].includes(userStatus(user)) || !hasPermission(user, 'manage_account_info')">Edit</button><button
                     type="button" role="menuitem"
                     @click="runAction(() => setStatus(user, userStatus(user) === 'blocked' ? 'approved' : 'blocked'))"
-                    :disabled="['pending', 'incomplete'].includes(userStatus(user)) || user.user_id === currentUserId || !hasPermission(user, 'block_accounts')">{{
+                    :disabled="['pending', 'incomplete'].includes(userStatus(user)) || (userStatus(user) !== 'blocked' && user.role !== 'user') || user.user_id === currentUserId || !hasPermission(user, 'block_accounts')">{{
                       userStatus(user) === 'blocked' ? 'Unblock' : 'Block' }}</button><button type="button"
                     role="menuitem" @click="runAction(() => requestDelete(user))"
                     :disabled="userStatus(user) === 'pending' || user.user_id === currentUserId || !hasPermission(user, 'delete_accounts')">Delete</button>
