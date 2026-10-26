@@ -190,6 +190,7 @@ export default {
       const query = this.searchQuery.trim().toLowerCase();
 
       const filteredUsers = this.users.filter((user) => {
+        if (user.registration_status === 'incomplete') return false;
         const matchesSearch = !query || [user.id_number, user.username, user.email]
           .some(value => String(value || '').toLowerCase().includes(query));
         const matchesRole = this.selectedRole === 'all' || user.role === this.selectedRole;
@@ -1127,7 +1128,7 @@ export default {
         await this.fetchUsers();
         this.addedUserRole = this.form.role;
         this.notificationTitle = 'User Added Successfully';
-        this.notificationMessage = `The new ${this.addedUserRole} account has been added to the system.`;
+        this.notificationMessage = `The new ${this.addedUserRole} account has been created. It will appear on the Accounts page after the user completes their profile on first login.`;
         this.showNotificationModal = true;
       } catch (err) {
         console.error(err);

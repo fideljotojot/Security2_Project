@@ -32,7 +32,6 @@
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
             <option value="inactive">Inactive</option>
-            <option value="incomplete">Incomplete</option>
           </select>
           <select name="user-position" id="user-position" v-model="selectedPosition">
             <option value="all">All Positions</option>
@@ -495,8 +494,7 @@
           <div class="notification-icon" aria-hidden="true"><i class="fi fi-br-user-add"></i></div>
           <h3 id="create-confirm-title">Confirm Account Creation</h3>
         </div>
-        <p>Create the {{ form.role }} account for <strong>{{ form.username }}</strong>? The account will show status
-          <strong>-</strong> until the user completes their details on first login.
+        <p>Create the {{ form.role }} account for <strong>{{ form.username }}</strong>? The account will appear on the Accounts page after the user completes their profile on first login.
         </p>
         <div v-if="errorMessage" class="alert-danger">{{ errorMessage }}</div>
         <div class="password-input-wrapper delete-password-wrapper">

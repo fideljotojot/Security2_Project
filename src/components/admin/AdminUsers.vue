@@ -16,7 +16,6 @@
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
             <option value="inactive">Inactive</option>
-            <option value="incomplete">Incomplete</option>
           </select>
           <select v-model="selectedRole" aria-label="Filter by role">
             <option value="all">All roles</option>
