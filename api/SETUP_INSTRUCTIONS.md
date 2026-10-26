@@ -1,8 +1,12 @@
 # Security 2 Database Setup Instructions
 
-The Logs page displays seven entries per page. For an existing database, apply
-`migration_logs_seven_per_page.sql` after `migration_all_activity_logs.sql` to
-enable seven-row requests before deploying this frontend change.
+Run `migration_unify_login_actions.sql` after the eight-per-page migration to
+display both historical `Logged in` and newer `Login` events as `Login`, with a
+single action-filter option. Stored audit history is preserved.
+
+The Logs page displays eight entries per page. For an existing database, apply
+`migration_logs_eight_per_page.sql` after `migration_all_activity_logs.sql` to
+enable eight-row requests before deploying this frontend change.
 
 ## Categorized logs and session history
 

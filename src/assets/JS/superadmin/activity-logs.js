@@ -7,7 +7,7 @@ export default {
   name: 'ActivityLogs',
   data: () => ({
     logs: [], category: 'all', categories: LOG_CATEGORIES, draft: emptyFilters(), applied: emptyFilters(),
-    currentPage: 1, pageSize: 7, total: 0, options: { actions: [], roles: [] },
+    currentPage: 1, pageSize: 8, total: 0, options: { actions: [], roles: [] },
     loading: false, errorMessage: '', validationMessage: '', requestId: 0, searchTimer: null,
   }),
   computed: {

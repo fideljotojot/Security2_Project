@@ -339,8 +339,33 @@ tbody .activity-role-column {
 }
 
 .activity-logs-page .categorized-logs-table th {
+  text-align: center;
   white-space: normal;
   letter-spacing: .03em;
+  font-size: .7rem;
+}
+
+.activity-logs-page .categorized-logs-table td {
+  font-size: .75rem;
+  line-height: 1.4;
+}
+
+.activity-logs-page .categorized-logs-table td.log-col-id,
+.activity-logs-page .categorized-logs-table td.log-col-performer,
+.activity-logs-page .categorized-logs-table td.log-col-role,
+.activity-logs-page .categorized-logs-table td.log-col-category,
+.activity-logs-page .categorized-logs-table td.log-col-module,
+.activity-logs-page .categorized-logs-table td.log-col-action,
+.activity-logs-page .categorized-logs-table td.log-col-browser,
+.activity-logs-page .categorized-logs-table td.log-col-date,
+.activity-logs-page .categorized-logs-table td.log-col-ip,
+.activity-logs-page .categorized-logs-table td.log-col-description {
+  text-align: center;
+}
+
+.activity-logs-page .categorized-logs-table .log-badge,
+.activity-logs-page .categorized-logs-table code {
+  font-size: .7rem;
 }
 
 .activity-logs-page .categorized-logs-table tbody tr {
@@ -446,6 +471,12 @@ tbody .activity-role-column {
   max-width: 100%;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.activity-logs-page .categorized-logs-table .log-col-role .log-badge {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  padding-inline: .4rem;
 }
 
 .activity-logs-page .categorized-logs-table .empty-state {

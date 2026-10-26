@@ -122,8 +122,8 @@ test('server pagination, immediate filter application and category reset without
   assert.equal(state.category, 'all');
   assert.equal(calls[0].args.p_category, 'all');
   assert.equal(state.categories[0].value, 'all');
-  assert.equal(state.pageCount, 22);
-  assert.equal(calls[0].args.p_page_size, 7);
+  assert.equal(state.pageCount, 19);
+  assert.equal(calls[0].args.p_page_size, 8);
   state.draft.search = 'alex2';
   await state.loadLogs();
   assert.equal(calls.at(-1).args.p_search, '');

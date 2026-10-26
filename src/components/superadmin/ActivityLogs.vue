@@ -22,7 +22,7 @@
               <option v-for="item in categories" :key="item.value" :value="item.value">{{ item.label }}</option>
             </select>
             <select v-model="draft.role" aria-label="Filter logs by role" @change="applyFilters">
-              <option value="">All roles</option><option v-for="role in options.roles" :key="role" :value="role">{{ role }}</option>
+              <option value="">All roles</option><option v-for="role in options.roles" :key="role" :value="role">{{ role.charAt(0).toUpperCase() + role.slice(1) }}</option>
             </select>
             <select v-model="draft.action" aria-label="Filter logs by action" @change="applyFilters">
               <option value="">All actions</option><option v-for="action in options.actions" :key="action" :value="action">{{ action }}</option>
@@ -49,7 +49,7 @@
             <template v-else>
               <tr v-for="log in logs" :key="log.log_id" role="row">
                 <td class="log-col-id" data-label="User ID" role="cell">{{ log.actor_id_number || '—' }}</td><td class="log-col-performer" data-label="Performed By" role="cell">{{ actorName(log) }}</td>
-                <td class="log-col-role" data-label="Role" role="cell"><span class="log-badge log-badge-neutral">{{ log.actor_role || 'System' }}</span></td>
+                <td class="log-col-role" data-label="Role" role="cell"><span class="log-badge log-badge-neutral">{{ log.actor_role ? log.actor_role.charAt(0).toUpperCase() + log.actor_role.slice(1) : 'System' }}</span></td>
                 <td v-if="category === 'all'" class="log-col-category" data-label="Category" role="cell">{{ categoryName(log.category) }}</td>
                 <td class="log-col-module" data-label="Module" role="cell">{{ log.module || '—' }}</td>
                 <td class="log-col-action" data-label="Action" role="cell"><span class="log-badge" :class="actionClass(log.action)">{{ log.action }}</span></td>
@@ -72,7 +72,7 @@
       </div>
       <div class="table-panel-footer logs-footer">
         <span role="status">Showing {{ pageStart }}–{{ pageEnd }} of {{ total }} entries</span>
-        <span class="logs-page-size">7 per page</span>
+        <span class="logs-page-size">8 per page</span>
         <nav class="pagination" aria-label="Log pages">
           <button type="button" :disabled="loading || currentPage === 1" @click="goToPage(currentPage - 1)">‹ Prev</button>
           <template v-for="(page, index) in visiblePages" :key="page">
