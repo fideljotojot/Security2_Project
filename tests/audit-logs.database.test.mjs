@@ -412,4 +412,53 @@ test('categorized audit migration and session security', async t => {
     await asUser(null); await assert.rejects(page({category:'all'}),/Only admins and superadmins/);
     assert.equal((await db.query("SELECT count(*)::INT n FROM public.audit_logs WHERE details->>'reason'='hidden-cleanup-marker'")).rows[0].n,3);
   });
+
+  await t.test('status updates still save while status-only log entries are hidden', async () => {
+    const signature = 'public.get_activity_log_page(text,text,uuid,text,text,timestamp with time zone,timestamp with time zone,integer,integer)';
+    const permissions = async () => (await db.query('SELECT proacl::TEXT acl,proowner FROM pg_proc WHERE oid=$1::regprocedure',[signature])).rows[0];
+    await asUser(admin);
+    await db.query("UPDATE public.users SET registration_status='inactive' WHERE id=$1",[user]);
+    const statusLog = (await db.query("SELECT id FROM public.audit_logs WHERE entity_id=$1 AND action='Updated user' AND details->'changed_fields'='[\"registration_status\"]'::JSONB ORDER BY id DESC LIMIT 1",[user])).rows[0];
+    assert(statusLog);
+    const history = (await db.query('SELECT * FROM public.audit_logs ORDER BY id')).rows;
+    const acl = await permissions();
+    const migration = await readFile(new URL('../api/migration_hide_account_status_updates.sql',import.meta.url),'utf8');
+    await db.exec(migration); await db.exec(migration);
+    assert.deepEqual(await permissions(),acl);
+    assert.deepEqual((await db.query('SELECT * FROM public.audit_logs ORDER BY id')).rows,history);
+    assert.equal((await db.query('SELECT registration_status FROM public.users WHERE id=$1',[user])).rows[0].registration_status,'inactive');
+    // Future writes remain audited and persisted as well.
+    await db.query("UPDATE public.users SET registration_status='incomplete' WHERE id=$1",[user]);
+    assert.equal((await db.query('SELECT registration_status FROM public.users WHERE id=$1',[user])).rows[0].registration_status,'incomplete');
+    for (const category of ['activity','security','system']) {
+      for (let n=0;n<11;n++) await db.query("INSERT INTO public.audit_logs(actor_id,action,entity_type,category,details) VALUES($1,'Updated user','user',$2,$3)",
+        [other,category,JSON.stringify({changed_fields:['registration_status'],marker:'hidden-status-fixture'})]);
+      for (const fields of [['registration_status','username'], [], null, 'registration_status', {registration_status:true}]) {
+        await db.query("INSERT INTO public.audit_logs(actor_id,action,entity_type,category,details) VALUES($1,'Updated user','user',$2,$3)",
+          [other,category,JSON.stringify({changed_fields:fields,marker:'visible-status-fixture'})]);
+      }
+      for (const action of ['Approved registration','Rejected registration','Blocked user','Unblocked user']) {
+        await db.query("INSERT INTO public.audit_logs(actor_id,action,entity_type,category,details) VALUES($1,$2,'user',$3,$4)",
+          [other,action,category,JSON.stringify({changed_fields:['registration_status'],marker:'visible-explicit-fixture'})]);
+      }
+    }
+    for (const viewer of [admin,other]) {
+      await asUser(viewer);
+      for (const category of ['all','activity','security','system']) {
+        await db.exec('SET ROLE authenticated');
+        try {
+          const data = await page({category});
+          assert(!data.rows.some(row=>row.log_id===statusLog.id));
+          assert(!data.actions.includes('Removed deletion request'));
+          assert.equal((await page({category,search:'hidden-status-fixture'})).total,0);
+          const visible = await page({category,search:'visible-status-fixture',size:8});
+          assert.equal(visible.total,category==='all'?15:5);
+          const explicit = await page({category,search:'visible-explicit-fixture',size:50});
+          assert.equal(explicit.total,category==='all'?12:4);
+        } finally { await db.exec('RESET ROLE'); }
+      }
+    }
+    await asUser(user); await assert.rejects(page({}),/Only admins and superadmins/);
+    await asUser(null); await assert.rejects(page({}),/Only admins and superadmins/);
+  });
 });

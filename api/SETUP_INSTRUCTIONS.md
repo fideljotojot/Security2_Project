@@ -1,5 +1,12 @@
 # Security 2 Database Setup Instructions
 
+Apply `migration_hide_account_status_updates.sql` after
+`migration_hide_removed_deletion_requests.sql` for existing and fresh installations.
+Status changes continue to save and be audited. The Logs page hides only Updated
+user events with changed_fields exactly ["registration_status"], including from
+counts and filter options. Mixed-field edits, events with missing/unknown metadata,
+and explicit approval, rejection, blocking and unblocking events stay visible.
+
 Apply `migration_hide_removed_deletion_requests.sql` after
 `migration_deletion_target_role.sql` for existing and fresh installations.
 The Logs page excludes Removed deletion request events from every category,
