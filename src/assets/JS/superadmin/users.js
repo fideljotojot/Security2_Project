@@ -156,6 +156,9 @@ export default {
         !this.hasFieldWarnings(['user_id', 'username', 'password', 'position'])
       );
     },
+    superadminLimitReached() {
+      return this.users.filter(u => u.role === 'superadmin' && ['approved', 'inactive', 'incomplete'].includes(u.registration_status)).length >= 2;
+    },
     activeSuperadminExists() {
       return this.users.some(u => u.role === 'superadmin' && this.getUserStatus(u) === 'active');
     },
@@ -456,6 +459,12 @@ export default {
     },
     async updatePrivilege() {
       if (!this.privilegeUser || this.isUpdatingPrivilege) return;
+      if (this.privilegeRole === 'superadmin' && this.privilegeUser.role !== 'superadmin' && this.superadminLimitReached) {
+        this.notificationTitle = 'Superadmin Limit Reached';
+        this.notificationMessage = 'Only two active, inactive or incomplete superadmin accounts are allowed.';
+        this.showNotificationModal = true;
+        return;
+      }
       if (!await confirmCurrentPassword('Enter your password to save these privilege changes:')) return;
       this.isUpdatingPrivilege = true;
       const { error } = await supabase.rpc('set_user_role', {
@@ -1020,6 +1029,11 @@ export default {
         });
     },
     async registerUser() {
+      if (!this.isViewing && this.form.role === 'superadmin' && this.superadminLimitReached &&
+          (!this.isEditing || this.users.find(u => u.user_id === this.editingUserId)?.role !== 'superadmin')) {
+        this.errorMessage = 'Superadmin limit reached. Only two active, inactive or incomplete superadmin accounts are allowed.';
+        return;
+      }
       this.normalizePosition();
       if (!this.isEditing && !this.isViewing && !this.form.idNumber) {
         await this.generateIdNumber();

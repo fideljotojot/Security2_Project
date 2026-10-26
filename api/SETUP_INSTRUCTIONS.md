@@ -1,5 +1,13 @@
 # Security 2 Database Setup Instructions
 
+Apply `migration_superadmin_slot_limit.sql` after `migration_superadmin_capacity.sql`
+and the current account-management migrations, for existing and fresh installations.
+Active (approved), inactive and incomplete superadmins each occupy one of two slots;
+blocked accounts do not. Creation, promotion and restoration cannot exceed the limit.
+Explicit backup replacement can still free a slot by blocking the old backup first.
+Existing accounts are not modified by this migration; first-login completion and
+login/logout transitions keep their reserved slots. Apply before deploying the UI.
+
 Apply `migration_hide_account_status_updates.sql` after
 `migration_hide_removed_deletion_requests.sql` for existing and fresh installations.
 Status changes continue to save and be audited. The Logs page hides only Updated
