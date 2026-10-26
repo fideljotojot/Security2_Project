@@ -31,7 +31,7 @@ export default {
       isUnblocking: false,
       deletePassword: '',
       showDeletePassword: false,
-      pendingDeleteUser: null,
+      pendingDeleteUser: null, deleteReason: '', showDeleteReasonModal: false, deleteError: '',
       isDeleting: false,
       showPrivilegeModal: false,
       privilegeUser: null,
@@ -418,6 +418,14 @@ export default {
     async deleteUser(user) {
       this.pendingDeleteUser = user;
       this.deletePassword = '';
+      this.deleteReason = '';
+      this.deleteError = '';
+      this.showDeleteReasonModal = true;
+    },
+    beginDeleteConfirmation() {
+      if (this.deleteReason.trim().length < 3) return;
+      this.showDeleteReasonModal = false;
+      this.showDeletePassword = false;
       this.showDeleteModal = true;
     },
     openPrivilegeModal(user) {
@@ -475,15 +483,18 @@ export default {
     closeDeleteModal() {
       if (this.isDeleting) return;
       this.showDeleteModal = false;
+      this.showDeleteReasonModal = false;
+      this.deleteReason = '';
+      this.deleteError = '';
       this.deletePassword = '';
       this.pendingDeleteUser = null;
     },
     async confirmDeleteUser() {
-      if (!this.deletePassword || !this.pendingDeleteUser || this.isDeleting) return;
+      if (!this.deletePassword || !this.pendingDeleteUser || this.deleteReason.trim().length < 3 || this.isDeleting) return;
+      this.deleteError = "";
       this.isDeleting = true;
       const name = `${this.pendingDeleteUser.username || this.pendingDeleteUser.email || 'this user'}`;
       let error = null;
-      let passwordError = false;
 
       try {
         const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
@@ -494,29 +505,28 @@ export default {
           password: this.deletePassword
         });
         if (authPasswordError) {
-          passwordError = true;
           throw new Error('Incorrect superadmin password.');
         }
 
-        const result = await supabase.rpc('delete_user_account', { p_user_id: this.pendingDeleteUser.user_id });
+        const result = await supabase.rpc('create_delete_request', { p_user_id: this.pendingDeleteUser.user_id, p_reason: this.deleteReason.trim() });
         error = result.error;
       } catch (caughtError) {
         error = caughtError;
       }
 
       this.isDeleting = false;
+      if (error) {
+        this.deleteError = error.message || 'Unable to delete the user.';
+        this.deletePassword = '';
+        return;
+      }
       this.showDeleteModal = false;
       this.deletePassword = '';
       this.pendingDeleteUser = null;
-      if (error) {
-        if (!passwordError) console.error('Error deleting user:', error);
-        this.notificationTitle = passwordError ? 'Incorrect Password' : 'Delete Failed';
-        this.notificationMessage = error.message || 'Unable to delete the user.';
-      } else {
-        this.notificationTitle = 'User Deleted';
-        this.notificationMessage = `${name} was deleted successfully.`;
-        await this.fetchUsers();
-      }
+      this.deleteReason = '';
+      this.notificationTitle = 'User Deleted';
+      this.notificationMessage = name + ' was deleted successfully.';
+      await this.fetchUsers();
       this.showNotificationModal = true;
     },
     async viewUser(user) {

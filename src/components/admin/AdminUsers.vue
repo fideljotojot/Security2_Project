@@ -200,13 +200,28 @@
         <div class="restore-account-actions"><button class="btn btn-secondary" @click="closeUnblockModal">Cancel</button><button class="btn btn-primary" :disabled="isUnblocking" @click="confirmUnblock">{{ isUnblocking ? 'Saving...' : 'Restore account' }}</button></div>
       </div>
     </div>
-    <div v-if="deleteTarget" class="modal-overlay">
+    <div v-if="deleteTarget && !showDeletePasswordModal" class="modal-overlay">
       <div class="notification-card delete-request-card">
         <h3>Request account deletion</h3>
         <p>Superadmin review is required for {{ deleteTarget.username }}.</p><textarea v-model="deleteReason" rows="4"
-          class="delete-reason-input" placeholder="Reason for deletion (required)"></textarea>
-        <div class="btn-container"><button class="btn btn-secondary" @click="deleteTarget = null">Cancel</button><button
-            class="btn btn-primary" @click="submitDelete">Send request</button></div>
+          class="delete-reason-input" aria-label="Reason for deletion" placeholder="Reason for deletion (at least 3 characters)" required minlength="3"></textarea>
+        <div class="btn-container"><button class="btn btn-secondary" @click="cancelDelete">Cancel</button><button
+            class="btn btn-primary" :disabled="deleteReason.trim().length < 3" @click="submitDelete">Continue</button></div>
+      </div>
+    </div>
+    <div v-if="showDeletePasswordModal" class="modal-overlay" @click.self="cancelDelete">
+      <div class="notification-card" role="dialog" aria-modal="true" aria-labelledby="admin-delete-password-title">
+        <h3 id="admin-delete-password-title">Confirm deletion request</h3>
+        <p>Enter your password to send this request for superadmin approval.</p>
+        <p v-if="deleteError" class="alert-danger" role="alert">{{ deleteError }}</p>
+        <div class="password-input-wrapper delete-password-wrapper">
+          <input v-model="deletePassword" :type="showDeletePassword ? 'text' : 'password'" class="delete-password-input"
+            placeholder="Password" autocomplete="current-password" @keyup.enter="confirmDeleteRequest">
+          <button class="toggle-password" type="button" @click="showDeletePassword = !showDeletePassword"
+            :aria-label="showDeletePassword ? 'Hide password' : 'Show password'"><i :class="showDeletePassword ? 'fi fi-br-eye-crossed' : 'fi fi-br-eye'"></i></button>
+        </div>
+        <div class="btn-container"><button class="btn btn-secondary" :disabled="isSubmittingDelete" @click="cancelDelete">Cancel</button>
+          <button class="btn btn-primary" :disabled="!deletePassword || isSubmittingDelete" @click="confirmDeleteRequest">{{ isSubmittingDelete ? 'Sending...' : 'Send request' }}</button></div>
       </div>
     </div>
     <div v-if="showPasswordModal" class="modal-overlay" @click.self="closePasswordModal">

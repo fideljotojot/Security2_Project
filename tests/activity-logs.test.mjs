@@ -46,7 +46,7 @@ test('Details describes account, registration, deletion and authentication actio
     ['Created deletion request', 'Submitted a deletion request.'],
     ['Approved deletion request', 'Approved a deletion request.'],
     ['Rejected deletion request', 'Rejected a deletion request.'],
-    ['Removed deletion request', 'Removed a deletion request.'],
+    ['Removed deletion request', 'Removed an account.'],
     ['Login', 'Logged in successfully.'], ['Logged in', 'Logged in successfully.'],
     ['Logout', 'Logged out.'], ['Logged out', 'Logged out.'],
     ['Session resumed', 'Resumed an existing session; original login time is unknown.'],

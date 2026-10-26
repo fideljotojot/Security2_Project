@@ -1,5 +1,19 @@
 # Security 2 Database Setup Instructions
 
+Apply `migration_deletion_target_role.sql` after `migration_deletion_reasons.sql`
+for role-specific removal descriptions in log Details. It captures the deleted
+account role before deletion and preserves it through cascading request removal.
+Historical removal logs without a recorded target role display "Removed an account."
+
+Apply `migration_deletion_reasons.sql` after the admin permissions, deletion
+request, categorized audit, and `migration_admin_activity_logs.sql` migrations,
+before deploying the frontend. Run it for fresh installations too, after the
+base setup scripts. Both roles enter a reason then confirm their password.
+Admins submit pending requests; superadmins automatically approve and delete.
+Reasons persist in audit logs after request/account cascades. The old direct
+`delete_user_account(UUID)` RPC is removed; update all clients to
+`create_delete_request(p_user_id, p_reason)`.
+
 For admin log access, run `migration_admin_activity_logs.sql` after
 `migration_unify_login_actions.sql` before deploying the frontend. Admins can
 open Logs from their navigation and see events performed by accounts whose

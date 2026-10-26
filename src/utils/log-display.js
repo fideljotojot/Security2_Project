@@ -60,6 +60,8 @@ export function logDescription(log) {
     return remaining.length ? `${description} Also updated fields: ${remaining.join(', ')}.` : description;
   };
   if (log.category === 'system' || key === 'operation failed') return 'An unexpected application operation failed.';
+  const withReason = description => typeof details.reason === 'string' && details.reason.trim()
+    ? description + ' Reason: ' + details.reason.trim() : description;
   switch (key) {
     case 'login': case 'logged in': return 'Logged in successfully.';
     case 'logout': case 'logged out': return 'Logged out.';
@@ -78,15 +80,20 @@ export function logDescription(log) {
     case 'password changed': return changes('Changed account password.', ['password']);
     case 'password reset': return changes('Reset account password.', ['password']);
     case 'signed up': return 'Created an account.';
-    case 'deleted user': return 'Deleted an account.';
+    case 'deleted user': return withReason('Deleted an account.');
     case 'approved registration': return 'Approved an account registration.';
     case 'rejected registration': return 'Rejected an account registration.';
     case 'blocked user': return 'Blocked an account.';
     case 'unblocked user': return 'Unblocked an account.';
-    case 'created deletion request': return 'Submitted a deletion request.';
-    case 'approved deletion request': return 'Approved a deletion request.';
-    case 'rejected deletion request': return 'Rejected a deletion request.';
-    case 'removed deletion request': return 'Removed a deletion request.';
+    case 'created deletion request': return withReason('Submitted a deletion request.');
+    case 'approved deletion request': return withReason('Approved a deletion request.');
+    case 'rejected deletion request': return withReason('Rejected a deletion request.');
+    case 'removed deletion request': {
+      const account = { admin: 'an admin', user: 'a user', superadmin: 'a superadmin' };
+      const label = typeof details.target_role === 'string' && Object.hasOwn(account, details.target_role)
+        ? account[details.target_role] : 'an account';
+      return withReason('Removed ' + label + '.');
+    }
     default: {
       if (!action) return 'Recorded an activity.';
       const sentence = action.charAt(0).toUpperCase() + action.slice(1);

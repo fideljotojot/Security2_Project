@@ -1,7 +1,7 @@
 import { supabase } from '@/utils/supabase.js';
 import { confirmCurrentPassword } from '@/utils/confirm-password.js';
 export default {
-  data: () => ({ users: [], currentUserId: null, viewerRole: null, viewerPermissions: [], openActionsUserId: null, search: '', status: 'all', selectedRole: 'all', selectedPosition: 'all', sortOrder: '', currentPage: 1, pageSize: 10, message: '', notificationTitle: '', notificationType: 'success', notificationMessage: '', editing: null, viewing: false, editForm: {}, editStep: 'personal', deleteTarget: null, deleteReason: '', showPasswordModal: false, confirmationPassword: '', showConfirmationPassword: false, isConfirmingPassword: false, showUnblockModal: false, unblockTarget: null, unblockRole: 'user', unblockPosition: 'Student', isUnblocking: false }),
+  data: () => ({ users: [], currentUserId: null, viewerRole: null, viewerPermissions: [], openActionsUserId: null, search: '', status: 'all', selectedRole: 'all', selectedPosition: 'all', sortOrder: '', currentPage: 1, pageSize: 10, message: '', notificationTitle: '', notificationType: 'success', notificationMessage: '', editing: null, viewing: false, editForm: {}, editStep: 'personal', deleteTarget: null, deleteReason: '', deletePassword: '', showDeletePasswordModal: false, showDeletePassword: false, isSubmittingDelete: false, deleteError: '', showPasswordModal: false, confirmationPassword: '', showConfirmationPassword: false, isConfirmingPassword: false, showUnblockModal: false, unblockTarget: null, unblockRole: 'user', unblockPosition: 'Student', isUnblocking: false }),
   computed: { filtered() { const q = this.search.toLowerCase().trim(); const result = this.users.filter(u => (!q || [u.id_number, u.username, u.email].some(v => String(v || '').toLowerCase().includes(q))) && (this.status === 'all' || this.userStatus(u) === this.status) && (this.selectedRole === 'all' || u.role === this.selectedRole) && (this.selectedPosition === 'all' || String(u.position || '').trim().toLowerCase() === this.selectedPosition.toLowerCase())); if (!this.sortOrder) return result; const direction = this.sortOrder === 'descending' ? -1 : 1; return result.sort((a, b) => (Number(String(a.id_number || '').replace(/\D/g, '')) - Number(String(b.id_number || '').replace(/\D/g, ''))) * direction); }, pageCount() { return Math.max(1, Math.ceil(this.filtered.length / this.pageSize)); }, paginatedUsers() { return this.filtered.slice((this.currentPage - 1) * this.pageSize, this.currentPage * this.pageSize); }, pageNumbers() { return Array.from({ length: this.pageCount }, (_, i) => i + 1); }, pageStart() { return this.filtered.length ? (this.currentPage - 1) * this.pageSize + 1 : 0; }, pageEnd() { return Math.min(this.currentPage * this.pageSize, this.filtered.length); } },
   watch: { search() { this.currentPage = 1; }, status() { this.currentPage = 1; }, selectedRole() { this.currentPage = 1; }, selectedPosition() { this.currentPage = 1; }, sortOrder() { this.currentPage = 1; } },
   async mounted() { const { data: { user } } = await supabase.auth.getUser(); this.currentUserId = user?.id || null; if (user) { const { data: account } = await supabase.from('users').select('role,admin_permissions').eq('id', user.id).single(); this.viewerRole = account?.role || null; this.viewerPermissions = Array.isArray(account?.admin_permissions) && account.admin_permissions.length ? account.admin_permissions : ['manage_account_info', 'block_accounts', 'reset_passwords', 'delete_accounts']; } this.load(); },
@@ -42,6 +42,31 @@ export default {
     closePasswordModal() { if (!this.isConfirmingPassword) this.showPasswordModal = false; },
     async confirmSaveEdit() { if (!this.confirmationPassword || this.isConfirmingPassword) return; this.isConfirmingPassword = true; const { data: { user }, error: userError } = await supabase.auth.getUser(); const { error } = userError || !user?.email ? { error: userError || new Error('Unable to identify the signed-in user.') } : await supabase.auth.signInWithPassword({ email: user.email, password: this.confirmationPassword }); this.isConfirmingPassword = false; if (error) { this.message = 'Incorrect password. Changes were not saved.'; return; } this.showPasswordModal = false; await this.saveEdit(); },
     requestDelete(u) { if (!u || u.role === 'superadmin') return; this.deleteTarget = { ...u }; this.deleteReason = ''; },
-    async submitDelete() { const target = this.deleteTarget; const reason = this.deleteReason.trim(); if (!target || target.role === 'superadmin') return; if (!reason) { this.notificationTitle = 'Reason Required'; this.notificationType = 'error'; this.notificationMessage = 'A deletion reason is required.'; return; } const { error } = await supabase.rpc('create_delete_request', { p_user_id: target.user_id, p_reason: reason }); if (error) this.message = error.message; else { this.notificationTitle = 'Request Sent'; this.notificationType = 'success'; this.notificationMessage = 'Deletion request sent to the Superadmin.'; } this.deleteTarget = null; }
+    submitDelete() {
+      if (!this.deleteTarget || this.deleteReason.trim().length < 3) return;
+      this.deletePassword = ''; this.deleteError = ''; this.showDeletePassword = false;
+      this.showDeletePasswordModal = true;
+    },
+    cancelDelete() {
+      if (this.isSubmittingDelete) return;
+      this.showDeletePasswordModal = false; this.deleteTarget = null;
+      this.deleteReason = ''; this.deletePassword = ''; this.deleteError = '';
+    },
+    async confirmDeleteRequest() {
+      if (this.isSubmittingDelete || !this.deletePassword || !this.deleteTarget || this.deleteReason.trim().length < 3) return;
+      this.isSubmittingDelete = true; this.deleteError = '';
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user?.email) throw userError || new Error('Unable to identify the signed-in admin.');
+        const { error: passwordError } = await supabase.auth.signInWithPassword({ email: user.email, password: this.deletePassword });
+        if (passwordError) throw new Error('Incorrect password.');
+        const { error } = await supabase.rpc('create_delete_request', { p_user_id: this.deleteTarget.user_id, p_reason: this.deleteReason.trim() });
+        if (error) throw error;
+        this.showDeletePasswordModal = false; this.deleteTarget = null; this.deleteReason = '';
+        this.notificationTitle = 'Request Sent'; this.notificationType = 'success';
+        this.notificationMessage = 'Deletion request sent to the Superadmin.';
+      } catch (error) { this.deleteError = error.message || 'Unable to send deletion request.'; }
+      finally { this.isSubmittingDelete = false; this.deletePassword = ''; }
+    }
   }
 };

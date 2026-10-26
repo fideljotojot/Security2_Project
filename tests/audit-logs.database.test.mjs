@@ -298,4 +298,67 @@ test('categorized audit migration and session security', async t => {
       await asUser(null); await assert.rejects(page({}), /Only admins and superadmins/);
     } finally { await db.exec('RESET ROLE'); }
   });
+
+  await t.test('deletion reasons survive approval and account/request cascades', async () => {
+    await db.exec(`ALTER TABLE public.delete_requests
+      ADD COLUMN requested_by UUID REFERENCES public.users(id), ADD COLUMN reason TEXT,
+      ADD COLUMN reviewed_by UUID REFERENCES public.users(id), ADD COLUMN reviewed_at TIMESTAMPTZ;
+      ALTER TABLE public.delete_requests ADD CONSTRAINT deletion_target_fk FOREIGN KEY(user_id) REFERENCES public.users(id) ON DELETE CASCADE;`);
+    await db.exec(await readFile(new URL('../api/migration_deletion_reasons.sql', import.meta.url), 'utf8'));
+    await db.exec(await readFile(new URL('../api/migration_deletion_reasons.sql', import.meta.url), 'utf8'));
+    const roleMigration = await readFile(new URL('../api/migration_deletion_target_role.sql', import.meta.url), 'utf8');
+    await db.exec(roleMigration); await db.exec(roleMigration);
+    await db.query("UPDATE public.users SET admin_permissions='[\"delete_accounts\"]' WHERE id=$1", [other]);
+    const create = async reason => (await db.query('SELECT public.create_delete_request($1,$2) AS id', [target, reason])).rows[0].id;
+    const target = randomUUID();
+    await db.query('INSERT INTO auth.users(id) VALUES($1)', [target]);
+    await db.query("INSERT INTO public.users(id,role,username) VALUES($1,'user','delete-me')", [target]);
+    await asUser(other);
+    for (const reason of [null, '', '  ', '\n\t', ' ab ']) await assert.rejects(create(reason), /at least 3/);
+    await db.exec('SET ROLE authenticated');
+    const rid = await create('  Requested by admin  ');
+    await db.exec('RESET ROLE');
+    assert.equal((await db.query('SELECT status FROM public.delete_requests WHERE id=$1', [rid])).rows[0].status, 'pending');
+    assert.equal((await db.query('SELECT count(*)::INT n FROM auth.users WHERE id=$1', [target])).rows[0].n, 1);
+    await asUser(user); await assert.rejects(create('Not permitted'), /permission/);
+    await asUser(admin);
+    await db.exec('SET ROLE authenticated');
+    await db.query('SELECT public.review_delete_request($1,true)', [rid]);
+    await db.exec('RESET ROLE');
+    assert.equal((await db.query('SELECT count(*)::INT n FROM auth.users WHERE id=$1', [target])).rows[0].n, 0);
+    assert.equal((await db.query('SELECT count(*)::INT n FROM public.delete_requests WHERE id=$1', [rid])).rows[0].n, 0);
+    const deleted = (await db.query("SELECT details FROM public.audit_logs WHERE action='Deleted user' AND entity_id=$1", [target])).rows;
+    assert.equal(deleted.length, 1); assert.equal(deleted[0].details.reason, 'Requested by admin');
+    for (const action of ['Created deletion request','Approved deletion request','Removed deletion request']) {
+      const logs = (await db.query('SELECT details FROM public.audit_logs WHERE action=$1 AND entity_id=$2', [action,String(rid)])).rows;
+      assert.equal(logs.length,1); assert.equal(logs[0].details.reason,'Requested by admin');
+      assert.equal(logs[0].details.target_role,'user');
+    }
+    await db.query('INSERT INTO auth.users(id) VALUES($1)', [target]);
+    await db.query("INSERT INTO public.users(id,role,username) VALUES($1,'admin','delete-again')", [target]);
+    await db.exec('SET ROLE authenticated');
+    const auto = await create('Superadmin reason');
+    await db.exec('RESET ROLE');
+    assert.equal((await db.query('SELECT count(*)::INT n FROM public.delete_requests WHERE id=$1', [auto])).rows[0].n,0);
+    const removal = (await db.query("SELECT details FROM public.audit_logs WHERE action='Removed deletion request' AND entity_id=$1", [String(auto)])).rows[0];
+    assert.equal(removal.details.target_role,'admin');
+    assert.equal(removal.details.reason,'Superadmin reason');
+    assert.equal((await db.query("SELECT count(*)::INT n FROM public.audit_logs WHERE action='Deleted user' AND details->>'reason'='Superadmin reason'")).rows[0].n,1);
+    assert.equal((await db.query("SELECT to_regprocedure('public.delete_user_account(uuid)') fn")).rows[0].fn,null);
+    await assert.rejects(db.query('SELECT public.create_delete_request($1,$2)', [admin,'Protected']), /own account/);
+    await db.query('INSERT INTO auth.users(id) VALUES($1)', [target]);
+    await db.query("INSERT INTO public.users(id,role) VALUES($1,'user')", [target]);
+    await asUser(other);
+    const rejected = await create('Rejected reason');
+    await asUser(admin);
+    await db.query('SELECT public.review_delete_request($1,false)', [rejected]);
+    assert.equal((await db.query('SELECT status FROM public.delete_requests WHERE id=$1',[rejected])).rows[0].status,'rejected');
+    await db.exec("CREATE FUNCTION public.fail_deletion() RETURNS TRIGGER LANGUAGE plpgsql AS 'BEGIN RAISE EXCEPTION ''Deletion failed fixture''; END;'; CREATE TRIGGER fail_deletion BEFORE DELETE ON auth.users FOR EACH ROW EXECUTE FUNCTION public.fail_deletion();");
+    const before = (await db.query('SELECT count(*)::INT n FROM public.audit_logs')).rows[0].n;
+    await assert.rejects(create('Rollback reason'), /Deletion failed fixture/);
+    assert.equal((await db.query('SELECT count(*)::INT n FROM public.audit_logs')).rows[0].n,before);
+    assert.equal((await db.query("SELECT count(*)::INT n FROM public.delete_requests WHERE reason='Rollback reason'")).rows[0].n,0);
+    assert.equal((await db.query('SELECT count(*)::INT n FROM auth.users WHERE id=$1',[target])).rows[0].n,1);
+    await asUser(null); await assert.rejects(create('Anonymous'), /permission/);
+  });
 });

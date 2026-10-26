@@ -566,6 +566,16 @@
       </div>
     </div>
 
+    <div v-if="showDeleteReasonModal" class="modal-overlay" @click.self="closeDeleteModal">
+      <div class="notification-card delete-request-card" role="dialog" aria-modal="true" aria-labelledby="delete-reason-title">
+        <h3 id="delete-reason-title">Request account deletion</h3>
+        <p>Your request will be approved automatically after password confirmation.</p>
+        <textarea v-model="deleteReason" rows="4" class="delete-reason-input" aria-label="Reason for deletion"
+          placeholder="Reason for deletion (at least 3 characters)" required minlength="3"></textarea>
+        <div class="btn-container"><button class="btn btn-secondary" @click="closeDeleteModal">Cancel</button>
+          <button class="btn btn-primary" :disabled="deleteReason.trim().length < 3" @click="beginDeleteConfirmation">Continue</button></div>
+      </div>
+    </div>
     <!-- Delete confirmation modal -->
     <div v-if="showDeleteModal" class="modal-overlay" @click.self="closeDeleteModal">
       <div class="notification-card" role="dialog" aria-modal="true" aria-labelledby="delete-title">
@@ -575,7 +585,8 @@
           </div>
           <h3 id="delete-title">Confirm User Deletion</h3>
         </div>
-        <p>Enter your superadmin password to delete this user. This action cannot be undone.</p>
+        <p>Enter your superadmin password to approve and delete this user. This action cannot be undone.</p>
+        <p v-if="deleteError" class="alert-danger" role="alert">{{ deleteError }}</p>
         <div class="password-input-wrapper delete-password-wrapper">
           <input v-model="deletePassword" :type="showDeletePassword ? 'text' : 'password'" class="delete-password-input"
             placeholder="Superadmin password" autocomplete="current-password" @keyup.enter="confirmDeleteUser">
