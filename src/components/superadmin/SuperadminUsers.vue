@@ -181,13 +181,13 @@
               <label for="username">Username: <span>*</span></label>
             </div>
             <div class="form-group">
+              <span v-if="superadminLimitReached" class="field-warning" role="status">Both superadmin slots are occupied. Choose Admin or User.</span>
               <select id="role" v-model="form.role" required @change="normalizePosition">
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
                 <option value="superadmin" :disabled="superadminLimitReached">Superadmin</option>
               </select>
               <label for="role">Role: <span>*</span></label>
-              <small v-if="superadminLimitReached">Both superadmin slots are occupied. Choose Admin or User.</small>
             </div>
             <div class="form-group">
               <span class="field-warning" v-if="getWarning('position')">{{ getWarning('position') }}</span>
@@ -539,8 +539,8 @@
                 v-model="privilegeRole" @change="privilegeRoleChanged" class="privilege-select">
                 <option value="admin">Admin</option>
                 <option value="user">Regular User</option>
-                <option value="superadmin" :disabled="superadminLimitReached && privilegeUser?.role !== 'superadmin'">Superadmin</option>
-              </select></div>
+                <option value="superadmin" :disabled="superadminLimitReached">Superadmin</option>
+              </select><span v-if="superadminLimitReached" class="field-warning" role="status">Both superadmin slots are occupied.</span></div>
             <div><label class="privilege-label" for="privilege-position">Position</label><select id="privilege-position"
                 v-model="privilegePosition" class="privilege-select">
                 <option value="Student">Student</option>
