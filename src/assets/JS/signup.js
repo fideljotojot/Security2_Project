@@ -1,10 +1,20 @@
 
 import { supabase } from '../../utils/supabase.js';
+import { setUserAuthenticated } from '../../router.js';
 
 export default {
   data() {
     return {
       step: 'personal',
+      initialOtp: '',
+      initialOtpVerified: false,
+      initialOtpBusy: false,
+      initialOtpError: '',
+      initialOtpMessage: '',
+      initialOtpEmail: '',
+      initialUserId: '',
+      initialOtpUnavailable: false,
+      initialOtpRetryAt: 0,
       ageWarning: '',
       warnings: {},
       passwordStrengthScore: 0,
@@ -55,6 +65,10 @@ export default {
     }
   },
   computed: {
+    maskedInitialEmail() {
+      const [local, domain] = this.initialOtpEmail.split('@');
+      return domain ? `${local.slice(0, 1)}***@${domain}` : '';
+    },
     isCompletingProfile() {
       return this.$route?.name === 'complete-profile';
     },
@@ -111,10 +125,74 @@ export default {
     }
   },
   mounted() {
-    if (this.isCompletingProfile) this.loadInitialAccount();
+    if (this.isCompletingProfile) {
+      this.step = 'otp';
+      this.loadInitialAccount();
+    }
     else this.generateIdNumber();
   },
   methods: {
+    async logoutInitialAccount() {
+      await supabase.auth.signOut();
+      localStorage.removeItem('user');
+      setUserAuthenticated(false);
+      this.$router.push('/login');
+    },
+    async sendInitialOtp() {
+      if (this.initialOtpBusy || this.initialOtpUnavailable || !this.initialOtpEmail) return;
+      const seconds = Math.ceil((this.initialOtpRetryAt - Date.now()) / 1000);
+      if (seconds > 0) {
+        this.initialOtpError = `Please wait ${seconds} seconds before requesting another code.`;
+        return;
+      }
+      this.initialOtpBusy = true;
+      this.initialOtpError = '';
+      this.initialOtpMessage = '';
+      try {
+        const { error } = await supabase.auth.signInWithOtp({
+          email: this.initialOtpEmail,
+          options: { shouldCreateUser: false }
+        });
+        if (error) throw error;
+        this.initialOtp = '';
+        this.initialOtpRetryAt = Date.now() + 60000;
+        this.initialOtpMessage = 'A verification code has been sent to your email.';
+      } catch (error) {
+        const retry = (error.message || '').match(/(?:after|in) (\d+) seconds?/i);
+        if (retry) this.initialOtpRetryAt = Date.now() + Number(retry[1]) * 1000;
+        this.initialOtpError = error.message || 'Unable to send the code. Please try again.';
+      } finally {
+        this.initialOtpBusy = false;
+      }
+    },
+    async verifyInitialOtp() {
+      if (this.initialOtpBusy || this.initialOtpUnavailable) return;
+      this.initialOtpError = '';
+      if (!/^\d{8}$/.test(this.initialOtp.trim())) {
+        this.initialOtpError = 'Enter the 8-digit code sent to your email.';
+        return;
+      }
+      this.initialOtpBusy = true;
+      try {
+        const { data, error } = await supabase.auth.verifyOtp({
+          email: this.initialOtpEmail, token: this.initialOtp.trim(), type: 'email'
+        });
+        if (error) throw error;
+        if (!data?.user || data.user.id !== this.initialUserId) {
+          await this.logoutInitialAccount();
+          return;
+        }
+        const { data: verified, error: verificationError } = await supabase.rpc('initial_account_otp_verified');
+        if (verificationError || !verified) throw verificationError || new Error('Email verification is required. Please request a new code.');
+        this.initialOtpVerified = true;
+        this.initialOtp = '';
+        this.step = 'personal';
+      } catch (error) {
+        this.initialOtpError = error.message || 'Invalid or expired verification code.';
+      } finally {
+        this.initialOtpBusy = false;
+      }
+    },
     async generateIdNumber() {
       const { data, error } = await supabase.rpc('generate_next_id_number');
       if (!error && data) {
@@ -129,7 +207,7 @@ export default {
         this.showMessage('Your session has expired. Please log in again.');
         return;
       }
-      const { data, error } = await supabase.from('users').select('id_number, username, email').eq('id', user.id).single();
+      const { data, error } = await supabase.from('users').select('id_number, username, email, registration_status').eq('id', user.id).single();
       if (error || !data) {
         this.showMessage(error?.message || 'Unable to load your account.');
         return;
@@ -137,6 +215,26 @@ export default {
       this.form.id = data.id_number || '';
       this.form.username = data.username || '';
       this.form.email = data.email?.endsWith('@accounts.local') ? '' : (data.email || '');
+      this.initialUserId = user.id;
+      this.initialOtpEmail = (user.email || '').trim().toLowerCase();
+      if (data.registration_status !== 'incomplete') {
+        this.$router.push('/login');
+        return;
+      }
+      if (!this.initialOtpEmail || this.initialOtpEmail.endsWith('@accounts.local') ||
+          this.initialOtpEmail !== (data.email || '').trim().toLowerCase()) {
+        this.initialOtpUnavailable = true;
+        this.initialOtpError = 'Contact your administrator to register a valid email address before completing your account.';
+        return;
+      }
+      const { data: verified, error: verificationError } = await supabase.rpc('initial_account_otp_verified');
+      if (verificationError) {
+        this.initialOtpError = 'Unable to check verification. Please reload or contact your administrator.';
+        return;
+      }
+      this.initialOtpVerified = verified === true;
+      if (this.initialOtpVerified) this.step = 'personal';
+      else await this.sendInitialOtp();
     },
 
     showMessage(message) {
@@ -522,6 +620,10 @@ export default {
     },
 
     async register() {
+      if (this.isCompletingProfile && !this.initialOtpVerified) {
+        await this.verifyInitialOtp();
+        return;
+      }
       // Basic client-side validation
       if (!this.form.username || !this.form.email || !this.form.password) {
         this.showMessage('Please fill username, email and password');

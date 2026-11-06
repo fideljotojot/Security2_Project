@@ -1,5 +1,50 @@
 # Security 2 Database Setup Instructions
 
+Apply `migration_first_login_otp.sql` after the first-login, self-profile,
+superadmin-capacity/slot-limit, and current account-management migrations,
+before deploying the frontend. Superadmins must now supply a real email when
+creating accounts. Incomplete accounts verify an email OTP before personal
+details are available; completion and direct writes also enforce verification.
+Completed accounts keep their existing login flow.
+
+Use the existing Supabase Email provider configuration: eight-digit OTPs and
+an email template containing `{{ .Token }}` (not only a magic-link URL).
+Expiry and resend limits are controlled by Supabase Auth. Test delivery with
+a dedicated incomplete account after applying the migration. The frontend
+uses `shouldCreateUser: false`; verification must return the same account ID.
+
+For legacy incomplete accounts with `@accounts.local` addresses, first obtain
+the user's real email and run this targeted transaction in the Supabase SQL
+editor as the database administrator. Replace both example values. This
+updates Auth and application records together without completing the account:
+
+```sql
+BEGIN;
+DO $$
+DECLARE
+  target_id UUID := '00000000-0000-0000-0000-000000000000';
+  real_email TEXT := lower(trim('person@example.com'));
+BEGIN
+  IF real_email !~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'
+     OR real_email LIKE '%@accounts.local' THEN
+    RAISE EXCEPTION 'Supply a real email';
+  END IF;
+  PERFORM 1 FROM public.users
+    WHERE id = target_id AND registration_status = 'incomplete' FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Incomplete account not found'; END IF;
+  UPDATE auth.users SET email = real_email, email_confirmed_at = now(),
+    email_change = '', email_change_token_new = '', email_change_token_current = ''
+    WHERE id = target_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Auth account not found'; END IF;
+  UPDATE public.users SET email = real_email WHERE id = target_id;
+END;
+$$;
+COMMIT;
+```
+
+Have the user log out and log in again after the correction. Never mark the
+account complete or set browser verification flags as a substitute for OTP.
+
 Apply `migration_admin_block_users_only.sql` after current account-management
 migrations. Admins may block only user accounts; database enforcement applies
 to status and lockout updates through all existing RPCs. Superadmin controls

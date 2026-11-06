@@ -153,7 +153,9 @@ export default {
       const hasPosition = !needsPosition || !!(this.form.position && String(this.form.position).trim());
       return Boolean(
         this.form.idNumber && this.form.username && this.form.password && hasPosition &&
-        !this.hasFieldWarnings(['user_id', 'username', 'password', 'position'])
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email.trim()) &&
+        !this.form.email.trim().toLowerCase().endsWith('@accounts.local') &&
+        !this.hasFieldWarnings(['user_id', 'username', 'password', 'position', 'email'])
       );
     },
     superadminLimitReached() {
@@ -1083,10 +1085,10 @@ export default {
           }
         );
 
-        // 1. Sign up the user in Supabase Auth with an internal email until first login.
-        const internalEmail = `${this.form.username.trim()}@accounts.local`;
+        // Store the real delivery address for first-login verification.
+        const accountEmail = this.form.email.trim().toLowerCase();
         const { data: authData, error: authError } = await tempClient.auth.signUp({
-          email: internalEmail,
+          email: accountEmail,
           password: this.form.password
         });
 
@@ -1107,7 +1109,7 @@ export default {
           p_user_id: authData.user.id,
           p_id_number: this.form.idNumber.trim(),
           p_username: this.form.username.trim(),
-          p_email: internalEmail,
+          p_email: accountEmail,
           p_role: this.form.role,
           p_position: this.form.position || null
         });

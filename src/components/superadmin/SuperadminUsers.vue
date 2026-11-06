@@ -170,6 +170,11 @@
 
         <form v-if="!isEditing && !isViewing" @submit.prevent="registerUser" class="modal-form compact-create-form">
           <div class="registration-box">
+            <div class="form-group">
+              <span class="field-warning" v-if="getWarning('email')">{{ getWarning('email') }}</span>
+              <input type="email" id="email" v-model="form.email" required @input="checkEmail">
+              <label for="email">Email for first-login OTP: <span>*</span></label>
+            </div>
             <div class="form-group generated-id-field">
               <input type="text" id="user_id" v-model="form.idNumber" readonly>
               <label for="user_id">ID Number (auto-generated)</label>

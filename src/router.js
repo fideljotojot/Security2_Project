@@ -112,6 +112,11 @@ router.beforeEach(async (to, from, next) => {
       return;
     }
 
+    if (userData.registration_status === 'incomplete' && !userData.is_locked_out && to.name !== 'complete-profile') {
+      next({ name: 'complete-profile' });
+      return;
+    }
+
     // 4. Redirect unavailable accounts to login with a status-specific message.
     if (userData.registration_status === 'inactive') {
       const { data: activeSuperadmin } = await supabase

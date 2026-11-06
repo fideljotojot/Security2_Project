@@ -1,8 +1,26 @@
 <template>
   <form method="POST" @submit.prevent="register">
     <h1>{{ isCompletingProfile ? 'Complete Your Profile' : 'Sign Up' }}</h1>
-    <p v-if="isCompletingProfile" class="completion-notice">Finish your account details to continue to your dashboard.</p>
+    <p v-if="isCompletingProfile" class="completion-notice">{{ initialOtpVerified ? 'Finish your account details to continue to your dashboard.' : 'Verify your email before entering your personal details.' }}</p>
 
+    <div v-if="isCompletingProfile && !initialOtpVerified" class="form-content">
+      <h3>Email verification</h3>
+      <p v-if="maskedInitialEmail">Your code will be sent to {{ maskedInitialEmail }}.</p>
+      <p v-if="initialOtpMessage" role="status">{{ initialOtpMessage }}</p>
+      <p v-if="initialOtpError" role="alert">{{ initialOtpError }}</p>
+      <div v-if="!initialOtpUnavailable" class="form-group">
+        <input id="initial-otp" v-model="initialOtp" type="text" inputmode="numeric" autocomplete="one-time-code"
+          maxlength="8" :disabled="initialOtpBusy" aria-label="8-digit verification code">
+        <label for="initial-otp">8-digit verification code</label>
+      </div>
+      <div class="btn-container">
+        <button type="button" class="btn" :disabled="initialOtpBusy || initialOtpUnavailable || !initialOtpEmail" @click="verifyInitialOtp">Verify code</button>
+        <button type="button" class="btn" :disabled="initialOtpBusy || initialOtpUnavailable || !initialOtpEmail" @click="sendInitialOtp">Resend code</button>
+        <button type="button" class="btn" :disabled="initialOtpBusy" @click="logoutInitialAccount">Log out</button>
+      </div>
+    </div>
+
+    <template v-if="!isCompletingProfile || initialOtpVerified">
     <div class="steps">
       <div class="step-indicator">
         <div v-for="(stepInfo, index) in steps" :key="stepInfo.id" class="step-item" :class="{
@@ -70,7 +88,7 @@
         </div>
         <div class="form-group">
           <span class="field-warning" v-if="getWarning('email')">{{ getWarning('email') }}</span>
-          <input type="email" id="email" name="email" v-model="form.email" required @input="checkEmail">
+          <input type="email" id="email" name="email" v-model="form.email" required :readonly="isCompletingProfile" @input="checkEmail">
           <label for="email">Email: <span>*</span></label>
         </div>
       </div>
@@ -322,7 +340,7 @@
       </div>
     </div>
 
-
+    </template>
   </form>
   <div v-if="modalMessage" class="app-modal-overlay" @click.self="modalMessage = ''">
     <div class="app-modal" role="alertdialog" aria-modal="true">
