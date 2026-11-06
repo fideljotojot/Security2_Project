@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase.js';
 import { confirmCurrentPassword } from '@/utils/confirm-password.js';
 
@@ -51,6 +50,7 @@ export default {
       notificationMessage: '',
       originalUniqueFields: {},
       isSubmitting: false,
+      createBlockedAccountId: '',
       errorMessage: '',
       step: 'personal',
       passwordStrengthScore: 0,
@@ -152,6 +152,7 @@ export default {
       const needsPosition = this.form.role === 'user';
       const hasPosition = !needsPosition || !!(this.form.position && String(this.form.position).trim());
       return Boolean(
+        !this.createBlockedAccountId && !this.isSubmitting &&
         this.form.idNumber && this.form.username && this.form.password && hasPosition &&
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email.trim()) &&
         !this.form.email.trim().toLowerCase().endsWith('@accounts.local') &&
@@ -1032,6 +1033,11 @@ export default {
         });
     },
     async registerUser() {
+      if (this.isSubmitting) return;
+      if (!this.isEditing && this.createBlockedAccountId) {
+        this.errorMessage = 'Resolve the previous account creation before submitting again.';
+        return;
+      }
       if (!this.isViewing && this.form.role === 'superadmin' && this.superadminLimitReached &&
           (!this.isEditing || this.users.find(u => u.user_id === this.editingUserId)?.role !== 'superadmin')) {
         this.errorMessage = 'Superadmin limit reached. Only two active, inactive or incomplete superadmin accounts are allowed.';
@@ -1077,47 +1083,40 @@ export default {
           this.showNotificationModal = true;
           return;
         }
-        const tempClient = createClient(
-          import.meta.env.VITE_SUPABASE_URL,
-          import.meta.env.VITE_SUPABASE_ANON_KEY,
-          {
-            auth: { persistSession: false }
+        const { data, error } = await supabase.functions.invoke('create-account-with-email', {
+          body: {
+            idNumber: this.form.idNumber.trim(), username: this.form.username.trim(),
+            email: this.form.email.trim().toLowerCase(), password: this.form.password,
+            role: this.form.role, position: this.form.position
           }
-        );
-
-        // Store the real delivery address for first-login verification.
-        const accountEmail = this.form.email.trim().toLowerCase();
-        const { data: authData, error: authError } = await tempClient.auth.signUp({
-          email: accountEmail,
-          password: this.form.password
         });
-
-        if (authError) {
-          this.errorMessage = authError.message || 'Registration failed.';
-          this.isSubmitting = false;
-          return;
+        let result = data;
+        if (error?.context && typeof error.context.json === 'function') {
+          result = await error.context.json().catch(() => null);
         }
-
-        if (!authData?.user) {
-          this.errorMessage = 'Failed to retrieve user information after signup.';
-          this.isSubmitting = false;
-          return;
-        }
-
-        // 2. Create only the account shell. The user completes the profile on first login.
-        const { data: profileSuccess, error: profileError } = await supabase.rpc('create_initial_account', {
-          p_user_id: authData.user.id,
-          p_id_number: this.form.idNumber.trim(),
-          p_username: this.form.username.trim(),
-          p_email: accountEmail,
-          p_role: this.form.role,
-          p_position: this.form.position || null
-        });
-
-        if (profileError || !profileSuccess) {
-          console.error('Profile creation error:', profileError);
-          this.errorMessage = profileError?.message || 'Failed to create user database profiles.';
-          this.isSubmitting = false;
+        if (error || result?.ok !== true) {
+          this.showCreateConfirmation = false;
+          this.isCreateConfirmed = false;
+          this.createPassword = '';
+          this.showCreatePassword = false;
+          if (result?.code === 'NOT_FOUND' || error?.context?.status === 404 || result?.code === 'BOOT_ERROR') {
+            // The gateway rejected the request before account creation ran.
+            this.errorMessage = 'The account email service is unavailable. Deploy the SMTP mailer in this Supabase project before trying again. No account was created by this request.';
+          } else if (result?.code === 'EMAIL_SEND_FAILED' && result.rolledBack === true) {
+            this.form.email = '';
+            this.warnings.email = ['Re-enter the email address before trying again.'];
+            this.errorMessage = 'Credentials email could not be sent. Re-enter the email address and try again.';
+            await this.$nextTick();
+            this.$refs.createAccountEmail?.focus();
+          } else if (result?.code === 'CLEANUP_FAILED') {
+            this.createBlockedAccountId = result.accountId || 'unknown';
+            this.errorMessage = result.error;
+          } else if (!result?.code || result.code === 'REQUEST_FAILED') {
+            this.createBlockedAccountId = 'unknown';
+            this.errorMessage = 'The account service could not be reached or its response was lost. Check the account records before submitting again; this does not mean the email address is invalid.';
+          } else {
+            this.errorMessage = result.error || 'Unable to create the account.';
+          }
           return;
         }
 
@@ -1127,14 +1126,20 @@ export default {
         this.createPassword = '';
         this.showCreatePassword = false;
         this.showAddModal = false;
+        this.form.password = '';
+        this.form.repassword = '';
         await this.fetchUsers();
         this.addedUserRole = this.form.role;
-        this.notificationTitle = 'User Added Successfully';
-        this.notificationMessage = `The new ${this.addedUserRole} account has been created. It will appear on the Accounts page after the user completes their profile on first login.`;
+        this.notificationTitle = 'Account created and credentials email sent';
+        this.notificationMessage = `The new ${this.addedUserRole} account has been created and its login details emailed to the registered address. It will appear on the Accounts page after the user completes their profile on first login.`;
         this.showNotificationModal = true;
-      } catch (err) {
-        console.error(err);
-        this.errorMessage = 'An unexpected server or network error occurred.';
+      } catch {
+        if (!this.isEditing) {
+          this.createBlockedAccountId = 'unknown';
+          this.showCreateConfirmation = false;
+          this.isCreateConfirmed = false;
+        }
+        this.errorMessage = 'An unexpected error occurred. Check the account records before retrying.';
       } finally {
         this.isSubmitting = false;
       }

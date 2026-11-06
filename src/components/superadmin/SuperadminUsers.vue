@@ -169,11 +169,13 @@
         </div>
 
         <form v-if="!isEditing && !isViewing" @submit.prevent="registerUser" class="modal-form compact-create-form">
+          <p v-if="createBlockedAccountId === 'unknown'" role="alert">The previous request could not be confirmed. Check whether the account was created before trying again. This does not mean the email address is invalid.</p>
+          <p v-else-if="createBlockedAccountId" role="alert">Account creation is blocked until the leftover account is removed. Account ID: {{ createBlockedAccountId }}.</p>
           <div class="registration-box">
             <div class="form-group">
               <span class="field-warning" v-if="getWarning('email')">{{ getWarning('email') }}</span>
-              <input type="email" id="email" v-model="form.email" required @input="checkEmail">
-              <label for="email">Email for first-login OTP: <span>*</span></label>
+              <input type="email" id="email" ref="createAccountEmail" v-model="form.email" required :disabled="isSubmitting" @input="checkEmail">
+              <label for="email">Email for login details and OTP: <span>*</span></label>
             </div>
             <div class="form-group generated-id-field">
               <input type="text" id="user_id" v-model="form.idNumber" readonly>
@@ -181,12 +183,12 @@
             </div>
             <div class="form-group">
               <span class="field-warning" v-if="getWarning('username')">{{ getWarning('username') }}</span>
-              <input type="text" id="username" v-model="form.username" required @input="checkUsername">
+              <input type="text" id="username" v-model="form.username" required :disabled="isSubmitting" @input="checkUsername">
               <label for="username">Username: <span>*</span></label>
             </div>
             <div class="form-group">
-              <span v-if="superadminLimitReached" class="field-warning" role="status">Both superadmin slots are occupied. Choose Admin or User.</span>
-              <select id="role" v-model="form.role" required @change="normalizePosition">
+              <span v-if="superadminLimitReached && form.role === 'superadmin'" class="field-warning" role="status">Both superadmin slots are occupied. Choose Admin or User.</span>
+              <select id="role" v-model="form.role" required :disabled="isSubmitting" @change="normalizePosition">
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
                 <option value="superadmin" :disabled="superadminLimitReached">Superadmin</option>
@@ -195,7 +197,7 @@
             </div>
             <div class="form-group">
               <span class="field-warning" v-if="getWarning('position')">{{ getWarning('position') }}</span>
-              <select id="position" v-model="form.position" @change="validatePosition">
+              <select id="position" v-model="form.position" :disabled="isSubmitting" @change="validatePosition">
                 <option value="Instructor">Instructor</option>
                 <option value="Staff">Staff</option>
                 <option v-if="form.role === 'user'" value="Student">Student</option>
@@ -209,7 +211,7 @@
               </div>
               <span class="field-warning" v-if="getWarning('password')">{{ getWarning('password') }}</span>
               <div class="password-input-wrapper">
-                <input :type="showPassword ? 'text' : 'password'" id="password" v-model="form.password" required
+                <input :type="showPassword ? 'text' : 'password'" id="password" v-model="form.password" required :disabled="isSubmitting"
                   @input="validatePassword">
                 <button type="button" class="toggle-password" @click="showPassword = !showPassword"
                   :aria-label="showPassword ? 'Hide password' : 'Show password'">
@@ -236,7 +238,7 @@
           </div>
           <div class="btn-container">
             <button type="button" @click="closeAddModal" class="btn btn-secondary">Cancel</button>
-            <button type="submit" class="btn btn-primary" :disabled="!canCreateAccount">Continue</button>
+            <button type="submit" class="btn btn-primary" :disabled="!canCreateAccount || isSubmitting">{{ isSubmitting ? 'Creating and sending email...' : 'Continue' }}</button>
           </div>
         </form>
 

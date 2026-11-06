@@ -112,8 +112,6 @@ test('account creation requires a real delivery email before submission', async 
   assert.equal(canCreate(), true);
   state.warnings.email = ['This email is already registered'];
   assert.equal(canCreate(), false);
-  assert.match(source, /email: accountEmail/);
-  assert.match(source, /p_email: accountEmail/);
 });
 
 test('onboarding template hides all details until verified and locks the delivery email', async () => {

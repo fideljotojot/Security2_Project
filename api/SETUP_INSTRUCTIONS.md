@@ -1,5 +1,72 @@
 # Security 2 Database Setup Instructions
 
+## Add User credentials email using existing Gmail SMTP
+
+The current account mailer uses your existing Gmail SMTP provider. It does
+not need Resend. Supabase Auth's SMTP settings and OTP templates remain as
+configured. The mailer needs a second copy of those SMTP credentials as server
+secrets; Edge Functions cannot automatically read Auth's SMTP password.
+
+A custom email containing the username and initial password requires a
+backend mailer. SQL Editor alone cannot deploy it or send a custom message
+through Supabase Auth SMTP. The old Resend SQL setup is no longer used.
+
+1. Apply migration_first_login_otp.sql and existing account-management
+   migrations in the project used by the app.
+2. In that project's Edge Functions secrets, set:
+   - SMTP_HOST: smtp.gmail.com
+   - SMTP_PORT: 465
+   - SMTP_USERNAME: your existing Gmail sender account
+   - SMTP_PASSWORD: that account's Google App Password, not the app user's
+     initial password or your normal Google sign-in password
+   - SMTP_FROM: the same sender email, optionally Your App <sender@gmail.com>
+3. Deploy the included function from the correct linked project:
+
+~~~sh
+supabase functions deploy create-account-with-email --project-ref YOUR_PROJECT_ID
+~~~
+
+Supabase supplies SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY
+inside the hosted function. Never place SMTP passwords or service keys in
+VITE variables, frontend files, chat messages, or committed secrets files.
+Keep VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY pointed at that same project.
+
+Port 465 uses implicit TLS with certificate verification enabled. Gmail also
+supports STARTTLS 587 for Auth, but hosted Edge mailers cannot use ports 25/587.
+Leave the existing Auth SMTP port unchanged; the separate mailer uses 465.
+Gmail App Passwords require an eligible Google account with 2-Step Verification.
+If App Passwords are unavailable under your organization's policy, the mailer
+will require a separately configured OAuth solution rather than a normal password.
+
+Run api/migration_account_credentials_email.sql in SQL Editor if you previously
+installed the Resend-based RPC. It only revokes client execution of that obsolete
+RPC; it preserves existing accounts and Vault entries. No Resend secrets are
+required by the new flow. Reload Accounts to clear a previous local request block.
+
+The mailer verifies an approved, unlocked superadmin, creates the Auth account,
+then calls create_initial_account using that superadmin's identity. It emails
+the exact username and initial password. Account creation reports success only
+when SMTP accepts the recipient/message. Passwords remain in request memory
+and the outgoing email, never plaintext application records or application logs.
+After first login, the recipient still verifies an OTP and completes their profile.
+
+If sending fails, the mailer deletes only the account created by that attempt.
+The form clears and focuses the recipient email and requires re-entry plus
+confirmation before another attempt. If deletion fails, it shows the account
+ID and blocks resubmission. Remove that exact leftover Auth account, then
+reload Accounts. If the response was lost, check the attempted email/username
+in Auth before retrying. Never delete an unrelated existing account.
+
+SMTP acceptance does not guarantee inbox placement or prevent later bounces.
+Test deployment with a dedicated account. Automated tests mock delivery; no real
+email is sent by the test suite. Sender authentication failures, recipient
+rejection and network failures must not show account-creation success.
+
+References:
+- https://developers.google.com/workspace/gmail/imap/imap-smtp
+- https://support.google.com/accounts/answer/185833
+- https://github.com/supabase/supabase/tree/master/examples/edge-functions/supabase/functions/send-email-smtp
+
 Apply `migration_first_login_otp.sql` after the first-login, self-profile,
 superadmin-capacity/slot-limit, and current account-management migrations,
 before deploying the frontend. Superadmins must now supply a real email when
