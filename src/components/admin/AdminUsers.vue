@@ -12,7 +12,6 @@
         <div class="dropdown">
           <select v-model="status" aria-label="Filter by status">
             <option value="all">All statuses</option>
-            <option value="pending">Pending</option>
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
             <option value="inactive">Inactive</option>

@@ -28,7 +28,6 @@
 
           <select name="user-status" id="user-status" v-model="selectedStatus">
             <option value="all">All Status</option>
-            <option value="pending">Pending</option>
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
             <option value="inactive">Inactive</option>
@@ -559,7 +558,7 @@
               :class="{ 'privilege-option-disabled': privilegeRole !== 'admin' }">
               <input type="checkbox" v-model="selectedPrivileges" :value="privilege.key"
                 :disabled="privilegeRole !== 'admin'">
-              <span>{{ privilege.label }}</span>
+              <span>{{ privilege.key === 'delete_accounts' && privilegeRole === 'admin' ? 'Can Request Delete' : privilege.label }}</span>
             </label>
           </div>
         </div>

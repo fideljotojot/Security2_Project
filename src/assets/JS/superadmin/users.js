@@ -193,7 +193,7 @@ export default {
       const query = this.searchQuery.trim().toLowerCase();
 
       const filteredUsers = this.users.filter((user) => {
-        if (user.registration_status === 'incomplete') return false;
+        if (['incomplete', 'pending'].includes(user.registration_status)) return false;
         const matchesSearch = !query || [user.id_number, user.username, user.email]
           .some(value => String(value || '').toLowerCase().includes(query));
         const matchesRole = this.selectedRole === 'all' || user.role === this.selectedRole;
