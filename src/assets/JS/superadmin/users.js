@@ -42,7 +42,7 @@ export default {
         { key: 'manage_account_info', label: 'Can Manage Account Info' },
         { key: 'block_accounts', label: 'Can Block/Unblock' },
         { key: 'reset_passwords', label: 'Can Reset Password' },
-        { key: 'delete_accounts', label: 'Can Delete' }
+        { key: 'delete_accounts', label: 'Can Request Delete' }
       ],
       isUpdatingPrivilege: false,
       addedUserRole: 'user',
