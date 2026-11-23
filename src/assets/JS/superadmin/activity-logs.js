@@ -5,6 +5,7 @@ const emptyFilters = () => ({ search: '', action: '', role: '', from: '', to: ''
 
 export default {
   name: 'ActivityLogs',
+  props: { ownLogs: { type: Boolean, default: false } },
   data: () => ({
     logs: [], category: 'all', categories: LOG_CATEGORIES, draft: emptyFilters(), applied: emptyFilters(),
     currentPage: 1, pageSize: 8, total: 0, options: { actions: [], roles: [] },

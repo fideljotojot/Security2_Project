@@ -461,4 +461,49 @@ test('categorized audit migration and session security', async t => {
     await asUser(user); await assert.rejects(page({}),/Only admins and superadmins/);
     await asUser(null); await assert.rejects(page({}),/Only admins and superadmins/);
   });
+  await t.test('Users see only their own logs across filters, totals, options and pages', async () => {
+    const migration = await readFile(new URL('../api/migration_user_own_logs.sql', import.meta.url), 'utf8');
+    const history = (await db.query('SELECT * FROM public.audit_logs ORDER BY id')).rows;
+    await db.exec(migration); await db.exec(migration);
+    assert.deepEqual((await db.query('SELECT * FROM public.audit_logs ORDER BY id')).rows, history);
+    await db.exec("UPDATE public.users SET role='user',registration_status='approved' WHERE id='"+user+"'");
+    const own = await db.query("INSERT INTO public.audit_logs(actor_id,action,entity_type,category,details) SELECT $1,'Own event','user','activity','{}'::JSONB FROM generate_series(1,18) RETURNING id", [user]);
+    await db.query("INSERT INTO public.audit_logs(actor_id,action,entity_type,category,details) VALUES($1,'Other private event','user','activity','{}'),($2,'System event','system','system','{}')", [other,null]);
+    await asUser(user);
+    await db.exec('SET ROLE authenticated');
+    try {
+      const seen = [];
+      for (let n=1;n<=3;n++) {
+        const result = await page({category:'all',action:'Own event',page:n,size:8});
+        assert.equal(result.total,18);
+        assert(result.rows.every(row=>row.actor_id===user));
+        seen.push(...result.rows.map(row=>row.log_id));
+      }
+      assert.deepEqual([...new Set(seen)].sort((a,b)=>a-b),own.rows.map(row=>row.id).sort((a,b)=>a-b));
+      for (const category of ['all','activity','security','system']) {
+        const result=await page({category,size:8});
+        assert(result.rows.every(row=>row.actor_id===user));
+        assert(result.actors.every(actor=>actor.id===user));
+        assert(result.roles.every(role=>role==='user'));
+        assert(!result.actions.includes('Other private event'));
+        assert(!result.actions.includes('System event'));
+        const foreign=await page({category,actor:other});
+        assert.equal(foreign.total,0);assert.deepEqual(foreign.rows,[]);
+      }
+      for (const filters of [{search:'Other private event'},{role:'superadmin'},{role:'admin'}, {actor:admin}]) {
+        const result=await page({category:'all',...filters});
+        assert.equal(result.total,0);assert.deepEqual(result.rows,[]);
+      }
+      await assert.rejects(db.query('SELECT * FROM public.audit_logs'),/permission denied/);
+      await asUser(null);
+      await assert.rejects(page({category:'all'}),/signed-in account/);
+    } finally { await db.exec('RESET ROLE'); }
+    for (const viewer of [admin,other]) {
+      await asUser(viewer);
+      const result=await page({category:'all'});
+      if(viewer===admin) assert(result.total>18);
+      else assert(result.rows.every(row=>['admin','user'].includes(row.actor_role)));
+    }
+  });
+
 });

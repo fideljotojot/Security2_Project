@@ -26,6 +26,7 @@ const routes = [
   { path: '/signup', name: 'signup', component: SignupForm },
   { path: '/complete-profile', name: 'complete-profile', component: SignupForm },
   { path: '/dashboard', name: 'dashboard', component: Dashboard },
+  { path: '/logs', name: 'user-logs', component: ActivityLogs, props: { ownLogs: true } },
   { path: '/profile', name: 'profile', component: ProfilePage },
   { path: '/forgot', name: 'forgot', component: ForgotPassword },
   { path: '/superadmin', component: RouterView,
@@ -144,6 +145,10 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // 5. Role authorization checks
+    if (to.name === 'user-logs' && userData.role !== 'user') {
+      next({ name: userData.role === 'superadmin' ? 'superadmin-activity-logs' : 'admin-activity-logs' });
+      return;
+    }
     if (to.name.startsWith('admin') && userData.role !== 'admin') {
       next({ name: 'dashboard' });
       return;

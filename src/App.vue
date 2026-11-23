@@ -381,10 +381,11 @@ export default {
       </div>
     </header>
 
-    <header v-else-if="$route.name === 'dashboard' || ($route.name === 'profile' && !['admin', 'superadmin'].includes(currentUserRole))">
+    <header v-else-if="['dashboard', 'user-logs'].includes($route.name) || ($route.name === 'profile' && !['admin', 'superadmin'].includes(currentUserRole))">
       <img src="./assets/images/Caraga_State_University_-_Cabadbaran_Campus_logo_(Reduced).png" alt="Logo">
       <div class="header-btn">
         <router-link to="/dashboard"><p class="dark-btn">Dashboard</p></router-link>
+        <router-link to="/logs"><p>Logs</p></router-link>
         <router-link to="/profile"><p>Profile</p></router-link>
         <router-link to="/login" @click.prevent="logout"><p>Logout</p></router-link>
       </div>
@@ -406,7 +407,7 @@ export default {
       </div>
 
       <div class="page-container"
-        v-else-if="['dashboard', 'profile', 'admin', 'superadmin', 'admin-users', 'admin-registrations', 'admin-activity-logs', 'superadmin-users', 'superadmin-registrations', 'superadmin-activity-logs'].includes($route.name)">
+        v-else-if="['dashboard', 'user-logs', 'profile', 'admin', 'superadmin', 'admin-users', 'admin-registrations', 'admin-activity-logs', 'superadmin-users', 'superadmin-registrations', 'superadmin-activity-logs'].includes($route.name)">
         <router-view></router-view>
       </div>
 

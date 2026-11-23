@@ -2,7 +2,7 @@
   <main class="container activity-logs-page">
     <section class="user-table" aria-labelledby="logs-heading">
       <div class="header-section table-panel-header">
-        <h2 id="logs-heading">Logs</h2>
+        <h2 id="logs-heading">{{ ownLogs ? 'My Logs' : 'Logs' }}</h2>
         <div class="logs-header-actions">
           <button class="logs-clear-button" type="button" @click="clearFilters">Clear</button>
           <button type="button" @click="applyFilters">Refresh</button>
@@ -21,7 +21,7 @@
             <select v-model="category" aria-label="Log type" @change="changeCategory">
               <option v-for="item in categories" :key="item.value" :value="item.value">{{ item.label }}</option>
             </select>
-            <select v-model="draft.role" aria-label="Filter logs by role" @change="applyFilters">
+            <select v-if="!ownLogs" v-model="draft.role" aria-label="Filter logs by role" @change="applyFilters">
               <option value="">All roles</option><option v-for="role in options.roles" :key="role" :value="role">{{ role.charAt(0).toUpperCase() + role.slice(1) }}</option>
             </select>
             <select v-model="draft.action" aria-label="Filter logs by action" @change="applyFilters">

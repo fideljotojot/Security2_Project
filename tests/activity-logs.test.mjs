@@ -225,7 +225,7 @@ test('actual Vue template renders categorized headers, session status, errors an
   const code = compiled.code.replace(/from "([^"]+)"/g, (_all, name) => `from ${JSON.stringify(import.meta.resolve(name))}`);
   const { ssrRender } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
   const state = await pageHarness(async () => ({ data: { rows: [], total: 0 } }));
-  const render = async () => renderToString(createSSRApp({ ssrRender, data: () => ({ ...state,
+  const render = async () => renderToString(createSSRApp({ ssrRender, data: () => ({ ownLogs: false, ...state,
     categoryLabel: state.categoryLabel, pageCount: state.pageCount,
     pageStart: state.pageStart, pageEnd: state.pageEnd, visiblePages: state.visiblePages,
   }) }));
@@ -276,6 +276,12 @@ test('actual Vue template renders categorized headers, session status, errors an
   html = await render(); assert(html.includes('Loading login &amp; security logs'));
   state.loading = false; state.errorMessage = 'Offline';
   html = await render(); assert(html.includes('role="alert"')); assert(html.includes('Use Refresh to try again.'));
+  state.ownLogs = true; state.errorMessage = '';
+  html = await render();
+  assert(html.includes('<h2 id="logs-heading">My Logs</h2>'));
+  assert(!html.includes('Filter logs by role'));
+  assert(html.includes('Time In')); assert(html.includes('Time Out'));
+  assert(html.includes('From date')); assert(html.includes('To date'));
 });
 
 test('error transport excludes secrets, expected failures and recursive reports', async () => {

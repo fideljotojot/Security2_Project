@@ -1,5 +1,15 @@
 # Security 2 Database Setup Instructions
 
+## User Logs
+
+Run `api/migration_user_own_logs.sql` after `migration_hide_account_status_updates.sql`
+and all other log migrations, before deploying the frontend. Users get a Logs link
+at `/logs` with search, category/action filters, date ranges, and pagination.
+Database ownership filtering applies to rows, totals, and filter options; passing
+another actor ID cannot expose their events. Admin and Superadmin visibility is
+preserved. This migration does not change account-blocking rules.
+
+
 ## Remove automatic blocking and enforce User-role restrictions
 
 Run `api/migration_remove_auto_block.sql` in Supabase SQL Editor **last**, after
