@@ -1,134 +1,21 @@
--- Keep one active superadmin and one inactive backup while signed in.
--- When nobody is active, keep up to two inactive superadmins.
--- Run after migration_first_login_accounts.sql and the other current user
--- management migrations.
-
-CREATE OR REPLACE FUNCTION public.normalize_superadmin_capacity()
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_active_id UUID;
-  v_backup_id UUID;
-  v_second_backup_id UUID;
-BEGIN
-  -- Serialize all capacity changes so concurrent creation, completion, or
-  -- promotion requests cannot both claim the backup slot.
-  PERFORM pg_advisory_xact_lock(hashtextextended('superadmin-capacity', 0));
-
-  SELECT id INTO v_active_id
-  FROM public.users
-  WHERE role = 'superadmin' AND registration_status = 'approved'
-  ORDER BY created_at ASC, id ASC
-  LIMIT 1;
-
-  SELECT id INTO v_backup_id
-  FROM public.users
-  WHERE role = 'superadmin' AND registration_status = 'inactive'
-    AND id <> COALESCE(v_active_id, '00000000-0000-0000-0000-000000000000'::UUID)
-  ORDER BY created_at DESC, id DESC
-  LIMIT 1;
-
-  IF v_active_id IS NULL THEN
-    SELECT id INTO v_second_backup_id
-    FROM public.users
-    WHERE role = 'superadmin' AND registration_status = 'inactive'
-      AND id <> COALESCE(v_backup_id, '00000000-0000-0000-0000-000000000000'::UUID)
-    ORDER BY created_at DESC, id DESC
-    LIMIT 1;
-  END IF;
-
-  UPDATE public.users
-  SET registration_status = 'blocked', is_locked_out = TRUE
-  WHERE role = 'superadmin'
-    AND registration_status IN ('approved', 'inactive')
-    AND id <> COALESCE(v_active_id, '00000000-0000-0000-0000-000000000000'::UUID)
-    AND id <> COALESCE(v_backup_id, '00000000-0000-0000-0000-000000000000'::UUID)
-    AND id <> COALESCE(v_second_backup_id, '00000000-0000-0000-0000-000000000000'::UUID);
-END;
-$$;
-
--- Newly completed superadmins are inactive. If an older inactive backup
--- exists, the newest inactive account is retained and the older one blocked.
-CREATE OR REPLACE FUNCTION public.normalize_superadmin_capacity_on_change()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  IF pg_trigger_depth() = 1
-     AND current_setting('app.superadmin_logout', true) IS DISTINCT FROM 'true'
-     AND (NEW.role = 'superadmin' OR (TG_OP <> 'INSERT' AND OLD.role = 'superadmin'))
-     AND (NEW.registration_status IN ('approved', 'inactive')
-          OR (TG_OP <> 'INSERT' AND OLD.registration_status IN ('approved', 'inactive'))) THEN
-    PERFORM public.normalize_superadmin_capacity();
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
+-- Automatic blocking removed; slot limits reject additions instead.
+-- Apply migration_remove_auto_block.sql LAST on existing installations.
 DROP TRIGGER IF EXISTS enforce_superadmin_capacity ON public.users;
-CREATE TRIGGER enforce_superadmin_capacity
-AFTER INSERT OR UPDATE OF role, registration_status ON public.users
-FOR EACH ROW
-EXECUTE FUNCTION public.normalize_superadmin_capacity_on_change();
+DROP FUNCTION IF EXISTS public.normalize_superadmin_capacity_on_change();
+DROP FUNCTION IF EXISTS public.normalize_superadmin_capacity();
 
--- Normalize any existing data immediately when this migration is applied.
-SELECT public.normalize_superadmin_capacity();
-
--- Preserve the active account as a second inactive backup when it logs out.
+-- Logout only changes the caller's own superadmin status, never other accounts.
 CREATE OR REPLACE FUNCTION public.deactivate_superadmin_on_logout()
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_backup_id UUID;
-  v_changed BOOLEAN;
+RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $$
 BEGIN
-  PERFORM pg_advisory_xact_lock(hashtextextended('superadmin-capacity', 0));
-
-  -- The trigger must not normalize between the active account's status update
-  -- and the cleanup below; otherwise it may block the account that just logged
-  -- out before it can become the second inactive backup.
-  PERFORM set_config('app.superadmin_logout', 'true', true);
-
-  UPDATE public.users
-  SET registration_status = 'inactive', is_locked_out = FALSE
-  WHERE id = auth.uid()
-    AND role = 'superadmin'
-    AND registration_status = 'approved';
-  v_changed := FOUND;
-
-  SELECT id INTO v_backup_id
-  FROM public.users
-  WHERE role = 'superadmin'
-    AND registration_status = 'inactive'
-    AND id <> auth.uid()
-  ORDER BY created_at DESC, id DESC
-  LIMIT 1;
-
-  -- Keep the account that logged out plus one existing backup. Any further
-  -- inactive superadmins are excess and become blocked.
-  UPDATE public.users
-  SET registration_status = 'blocked', is_locked_out = TRUE
-  WHERE role = 'superadmin'
-    AND registration_status = 'inactive'
-    AND id <> auth.uid()
-    AND id <> COALESCE(v_backup_id, '00000000-0000-0000-0000-000000000000'::UUID);
-
-  RETURN v_changed;
+  UPDATE public.users SET registration_status = 'inactive', is_locked_out = FALSE
+  WHERE id = auth.uid() AND role = 'superadmin' AND registration_status = 'approved';
+  RETURN FOUND;
 END;
 $$;
-
-REVOKE ALL ON FUNCTION public.normalize_superadmin_capacity() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.normalize_superadmin_capacity_on_change() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.deactivate_superadmin_on_logout() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.deactivate_superadmin_on_logout() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.deactivate_superadmin_on_logout() TO authenticated;
+
 
 -- Atomically replace the inactive backup while an active superadmin is signed in.
 CREATE OR REPLACE FUNCTION public.replace_inactive_superadmin_backup(

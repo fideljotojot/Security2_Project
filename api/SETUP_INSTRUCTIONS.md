@@ -1,5 +1,16 @@
 # Security 2 Database Setup Instructions
 
+## Remove automatic blocking and enforce User-role restrictions
+
+Run `api/migration_remove_auto_block.sql` in Supabase SQL Editor **last**, after
+all account-management migrations. It removes automatic capacity blocking and
+prevents Users from blocking or locking any account, including through privileged
+RPCs. User/admin logout leaves superadmins untouched. Admins may block only Users;
+active Superadmins retain manual controls. The two-slot limit rejects additions
+without blocking existing accounts. Previously blocked accounts must be reviewed
+and restored explicitly.
+
+
 ## Add User credentials email using existing Gmail SMTP
 
 The current account mailer uses your existing Gmail SMTP provider. It does
